@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>About Us | Kadesh Hope Mission</title>
+<meta name="description" content="Founded in 2009, Kadesh Hope Mission has spent 15+ years transforming lives across DR Congo, Uganda, and Kenya."/>
+<link rel="icon" type="image/png" href="images/favicon-32.png"/>
+<link rel="apple-touch-icon" href="images/apple-touch-icon.png"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400..700;1,8..60,400..700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "on-secondary-container": "#5d2300",
+          "surface-container-low": "#eff4ff",
+          "inverse-on-surface": "#eaf1ff",
+          "soft-accent": "#E2E8F0",
+          "on-primary": "#ffffff",
+          "surface": "#f8f9ff",
+          "background": "#f8f9ff",
+          "on-tertiary": "#ffffff",
+          "on-secondary": "#ffffff",
+          "surface-container-high": "#dce9ff",
+          "hope-orange": "#F37021",
+          "secondary-fixed": "#ffdbcb",
+          "surface-dim": "#cbdbf5",
+          "surface-gray": "#F8FAFC",
+          "primary-container": "#1a469d",
+          "deep-navy": "#0D1B3E",
+          "surface-container-lowest": "#ffffff",
+          "surface-container": "#e5eeff",
+          "on-surface": "#0b1c30",
+          "surface-container-highest": "#d3e4fe",
+          "error": "#ba1a1a",
+          "primary-fixed": "#dae2ff",
+          "inverse-surface": "#213145",
+          "outline-variant": "#c4c6d4",
+          "primary-fixed-dim": "#b2c5ff",
+          "on-surface-variant": "#434652",
+          "on-background": "#0b1c30",
+          "primary": "#002f7b",
+          "vibrant-blue": "#2563EB",
+          "surface-bright": "#f8f9ff",
+          "surface-variant": "#d3e4fe",
+          "secondary": "#a04100",
+          "outline": "#747783",
+          "tertiary": "#263357",
+          "on-error": "#ffffff",
+          "secondary-container": "#fc7728"
+        },
+        borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px" },
+        spacing: { "section-gap": "120px", "margin-mobile": "20px", "margin-desktop": "64px", "container-max": "1280px", gutter: "32px" },
+        fontFamily: {
+          "label-bold": ["Hanken Grotesk"],
+          "caption": ["Hanken Grotesk"],
+          "headline-md": ["\"Source Serif 4\""],
+          "display-lg": ["\"Source Serif 4\""],
+          "display-lg-mobile": ["\"Source Serif 4\""],
+          "headline-lg": ["\"Source Serif 4\""],
+          "body-lg": ["Hanken Grotesk"],
+          "body-md": ["Hanken Grotesk"]
+        },
+        fontSize: {
+          "label-bold": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+          "caption": ["13px", {"lineHeight": "18px", "fontWeight": "500"}],
+          "headline-md": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+          "display-lg": ["60px", {"lineHeight": "72px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+          "display-lg-mobile": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+          "headline-lg": ["36px", {"lineHeight": "44px", "fontWeight": "600"}],
+          "body-lg": ["18px", {"lineHeight": "30px", "fontWeight": "400"}],
+          "body-md": ["16px", {"lineHeight": "26px", "fontWeight": "400"}]
+        }
+      }
+    }
+  }
+</script>
+<style>
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  .glass-nav { background: rgba(255,255,255,0.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+  .hero-gradient { background: linear-gradient(180deg, rgba(13,27,62,0.35) 0%, rgba(13,27,62,0.85) 100%); }
+  .card-shadow { box-shadow: 0 40px 80px -20px rgba(0,0,0,0.08); }
+  .glass-card { background: rgba(255,255,255,0.8); backdrop-filter: blur(8px); border: 1px solid rgba(226,232,240,0.5); }
+  html { scroll-behavior: smooth; }
+</style>
+
+</head>
+<body class="bg-background text-on-background font-body-md selection:bg-primary-fixed selection:text-white">
+<header class="fixed top-0 w-full z-50 glass-nav shadow-sm">
+<div class="flex justify-between items-center h-20 px-6 md:px-margin-desktop max-w-container-max mx-auto">
+<a href="index.html" class="flex items-center">
+<img src="images/kadesh-logo.png" alt="Kadesh Hope Mission of Africa" class="h-11 md:h-12 w-auto"/>
+</a>
+<nav class="hidden lg:flex gap-8 items-center">
+<a class="nav-link font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue transition-colors" data-nav="home" href="index.html">Home</a>
+<a class="nav-link font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue transition-colors" data-nav="about" href="about.html">About</a>
+<a class="nav-link font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue transition-colors" data-nav="programs" href="programs.html">Programs</a>
+<a class="nav-link font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue transition-colors" data-nav="sponsor" href="sponsor.html">Sponsor a Child</a>
+<a class="nav-link font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue transition-colors" data-nav="gallery" href="gallery.html">Gallery</a>
+<a class="nav-link font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue transition-colors" data-nav="videos" href="video-gallery.html">Videos</a>
+<a class="nav-link font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue transition-colors" data-nav="involved" href="get-involved.html">Get Involved</a>
+<a class="nav-link font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue transition-colors" data-nav="contact" href="contact.html">Contact</a>
+</nav>
+<div class="flex items-center gap-3">
+<a href="donate.html" class="bg-vibrant-blue text-on-primary px-6 py-2.5 rounded-lg font-label-bold text-label-bold hover:bg-primary transition-colors active:scale-95 duration-200">Donate</a>
+<button class="lg:hidden text-deep-navy" onclick="document.getElementById('mobileMenu').classList.toggle('hidden')" aria-label="Toggle menu">
+<span class="material-symbols-outlined text-3xl">menu</span>
+</button>
+</div>
+</div>
+<div id="mobileMenu" class="hidden lg:hidden bg-white border-t border-soft-accent px-6 py-6 space-y-4">
+<a class="block font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue" href="index.html">Home</a>
+<a class="block font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue" href="about.html">About</a>
+<a class="block font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue" href="programs.html">Programs</a>
+<a class="block font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue" href="sponsor.html">Sponsor a Child</a>
+<a class="block font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue" href="gallery.html">Gallery</a>
+<a class="block font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue" href="video-gallery.html">Videos</a>
+<a class="block font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue" href="get-involved.html">Get Involved</a>
+<a class="block font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue" href="contact.html">Contact</a>
+</div>
+</header>
+
+<main class="pt-20">
+<section class="relative h-[70vh] min-h-[520px] flex items-center overflow-hidden">
+<div class="absolute inset-0 z-0">
+<img alt="Kadesh Hope community work" class="w-full h-full object-cover" src="https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?q=80&w=1600&auto=format&fit=crop"/>
+<div class="absolute inset-0 bg-gradient-to-r from-deep-navy/90 via-deep-navy/50 to-transparent"></div>
+</div>
+<div class="relative z-10 px-6 md:px-margin-desktop max-w-container-max mx-auto w-full">
+<div class="max-w-2xl text-white">
+<span class="inline-block px-3 py-1 bg-hope-orange/20 border border-hope-orange/30 rounded text-hope-orange font-label-bold text-label-bold mb-6">EST. 2009</span>
+<h1 class="font-display-lg-mobile text-display-lg-mobile md:font-display-lg md:text-display-lg mb-6 leading-tight">Wisdom guided by empathy.</h1>
+<p class="font-body-lg text-body-lg text-surface-container-low mb-4 leading-relaxed">
+This mission movement was launched in 2009 by a group of young people who migrated from India to the Democratic Republic of the Congo, inspired by a vision to uplift impoverished communities and transform lives.
+</p>
+</div>
+</div>
+</section>
+
+<section class="py-section-gap px-6 md:px-margin-desktop max-w-container-max mx-auto">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter items-stretch">
+<div class="lg:col-span-7 flex flex-col justify-center" data-reveal>
+<h2 class="font-headline-lg text-headline-lg text-deep-navy mb-8">Our Story</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-6 leading-loose">
+Focused on initiatives in education, healthcare, social empowerment, and development, our founders faced immense physical and mental challenges, limited resources, and security risks &mdash; yet remained steadfast in their commitment to driving sustainable change.
+</p>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-10 leading-loose">
+Over 15 years of perseverance, we have pioneered transformative programs to address critical needs across the region, building schools, funding clinics, and equipping families with the tools for self-reliance.
+</p>
+<div class="grid grid-cols-2 gap-8">
+<div><div class="text-vibrant-blue font-display-lg text-[48px] mb-2">15+</div><div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant">Years of Persistence</div></div>
+<div><div class="text-hope-orange font-display-lg text-[48px] mb-2">10k+</div><div class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface-variant">Lives Transformed</div></div>
+</div>
+</div>
+<div class="lg:col-span-5 h-[420px] lg:h-auto rounded-xl overflow-hidden relative group" data-reveal>
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Community leader in front of a newly built school" src="https://images.unsplash.com/photo-1509062522246-3755977927d7?q=80&w=1000&auto=format&fit=crop"/>
+<div class="absolute bottom-6 left-6 right-6 glass-card p-6 rounded-lg shadow-lg">
+<p class="italic text-deep-navy font-body-md">&ldquo;Hope is not a sentiment; it is a strategy for survival and progress.&rdquo;</p>
+</div>
+</div>
+</div>
+</section>
+
+<section class="bg-surface-gray py-section-gap">
+<div class="px-6 md:px-margin-desktop max-w-container-max mx-auto grid md:grid-cols-2 gap-12" data-reveal>
+<div class="bg-white rounded-2xl p-10 border border-soft-accent shadow-sm">
+<span class="material-symbols-outlined text-vibrant-blue text-4xl mb-4" style="font-variation-settings:'FILL' 1;">flag</span>
+<h3 class="font-headline-md text-headline-md text-deep-navy mb-4">Mission Statement</h3>
+<p class="font-body-lg text-body-lg text-on-surface-variant leading-relaxed">Our mission is to transform lives and uplift communities in Uganda and Kenya through holistic gospel outreach.</p>
+</div>
+<div class="bg-white rounded-2xl p-10 border border-soft-accent shadow-sm">
+<span class="material-symbols-outlined text-hope-orange text-4xl mb-4" style="font-variation-settings:'FILL' 1;">visibility</span>
+<h3 class="font-headline-md text-headline-md text-deep-navy mb-4">Vision Statement</h3>
+<p class="font-body-lg text-body-lg text-on-surface-variant leading-relaxed">To create thriving, self-sustaining communities in Africa where every individual has access to spiritual as well as physical needs.</p>
+</div>
+</div>
+</section>
+
+<!-- Ministry Areas -->
+<section class="py-section-gap px-6 md:px-margin-desktop max-w-container-max mx-auto">
+<div class="text-center mb-16" data-reveal>
+<span class="font-label-bold text-label-bold text-vibrant-blue uppercase tracking-widest mb-4 block">Ministry</span>
+<h2 class="font-headline-lg text-headline-lg text-deep-navy">How We Serve</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8" data-reveal>
+<div class="flex gap-5 bg-white p-8 rounded-xl border border-soft-accent card-shadow">
+<span class="material-symbols-outlined text-vibrant-blue text-3xl shrink-0" style="font-variation-settings:'FILL' 1;">school</span>
+<div><h4 class="font-headline-md text-headline-md text-deep-navy mb-2 text-[20px]">Education</h4><p class="text-on-surface-variant font-body-md">Ensuring access to education for every child by constructing schools and learning centers, equipping African youth to compete globally.</p></div>
+</div>
+<div class="flex gap-5 bg-white p-8 rounded-xl border border-soft-accent card-shadow">
+<span class="material-symbols-outlined text-hope-orange text-3xl shrink-0" style="font-variation-settings:'FILL' 1;">health_and_safety</span>
+<div><h4 class="font-headline-md text-headline-md text-deep-navy mb-2 text-[20px]">Health</h4><p class="text-on-surface-variant font-body-md">Implementing home-based healthcare programs to reach underserved populations.</p></div>
+</div>
+<div class="flex gap-5 bg-white p-8 rounded-xl border border-soft-accent card-shadow">
+<span class="material-symbols-outlined text-secondary text-3xl shrink-0" style="font-variation-settings:'FILL' 1;">restaurant</span>
+<div><h4 class="font-headline-md text-headline-md text-deep-navy mb-2 text-[20px]">Combating Hunger</h4><p class="text-on-surface-variant font-body-md">The Bethlehem Bread Project provides daily meals and food security for vulnerable communities.</p></div>
+</div>
+<div class="flex gap-5 bg-white p-8 rounded-xl border border-soft-accent card-shadow">
+<span class="material-symbols-outlined text-vibrant-blue text-3xl shrink-0" style="font-variation-settings:'FILL' 1;">rocket_launch</span>
+<div><h4 class="font-headline-md text-headline-md text-deep-navy mb-2 text-[20px]">Entrepreneurial Programs</h4><p class="text-on-surface-variant font-body-md">Skills training, mentorship, and motivational workshops empowering Africa's next generation of innovators.</p></div>
+</div>
+<div class="flex gap-5 bg-white p-8 rounded-xl border border-soft-accent card-shadow md:col-span-2">
+<span class="material-symbols-outlined text-hope-orange text-3xl shrink-0" style="font-variation-settings:'FILL' 1;">groups</span>
+<div><h4 class="font-headline-md text-headline-md text-deep-navy mb-2 text-[20px]">Social Development</h4><p class="text-on-surface-variant font-body-md">Advancing gender equality through micro-financing initiatives that enable women to start businesses and achieve financial independence.</p></div>
+</div>
+</div>
+</section>
+
+<!-- Timeline -->
+<section class="py-section-gap px-6 md:px-margin-desktop max-w-container-max mx-auto bg-surface-gray">
+<div class="flex flex-col lg:flex-row gap-gutter py-section-gap">
+<div class="lg:w-1/3" data-reveal>
+<h2 class="font-headline-lg text-headline-lg text-deep-navy mb-6">A Legacy of Persistence</h2>
+<p class="text-on-surface-variant font-body-lg">Tracking our evolution from a local initiative to a multi-country mission.</p>
+</div>
+<div class="lg:w-2/3 space-y-10" data-reveal>
+<div class="flex gap-6"><div class="w-12 h-12 rounded-full border-4 border-vibrant-blue bg-white flex items-center justify-center font-bold text-vibrant-blue shrink-0">09</div><div class="pt-2"><h4 class="font-headline-md text-headline-md text-deep-navy mb-2 text-[20px]">The Seed is Planted</h4><p class="text-on-surface-variant leading-relaxed">Kadesh Hope Mission begins as a pilot program in the DR Congo, focused on education and community outreach.</p></div></div>
+<div class="flex gap-6"><div class="w-12 h-12 rounded-full border-4 border-soft-accent bg-white flex items-center justify-center font-bold text-on-surface-variant shrink-0">14</div><div class="pt-2"><h4 class="font-headline-md text-headline-md text-deep-navy mb-2 text-[20px]">Scaling Impact</h4><p class="text-on-surface-variant leading-relaxed">Expansion of health outreach and the launch of the Bethlehem Bread Project to fight food insecurity.</p></div></div>
+<div class="flex gap-6"><div class="w-12 h-12 rounded-full border-4 border-soft-accent bg-white flex items-center justify-center font-bold text-on-surface-variant shrink-0">19</div><div class="pt-2"><h4 class="font-headline-md text-headline-md text-deep-navy mb-2 text-[20px]">Reaching Further</h4><p class="text-on-surface-variant leading-relaxed">Mission activity extends into Uganda and Kenya, growing our women's microfinance and youth mentorship programs.</p></div></div>
+<div class="flex gap-6"><div class="w-12 h-12 rounded-full border-4 border-hope-orange bg-white flex items-center justify-center font-bold text-hope-orange shrink-0">26</div><div class="pt-2"><h4 class="font-headline-md text-headline-md text-deep-navy mb-2 text-[20px]">The Future Unfolds</h4><p class="text-on-surface-variant leading-relaxed">Present day: continuing to build schools, clinics, and self-sustaining community programs across the region.</p></div></div>
+</div>
+</div>
+</section>
+
+<!-- Final CTA -->
+<section class="py-section-gap px-6 md:px-margin-desktop max-w-container-max mx-auto">
+<div class="relative rounded-2xl overflow-hidden bg-deep-navy p-10 md:p-24 text-center" data-reveal>
+<div class="relative z-10 max-w-3xl mx-auto">
+<h2 class="font-display-lg-mobile text-display-lg-mobile md:font-display-lg md:text-display-lg text-white mb-8">Ready to make a difference?</h2>
+<p class="text-surface-container-low font-body-lg mb-12">Your involvement provides the momentum we need to reach the next village, the next family, and the next child.</p>
+<div class="flex flex-col sm:flex-row justify-center gap-6">
+<a href="get-involved.html" class="bg-hope-orange text-white px-10 py-5 rounded-lg font-label-bold text-label-bold text-lg active:scale-95 transition-transform">Get Involved Now</a>
+<a href="donate.html" class="bg-transparent border border-white/30 text-white px-10 py-5 rounded-lg font-label-bold text-label-bold text-lg hover:bg-white/5 transition-colors">Donate Today</a>
+</div>
+</div>
+</div>
+</section>
+
+</main>
+<footer class="bg-deep-navy text-on-primary w-full pt-section-gap pb-10">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-gutter px-6 md:px-margin-desktop max-w-container-max mx-auto">
+<div class="col-span-1 md:col-span-2">
+<div class="mb-6">
+<img src="images/kadesh-logo.png" alt="Kadesh Hope Mission of Africa" class="h-14 w-auto brightness-0 invert"/>
+</div>
+<p class="font-body-md text-body-md text-on-primary/70 max-w-sm mb-8">
+Founded in 2009, Kadesh Hope Mission transforms lives across Africa through education, healthcare, food security, and community empowerment &mdash; holistic support with lasting impact.
+</p>
+<div class="flex gap-4">
+<a class="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center hover:bg-hope-orange transition-colors" href="#" aria-label="Facebook"><span class="material-symbols-outlined text-[20px]">public</span></a>
+<a class="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center hover:bg-hope-orange transition-colors" href="#" aria-label="Twitter"><span class="material-symbols-outlined text-[20px]">share</span></a>
+<a class="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center hover:bg-hope-orange transition-colors" href="#" aria-label="YouTube"><span class="material-symbols-outlined text-[20px]">movie</span></a>
+<a class="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center hover:bg-hope-orange transition-colors" href="#" aria-label="LinkedIn"><span class="material-symbols-outlined text-[20px]">business_center</span></a>
+</div>
+</div>
+<div>
+<h4 class="font-label-bold text-label-bold text-white uppercase tracking-wider mb-6">Explore</h4>
+<ul class="space-y-4">
+<li><a class="font-body-md text-body-md text-on-primary/70 hover:text-hope-orange transition-colors" href="programs.html">Our Programs</a></li>
+<li><a class="font-body-md text-body-md text-on-primary/70 hover:text-hope-orange transition-colors" href="sponsor.html">Sponsor a Child</a></li>
+<li><a class="font-body-md text-body-md text-on-primary/70 hover:text-hope-orange transition-colors" href="gallery.html">Gallery</a></li>
+<li><a class="font-body-md text-body-md text-on-primary/70 hover:text-hope-orange transition-colors" href="get-involved.html">Volunteer</a></li>
+</ul>
+</div>
+<div>
+<h4 class="font-label-bold text-label-bold text-white uppercase tracking-wider mb-6">Organization</h4>
+<ul class="space-y-4">
+<li><a class="font-body-md text-body-md text-on-primary/70 hover:text-hope-orange transition-colors" href="about.html">About Us</a></li>
+<li><a class="font-body-md text-body-md text-on-primary/70 hover:text-hope-orange transition-colors" href="contact.html">Contact Us</a></li>
+<li><a class="font-body-md text-body-md text-on-primary/70 hover:text-hope-orange transition-colors" href="#">Financial Reports</a></li>
+<li><a class="font-body-md text-body-md text-on-primary/70 hover:text-hope-orange transition-colors" href="#">Privacy Policy</a></li>
+</ul>
+</div>
+</div>
+<div class="px-6 md:px-margin-desktop max-w-container-max mx-auto mt-20 pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4">
+<p class="font-caption text-caption text-on-primary/50 text-center md:text-left">&copy; 2026 Kadesh Hope Mission. Empowering communities through transparency and love.</p>
+<div class="flex gap-8 text-on-primary/50 font-caption text-caption">
+<a class="hover:text-white transition-colors" href="#">Terms of Service</a>
+<a class="hover:text-white transition-colors" href="#">Cookie Policy</a>
+</div>
+</div>
+</footer>
+<nav class="lg:hidden fixed bottom-0 left-0 w-full flex justify-around items-center h-16 bg-surface shadow-[0_-4px_40px_rgba(0,0,0,0.06)] z-50 rounded-t-xl px-4 border-t border-soft-accent/40">
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 font-label-bold text-[10px]" href="index.html"><span class="material-symbols-outlined mb-0.5">home</span>Home</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 font-label-bold text-[10px]" href="programs.html"><span class="material-symbols-outlined mb-0.5">volunteer_activism</span>Programs</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 font-label-bold text-[10px]" href="sponsor.html"><span class="material-symbols-outlined mb-0.5">child_care</span>Sponsor</a>
+<a class="flex flex-col items-center justify-center text-vibrant-blue font-label-bold text-[10px]" href="donate.html"><span class="material-symbols-outlined mb-0.5">favorite</span>Donate</a>
+</nav>
+<div class="fixed bottom-20 right-6 lg:bottom-8 z-40">
+<a href="https://wa.me/message" class="bg-[#25D366] text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center active:scale-95 transition-transform" aria-label="Chat on WhatsApp">
+<span class="material-symbols-outlined">chat_bubble</span>
+</a>
+</div>
+<script>
+  // Active nav highlight
+  (function(){
+    const path = window.location.pathname.split('/').pop() || 'index.html';
+    document.querySelectorAll('.nav-link').forEach(a => {
+      if (a.getAttribute('href') === path) {
+        a.classList.add('text-vibrant-blue','font-bold','border-b-2','border-vibrant-blue','pb-1');
+        a.classList.remove('text-on-surface-variant');
+      }
+    });
+  })();
+  // Fade-up section reveals
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('opacity-100','translate-y-0'); e.target.classList.remove('opacity-0','translate-y-8'); } });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('[data-reveal]').forEach(el => {
+    el.classList.add('transition-all','duration-700','ease-out','opacity-0','translate-y-8');
+    io.observe(el);
+  });
+  // Counter animation
+  document.querySelectorAll('[data-counter]').forEach(el => {
+    const target = parseFloat(el.getAttribute('data-counter'));
+    const suffix = el.getAttribute('data-suffix') || '';
+    const io2 = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && !el.dataset.done) {
+          el.dataset.done = "1";
+          let cur = 0; const steps = 40; const inc = target/steps;
+          const t = setInterval(() => { cur += inc; if (cur >= target) { cur = target; clearInterval(t);} el.textContent = Math.round(cur).toLocaleString() + suffix; }, 30);
+        }
+      });
+    }, {threshold:0.3});
+    io2.observe(el);
+  });
+</script>
+
+</body>
+</html>

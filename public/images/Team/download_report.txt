@@ -1,0 +1,44 @@
+================================================================================
+                      IMAGE EXTRACTOR - DOWNLOAD REPORT
+================================================================================
+Page URL:   https://kadeshhopemission.org/our-team/
+Base Name:  Team
+Started:    2026-07-14 17:23
+Completed:  2026-07-14 17:23
+
+================================================================================
+                                 SUMMARY
+================================================================================
+Total Selected:     6
+Downloaded:         6
+
+================================================================================
+                     DOWNLOADED FILES - FILENAME → URL
+================================================================================
+Team_1.jpeg
+  → https://kadeshhopemission.org/wp-content/uploads/elementor/thumbs/WhatsApp-Image-2025-05-15-at-10.07.22-1-r5u5zodmatwn1zvx1d96iniwnu6tknpi7ebdfzbhps.jpeg
+
+Team_2.jpeg
+  → https://kadeshhopemission.org/wp-content/uploads/elementor/thumbs/WhatsApp-Image-2025-02-14-at-06.30.23-r4vajzkit8eygl5a4a6o2mm5apzl05yedi7oeff1ps.jpeg
+
+Team_3.jpeg
+  → https://kadeshhopemission.org/wp-content/uploads/elementor/thumbs/WhatsApp-Image-2025-05-15-at-10.07.22-e1758891459473-rcbqnf3mqhgllk6w2omqowe1i0jit5cbjeux3nlnjk.jpeg
+
+Team_4.jpeg
+  → https://kadeshhopemission.org/wp-content/uploads/elementor/thumbs/WhatsApp-Image-2025-02-14-at-06.30.57-r4vajymomedo4z6n9rs1i4uopc47sguo1dk6x5gfw0.jpeg
+
+Team_5.jpeg
+  → https://kadeshhopemission.org/wp-content/uploads/elementor/thumbs/WhatsApp-Image-2025-02-14-at-06.34.04-r4vajzkit8eygl5a4a6o2mm5apzl05yedi7oeff1ps.jpeg
+
+Team_6.jpg
+  → https://kadeshhopemission.org/wp-content/uploads/elementor/thumbs/doc-r4vajzkit8eygl5a4a6o2mm5apzl05yedi7oeff1ps.jpg
+
+================================================================================
+                       COPY-PASTE URLS (DOWNLOADED)
+================================================================================
+https://kadeshhopemission.org/wp-content/uploads/elementor/thumbs/WhatsApp-Image-2025-05-15-at-10.07.22-1-r5u5zodmatwn1zvx1d96iniwnu6tknpi7ebdfzbhps.jpeg
+https://kadeshhopemission.org/wp-content/uploads/elementor/thumbs/WhatsApp-Image-2025-02-14-at-06.30.23-r4vajzkit8eygl5a4a6o2mm5apzl05yedi7oeff1ps.jpeg
+https://kadeshhopemission.org/wp-content/uploads/elementor/thumbs/WhatsApp-Image-2025-05-15-at-10.07.22-e1758891459473-rcbqnf3mqhgllk6w2omqowe1i0jit5cbjeux3nlnjk.jpeg
+https://kadeshhopemission.org/wp-content/uploads/elementor/thumbs/WhatsApp-Image-2025-02-14-at-06.30.57-r4vajymomedo4z6n9rs1i4uopc47sguo1dk6x5gfw0.jpeg
+https://kadeshhopemission.org/wp-content/uploads/elementor/thumbs/WhatsApp-Image-2025-02-14-at-06.34.04-r4vajzkit8eygl5a4a6o2mm5apzl05yedi7oeff1ps.jpeg
+https://kadeshhopemission.org/wp-content/uploads/elementor/thumbs/doc-r4vajzkit8eygl5a4a6o2mm5apzl05yedi7oeff1ps.jpg

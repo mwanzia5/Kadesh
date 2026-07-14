@@ -1,0 +1,13 @@
+{
+  "name": "Kadesh Hope Mission",
+  "short_name": "KHM",
+  "description": "Fostering hope and healing through compassionate action",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8f9ff",
+  "theme_color": "#0D1B3E",
+  "icons": [
+    { "src": "/images/favicon-32.png", "sizes": "32x32", "type": "image/png" },
+    { "src": "/images/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}

@@ -1,0 +1,78 @@
+@import url("https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&family=Hanken+Grotesk:wght@100..800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply font-body bg-background text-on-surface;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-display;
+  }
+}
+
+@layer components {
+  .glass-nav {
+    @apply bg-white/80 backdrop-blur-glass;
+  }
+
+  .hero-gradient {
+    background: linear-gradient(
+      180deg,
+      rgba(13, 27, 62, 0.35) 0%,
+      rgba(13, 27, 62, 0.85) 100%
+    );
+  }
+
+  .glass-card {
+    @apply border border-soft-accent/50 bg-white/80 backdrop-blur-glass-card;
+  }
+
+  .section-padding {
+    @apply px-5 py-16 md:px-16 lg:px-20 lg:py-24;
+  }
+
+  .container-custom {
+    @apply mx-auto max-w-container px-5 md:px-16;
+  }
+
+  .text-gradient {
+    @apply bg-gradient-to-r from-vibrant-blue to-hope-orange bg-clip-text text-transparent;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-vibrant-blue px-6 py-3 font-body text-sm font-semibold text-on-primary transition-all duration-300 hover:bg-primary hover:shadow-lg hover:shadow-vibrant-blue/25 active:scale-[0.98];
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border-2 border-vibrant-blue px-6 py-3 font-body text-sm font-semibold text-vibrant-blue transition-all duration-300 hover:bg-vibrant-blue hover:text-on-primary active:scale-[0.98];
+  }
+
+  .btn-orange {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-hope-orange px-6 py-3 font-body text-sm font-semibold text-on-primary transition-all duration-300 hover:bg-hope-orange-dark hover:shadow-lg hover:shadow-hope-orange/25 active:scale-[0.98];
+  }
+
+  .card-shadow {
+    box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.08);
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

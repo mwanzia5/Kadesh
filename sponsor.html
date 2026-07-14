@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Sponsor a Child | Kadesh Hope Mission</title>
+<meta name="description" content="Sponsor a child with Kadesh Hope Mission and provide education, nourishment, and a pathway to self-reliance."/>
+<link rel="icon" type="image/png" href="images/favicon-32.png"/>
+<link rel="apple-touch-icon" href="images/apple-touch-icon.png"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400..700;1,8..60,400..700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "on-secondary-container": "#5d2300",
+          "surface-container-low": "#eff4ff",
+          "inverse-on-surface": "#eaf1ff",
+          "soft-accent": "#E2E8F0",
+          "on-primary": "#ffffff",
+          "surface": "#f8f9ff",
+          "background": "#f8f9ff",
+          "on-tertiary": "#ffffff",
+          "on-secondary": "#ffffff",
+          "surface-container-high": "#dce9ff",
+          "hope-orange": "#F37021",
+          "secondary-fixed": "#ffdbcb",
+          "surface-dim": "#cbdbf5",
+          "surface-gray": "#F8FAFC",
+          "primary-container": "#1a469d",
+          "deep-navy": "#0D1B3E",
+          "surface-container-lowest": "#ffffff",
+          "surface-container": "#e5eeff",
+          "on-surface": "#0b1c30",
+          "surface-container-highest": "#d3e4fe",
+          "error": "#ba1a1a",
+          "primary-fixed": "#dae2ff",
+          "inverse-surface": "#213145",
+          "outline-variant": "#c4c6d4",
+          "primary-fixed-dim": "#b2c5ff",
+          "on-surface-variant": "#434652",
+          "on-background": "#0b1c30",
+          "primary": "#002f7b",
+          "vibrant-blue": "#2563EB",
+          "surface-bright": "#f8f9ff",
+          "surface-variant": "#d3e4fe",
+          "secondary": "#a04100",
+          "outline": "#747783",
+          "tertiary": "#263357",
+          "on-error": "#ffffff",
+          "secondary-container": "#fc7728"
+        },
+        borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px" },
+        spacing: { "section-gap": "120px", "margin-mobile": "20px", "margin-desktop": "64px", "container-max": "1280px", gutter: "32px" },
+        fontFamily: {
+          "label-bold": ["Hanken Grotesk"],
+          "caption": ["Hanken Grotesk"],
+          "headline-md": ["\"Source Serif 4\""],
+          "display-lg": ["\"Source Serif 4\""],
+          "display-lg-mobile": ["\"Source Serif 4\""],
+          "headline-lg": ["\"Source Serif 4\""],
+          "body-lg": ["Hanken Grotesk"],
+          "body-md": ["Hanken Grotesk"]
+        },
+        fontSize: {
+          "label-bold": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+          "caption": ["13px", {"lineHeight": "18px", "fontWeight": "500"}],
+          "headline-md": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+          "display-lg": ["60px", {"lineHeight": "72px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+          "display-lg-mobile": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+          "headline-lg": ["36px", {"lineHeight": "44px", "fontWeight": "600"}],
+          "body-lg": ["18px", {"lineHeight": "30px", "fontWeight": "400"}],
+          "body-md": ["16px", {"lineHeight": "26px", "fontWeight": "400"}]
+        }
+      }
+    }
+  }
+</script>
+<style>
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  .glass-nav { background: rgba(255,255,255,0.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+  .hero-gradient { background: linear-gradient(180deg, rgba(13,27,62,0.35) 0%, rgba(13,27,62,0.85) 100%); }
+  .card-shadow { box-shadow: 0 40px 80px -20px rgba(0,0,0,0.08); }
+  .glass-card { background: rgba(255,255,255,0.8); backdrop-filter: blur(8px); border: 1px solid rgba(226,232,240,0.5); }
+  html { scroll-behavior: smooth; }
+</style>
+
+</head>
+<body class="bg-background text-on-background font-body-md selection:bg-primary-fixed selection:text-white">
+<header class="fixed top-0 w-full z-50 glass-nav shadow-sm">
+<div class="flex justify-between items-center h-20 px-6 md:px-margin-desktop max-w-container-max mx-auto">
+<a href="index.html" class="flex items-center">
+<img src="images/kadesh-logo.png" alt="Kadesh Hope Mission of Africa" class="h-11 md:h-12 w-auto"/>
+</a>
+<nav class="hidden lg:flex gap-8 items-center">
+<a class="nav-link font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue transition-colors" data-nav="home" href="index.html">Home</a>
+<a class="nav-link font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue transition-colors" data-nav="about" href="about.html">About</a>
+<a class="nav-link font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue transition-colors" data-nav="programs" href="programs.html">Programs</a>
+<a class="nav-link font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue transition-colors" data-nav="sponsor" href="sponsor.html">Sponsor a Child</a>
+<a class="nav-link font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue transition-colors" data-nav="gallery" href="gallery.html">Gallery</a>
+<a class="nav-link font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue transition-colors" data-nav="videos" href="video-gallery.html">Videos</a>
+<a class="nav-link font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue transition-colors" data-nav="involved" href="get-involved.html">Get Involved</a>
+<a class="nav-link font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue transition-colors" data-nav="contact" href="contact.html">Contact</a>
+</nav>
+<div class="flex items-center gap-3">
+<a href="donate.html" class="bg-vibrant-blue text-on-primary px-6 py-2.5 rounded-lg font-label-bold text-label-bold hover:bg-primary transition-colors active:scale-95 duration-200">Donate</a>
+<button class="lg:hidden text-deep-navy" onclick="document.getElementById('mobileMenu').classList.toggle('hidden')" aria-label="Toggle menu">
+<span class="material-symbols-outlined text-3xl">menu</span>
+</button>
+</div>
+</div>
+<div id="mobileMenu" class="hidden lg:hidden bg-white border-t border-soft-accent px-6 py-6 space-y-4">
+<a class="block font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue" href="index.html">Home</a>
+<a class="block font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue" href="about.html">About</a>
+<a class="block font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue" href="programs.html">Programs</a>
+<a class="block font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue" href="sponsor.html">Sponsor a Child</a>
+<a class="block font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue" href="gallery.html">Gallery</a>
+<a class="block font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue" href="video-gallery.html">Videos</a>
+<a class="block font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue" href="get-involved.html">Get Involved</a>
+<a class="block font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue" href="contact.html">Contact</a>
+</div>
+</header>
+
+<main class="pt-20">
+<section class="relative min-h-[600px] flex items-center overflow-hidden bg-surface-container-low">
+<div class="absolute inset-0 z-0 opacity-20" style="background-image: radial-gradient(#cbd5e1 1px, transparent 1px); background-size: 20px 20px;"></div>
+<div class="px-6 md:px-margin-desktop max-w-container-max mx-auto grid md:grid-cols-2 gap-gutter items-center relative z-10 py-16">
+<div class="space-y-8">
+<h1 class="font-display-lg text-display-lg-mobile md:text-display-lg text-deep-navy">Small acts, <span class="text-vibrant-blue">infinite possibilities.</span></h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-lg">Your support provides education, nourishment, and a pathway to self-reliance. Choose a child to sponsor or make a general impact contribution today.</p>
+<div class="flex flex-wrap gap-4">
+<a href="#sponsor-grid" class="bg-deep-navy text-white px-10 py-4 rounded-lg font-label-bold text-label-bold flex items-center gap-2 group transition-all">Find a Child<span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span></a>
+<a href="donate.html" class="bg-white border-2 border-soft-accent text-deep-navy px-10 py-4 rounded-lg font-label-bold text-label-bold hover:bg-surface-container transition-colors">Monthly Impact</a>
+</div>
+</div>
+<div class="relative hidden md:block">
+<div class="relative w-full aspect-square">
+<div class="absolute top-0 right-0 w-3/4 h-3/4 rounded-2xl overflow-hidden shadow-2xl z-20 transform hover:-translate-y-2 transition-transform duration-500"><img class="w-full h-full object-cover" alt="A child laughing with joy" src="images/hero-children.jpg"/></div>
+<div class="absolute bottom-0 left-0 w-2/3 h-2/3 rounded-2xl overflow-hidden shadow-xl z-10 transform -rotate-3 hover:rotate-0 transition-transform duration-500"><img class="w-full h-full object-cover" alt="Children embracing together" src="images/kids-embrace.jpg"/></div>
+</div>
+</div>
+</div>
+</section>
+
+<section class="py-section-gap bg-surface-gray" id="sponsor-grid">
+<div class="px-6 md:px-margin-desktop max-w-container-max mx-auto">
+<div class="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6" data-reveal>
+<div>
+<h2 class="font-headline-lg text-headline-lg text-deep-navy mb-4">Sponsor a Child</h2>
+<p class="text-on-surface-variant font-body-md max-w-xl">Browse children currently waiting for a sponsor. Your commitment changes a life forever. <em>(Illustrative profiles &mdash; contact us for current waiting children.)</em></p>
+</div>
+<div class="flex gap-4">
+<select class="px-6 py-3 rounded-lg border border-soft-accent bg-white text-on-surface-variant font-label-bold text-label-bold focus:ring-vibrant-blue"><option>Age: Any</option><option>Under 8</option><option>8&ndash;12</option><option>12+</option></select>
+<select class="px-6 py-3 rounded-lg border border-soft-accent bg-white text-on-surface-variant font-label-bold text-label-bold focus:ring-vibrant-blue"><option>Region: All</option><option>DR Congo</option><option>Uganda</option><option>Kenya</option></select>
+</div>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8" data-reveal>
+
+<div class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
+<div class="aspect-[4/5] relative overflow-hidden"><img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="Child portrait" src="https://images.unsplash.com/photo-1516726817505-f5ed825624d8?q=80&w=600&auto=format&fit=crop"/></div>
+<div class="p-6"><h3 class="font-headline-md text-headline-md text-deep-navy mb-1 text-[20px]">Amina</h3><p class="text-caption font-bold text-on-surface-variant/60 mb-4">AGE 8 &bull; DR CONGO</p><p class="text-body-md text-on-surface-variant mb-6 line-clamp-2">Amina dreams of becoming a teacher to help others in her community learn.</p><a href="donate.html" class="block text-center w-full border-2 border-vibrant-blue text-vibrant-blue py-3 rounded-lg font-label-bold text-label-bold group-hover:bg-vibrant-blue group-hover:text-white transition-all">Sponsor Amina</a></div>
+</div>
+
+<div class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
+<div class="aspect-[4/5] relative overflow-hidden"><img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="Child portrait" src="https://images.unsplash.com/photo-1595314936626-9a99a9b76a99?q=80&w=600&auto=format&fit=crop"/></div>
+<div class="p-6"><h3 class="font-headline-md text-headline-md text-deep-navy mb-1 text-[20px]">Samuel</h3><p class="text-caption font-bold text-on-surface-variant/60 mb-4">AGE 10 &bull; KENYA</p><p class="text-body-md text-on-surface-variant mb-6 line-clamp-2">Samuel is the oldest of four siblings and works hard to support his family's small farm.</p><a href="donate.html" class="block text-center w-full border-2 border-vibrant-blue text-vibrant-blue py-3 rounded-lg font-label-bold text-label-bold group-hover:bg-vibrant-blue group-hover:text-white transition-all">Sponsor Samuel</a></div>
+</div>
+
+<div class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
+<div class="aspect-[4/5] relative overflow-hidden"><img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="Sisters portrait" src="https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?q=80&w=600&auto=format&fit=crop"/></div>
+<div class="p-6"><h3 class="font-headline-md text-headline-md text-deep-navy mb-1 text-[20px]">Grace &amp; Faith</h3><p class="text-caption font-bold text-on-surface-variant/60 mb-4">AGES 6 &amp; 8 &bull; UGANDA</p><p class="text-body-md text-on-surface-variant mb-6 line-clamp-2">These inseparable sisters need support to continue their education together.</p><a href="donate.html" class="block text-center w-full border-2 border-vibrant-blue text-vibrant-blue py-3 rounded-lg font-label-bold text-label-bold group-hover:bg-vibrant-blue group-hover:text-white transition-all">Sponsor Sisters</a></div>
+</div>
+
+<div class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
+<div class="aspect-[4/5] relative overflow-hidden"><img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="Child portrait" src="https://images.unsplash.com/photo-1509140060642-9337bbaf9c5c?q=80&w=600&auto=format&fit=crop"/></div>
+<div class="p-6"><h3 class="font-headline-md text-headline-md text-deep-navy mb-1 text-[20px]">Nadia</h3><p class="text-caption font-bold text-on-surface-variant/60 mb-4">AGE 9 &bull; DR CONGO</p><p class="text-body-md text-on-surface-variant mb-6 line-clamp-2">Nadia is a brilliant student who recently won a local science competition.</p><a href="donate.html" class="block text-center w-full border-2 border-vibrant-blue text-vibrant-blue py-3 rounded-lg font-label-bold text-label-bold group-hover:bg-vibrant-blue group-hover:text-white transition-all">Sponsor Nadia</a></div>
+</div>
+</div>
+<div class="mt-16 text-center" data-reveal>
+<a href="contact.html" class="bg-deep-navy text-white px-12 py-4 rounded-lg font-label-bold text-label-bold hover:shadow-lg transition-all inline-block">Ask About Waiting Children</a>
+</div>
+</div>
+</section>
+
+<section class="py-section-gap px-6 md:px-margin-desktop max-w-container-max mx-auto grid md:grid-cols-3 gap-gutter text-center" data-reveal>
+<div class="space-y-4"><div class="font-display-lg text-display-lg text-hope-orange"><span data-counter="45000" data-suffix="+">0</span></div><p class="font-label-bold text-label-bold text-deep-navy">CHILDREN SPONSORED</p><p class="text-on-surface-variant">Active sponsorships creating sustainable change across the region.</p></div>
+<div class="space-y-4"><div class="font-display-lg text-display-lg text-vibrant-blue">92&cent;</div><p class="font-label-bold text-label-bold text-deep-navy">OF EVERY DOLLAR</p><p class="text-on-surface-variant">Goes directly to program services supporting child development.</p></div>
+<div class="space-y-4"><div class="font-display-lg text-display-lg text-deep-navy">100%</div><p class="font-label-bold text-label-bold text-deep-navy">TRANSPARENT</p><p class="text-on-surface-variant">Every contribution is tracked and reported for full accountability.</p></div>
+</section>
+
+</main>
+<footer class="bg-deep-navy text-on-primary w-full pt-section-gap pb-10">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-gutter px-6 md:px-margin-desktop max-w-container-max mx-auto">
+<div class="col-span-1 md:col-span-2">
+<div class="mb-6">
+<img src="images/kadesh-logo.png" alt="Kadesh Hope Mission of Africa" class="h-14 w-auto brightness-0 invert"/>
+</div>
+<p class="font-body-md text-body-md text-on-primary/70 max-w-sm mb-8">
+Founded in 2009, Kadesh Hope Mission transforms lives across Africa through education, healthcare, food security, and community empowerment &mdash; holistic support with lasting impact.
+</p>
+<div class="flex gap-4">
+<a class="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center hover:bg-hope-orange transition-colors" href="#" aria-label="Facebook"><span class="material-symbols-outlined text-[20px]">public</span></a>
+<a class="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center hover:bg-hope-orange transition-colors" href="#" aria-label="Twitter"><span class="material-symbols-outlined text-[20px]">share</span></a>
+<a class="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center hover:bg-hope-orange transition-colors" href="#" aria-label="YouTube"><span class="material-symbols-outlined text-[20px]">movie</span></a>
+<a class="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center hover:bg-hope-orange transition-colors" href="#" aria-label="LinkedIn"><span class="material-symbols-outlined text-[20px]">business_center</span></a>
+</div>
+</div>
+<div>
+<h4 class="font-label-bold text-label-bold text-white uppercase tracking-wider mb-6">Explore</h4>
+<ul class="space-y-4">
+<li><a class="font-body-md text-body-md text-on-primary/70 hover:text-hope-orange transition-colors" href="programs.html">Our Programs</a></li>
+<li><a class="font-body-md text-body-md text-on-primary/70 hover:text-hope-orange transition-colors" href="sponsor.html">Sponsor a Child</a></li>
+<li><a class="font-body-md text-body-md text-on-primary/70 hover:text-hope-orange transition-colors" href="gallery.html">Gallery</a></li>
+<li><a class="font-body-md text-body-md text-on-primary/70 hover:text-hope-orange transition-colors" href="get-involved.html">Volunteer</a></li>
+</ul>
+</div>
+<div>
+<h4 class="font-label-bold text-label-bold text-white uppercase tracking-wider mb-6">Organization</h4>
+<ul class="space-y-4">
+<li><a class="font-body-md text-body-md text-on-primary/70 hover:text-hope-orange transition-colors" href="about.html">About Us</a></li>
+<li><a class="font-body-md text-body-md text-on-primary/70 hover:text-hope-orange transition-colors" href="contact.html">Contact Us</a></li>
+<li><a class="font-body-md text-body-md text-on-primary/70 hover:text-hope-orange transition-colors" href="#">Financial Reports</a></li>
+<li><a class="font-body-md text-body-md text-on-primary/70 hover:text-hope-orange transition-colors" href="#">Privacy Policy</a></li>
+</ul>
+</div>
+</div>
+<div class="px-6 md:px-margin-desktop max-w-container-max mx-auto mt-20 pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4">
+<p class="font-caption text-caption text-on-primary/50 text-center md:text-left">&copy; 2026 Kadesh Hope Mission. Empowering communities through transparency and love.</p>
+<div class="flex gap-8 text-on-primary/50 font-caption text-caption">
+<a class="hover:text-white transition-colors" href="#">Terms of Service</a>
+<a class="hover:text-white transition-colors" href="#">Cookie Policy</a>
+</div>
+</div>
+</footer>
+<nav class="lg:hidden fixed bottom-0 left-0 w-full flex justify-around items-center h-16 bg-surface shadow-[0_-4px_40px_rgba(0,0,0,0.06)] z-50 rounded-t-xl px-4 border-t border-soft-accent/40">
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 font-label-bold text-[10px]" href="index.html"><span class="material-symbols-outlined mb-0.5">home</span>Home</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 font-label-bold text-[10px]" href="programs.html"><span class="material-symbols-outlined mb-0.5">volunteer_activism</span>Programs</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 font-label-bold text-[10px]" href="sponsor.html"><span class="material-symbols-outlined mb-0.5">child_care</span>Sponsor</a>
+<a class="flex flex-col items-center justify-center text-vibrant-blue font-label-bold text-[10px]" href="donate.html"><span class="material-symbols-outlined mb-0.5">favorite</span>Donate</a>
+</nav>
+<div class="fixed bottom-20 right-6 lg:bottom-8 z-40">
+<a href="https://wa.me/message" class="bg-[#25D366] text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center active:scale-95 transition-transform" aria-label="Chat on WhatsApp">
+<span class="material-symbols-outlined">chat_bubble</span>
+</a>
+</div>
+<script>
+  // Active nav highlight
+  (function(){
+    const path = window.location.pathname.split('/').pop() || 'index.html';
+    document.querySelectorAll('.nav-link').forEach(a => {
+      if (a.getAttribute('href') === path) {
+        a.classList.add('text-vibrant-blue','font-bold','border-b-2','border-vibrant-blue','pb-1');
+        a.classList.remove('text-on-surface-variant');
+      }
+    });
+  })();
+  // Fade-up section reveals
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('opacity-100','translate-y-0'); e.target.classList.remove('opacity-0','translate-y-8'); } });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('[data-reveal]').forEach(el => {
+    el.classList.add('transition-all','duration-700','ease-out','opacity-0','translate-y-8');
+    io.observe(el);
+  });
+  // Counter animation
+  document.querySelectorAll('[data-counter]').forEach(el => {
+    const target = parseFloat(el.getAttribute('data-counter'));
+    const suffix = el.getAttribute('data-suffix') || '';
+    const io2 = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && !el.dataset.done) {
+          el.dataset.done = "1";
+          let cur = 0; const steps = 40; const inc = target/steps;
+          const t = setInterval(() => { cur += inc; if (cur >= target) { cur = target; clearInterval(t);} el.textContent = Math.round(cur).toLocaleString() + suffix; }, 30);
+        }
+      });
+    }, {threshold:0.3});
+    io2.observe(el);
+  });
+</script>
+
+</body>
+</html>

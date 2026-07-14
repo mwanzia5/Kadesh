@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /khma-admin
+
+Sitemap: https://kadeshhopemission.org/sitemap.xml

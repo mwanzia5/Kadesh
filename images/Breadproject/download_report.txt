@@ -1,0 +1,48 @@
+================================================================================
+                      IMAGE EXTRACTOR - DOWNLOAD REPORT
+================================================================================
+Page URL:   https://kadeshhopemission.org/bread-project/
+Base Name:  Breadproject
+Started:    2026-07-14 10:21
+Completed:  2026-07-14 10:21
+
+================================================================================
+                                 SUMMARY
+================================================================================
+Total Selected:     7
+Downloaded:         7
+
+================================================================================
+                     DOWNLOADED FILES - FILENAME → URL
+================================================================================
+Breadproject_1.png
+  → https://kadeshhopemission.org/wp-content/uploads/2024/12/Picture-1.png
+
+Breadproject_2.jpg
+  → https://kadeshhopemission.org/wp-content/uploads/2025/09/WhatsApp-Image-2025-07-29-at-18.17.51_59865235.jpg
+
+Breadproject_3.jpg
+  → https://kadeshhopemission.org/wp-content/uploads/2025/09/IMG-20250729-WA0048.jpg
+
+Breadproject_4.jpg
+  → https://kadeshhopemission.org/wp-content/uploads/2025/09/IMG-20250729-WA0049.jpg
+
+Breadproject_5.jpg
+  → https://kadeshhopemission.org/wp-content/uploads/2025/09/Picture46.jpg
+
+Breadproject_6.jpg
+  → https://kadeshhopemission.org/wp-content/uploads/2025/09/Picture51.jpg
+
+Breadproject_7.jpg
+  → https://kadeshhopemission.org/wp-content/uploads/2025/09/IMG-20250729-WA0047.jpg
+
+================================================================================
+                       COPY-PASTE URLS (DOWNLOADED)
+================================================================================
+https://kadeshhopemission.org/wp-content/uploads/2024/12/Picture-1.png
+https://kadeshhopemission.org/wp-content/uploads/2025/09/WhatsApp-Image-2025-07-29-at-18.17.51_59865235.jpg
+https://kadeshhopemission.org/wp-content/uploads/2025/09/IMG-20250729-WA0048.jpg
+https://kadeshhopemission.org/wp-content/uploads/2025/09/IMG-20250729-WA0049.jpg
+https://kadeshhopemission.org/wp-content/uploads/2025/09/Picture46.jpg
+https://kadeshhopemission.org/wp-content/uploads/2025/09/Picture51.jpg
+https://kadeshhopemission.org/wp-content/uploads/2025/09/IMG-20250729-WA0047.jpg

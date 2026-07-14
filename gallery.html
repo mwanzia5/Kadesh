@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Gallery | Kadesh Hope Mission</title>
+<meta name="description" content="Photo gallery of Kadesh Hope Mission's work across education, health, food security, and community programs."/>
+<link rel="icon" type="image/png" href="images/favicon-32.png"/>
+<link rel="apple-touch-icon" href="images/apple-touch-icon.png"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400..700;1,8..60,400..700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "on-secondary-container": "#5d2300",
+          "surface-container-low": "#eff4ff",
+          "inverse-on-surface": "#eaf1ff",
+          "soft-accent": "#E2E8F0",
+          "on-primary": "#ffffff",
+          "surface": "#f8f9ff",
+          "background": "#f8f9ff",
+          "on-tertiary": "#ffffff",
+          "on-secondary": "#ffffff",
+          "surface-container-high": "#dce9ff",
+          "hope-orange": "#F37021",
+          "secondary-fixed": "#ffdbcb",
+          "surface-dim": "#cbdbf5",
+          "surface-gray": "#F8FAFC",
+          "primary-container": "#1a469d",
+          "deep-navy": "#0D1B3E",
+          "surface-container-lowest": "#ffffff",
+          "surface-container": "#e5eeff",
+          "on-surface": "#0b1c30",
+          "surface-container-highest": "#d3e4fe",
+          "error": "#ba1a1a",
+          "primary-fixed": "#dae2ff",
+          "inverse-surface": "#213145",
+          "outline-variant": "#c4c6d4",
+          "primary-fixed-dim": "#b2c5ff",
+          "on-surface-variant": "#434652",
+          "on-background": "#0b1c30",
+          "primary": "#002f7b",
+          "vibrant-blue": "#2563EB",
+          "surface-bright": "#f8f9ff",
+          "surface-variant": "#d3e4fe",
+          "secondary": "#a04100",
+          "outline": "#747783",
+          "tertiary": "#263357",
+          "on-error": "#ffffff",
+          "secondary-container": "#fc7728"
+        },
+        borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px" },
+        spacing: { "section-gap": "120px", "margin-mobile": "20px", "margin-desktop": "64px", "container-max": "1280px", gutter: "32px" },
+        fontFamily: {
+          "label-bold": ["Hanken Grotesk"],
+          "caption": ["Hanken Grotesk"],
+          "headline-md": ["\"Source Serif 4\""],
+          "display-lg": ["\"Source Serif 4\""],
+          "display-lg-mobile": ["\"Source Serif 4\""],
+          "headline-lg": ["\"Source Serif 4\""],
+          "body-lg": ["Hanken Grotesk"],
+          "body-md": ["Hanken Grotesk"]
+        },
+        fontSize: {
+          "label-bold": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+          "caption": ["13px", {"lineHeight": "18px", "fontWeight": "500"}],
+          "headline-md": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+          "display-lg": ["60px", {"lineHeight": "72px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+          "display-lg-mobile": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+          "headline-lg": ["36px", {"lineHeight": "44px", "fontWeight": "600"}],
+          "body-lg": ["18px", {"lineHeight": "30px", "fontWeight": "400"}],
+          "body-md": ["16px", {"lineHeight": "26px", "fontWeight": "400"}]
+        }
+      }
+    }
+  }
+</script>
+<style>
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  .glass-nav { background: rgba(255,255,255,0.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+  .hero-gradient { background: linear-gradient(180deg, rgba(13,27,62,0.35) 0%, rgba(13,27,62,0.85) 100%); }
+  .card-shadow { box-shadow: 0 40px 80px -20px rgba(0,0,0,0.08); }
+  .glass-card { background: rgba(255,255,255,0.8); backdrop-filter: blur(8px); border: 1px solid rgba(226,232,240,0.5); }
+  html { scroll-behavior: smooth; }
+</style>
+
+</head>
+<body class="bg-background text-on-background font-body-md selection:bg-primary-fixed selection:text-white">
+<header class="fixed top-0 w-full z-50 glass-nav shadow-sm">
+<div class="flex justify-between items-center h-20 px-6 md:px-margin-desktop max-w-container-max mx-auto">
+<a href="index.html" class="flex items-center">
+<img src="images/kadesh-logo.png" alt="Kadesh Hope Mission of Africa" class="h-11 md:h-12 w-auto"/>
+</a>
+<nav class="hidden lg:flex gap-8 items-center">
+<a class="nav-link font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue transition-colors" data-nav="home" href="index.html">Home</a>
+<a class="nav-link font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue transition-colors" data-nav="about" href="about.html">About</a>
+<a class="nav-link font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue transition-colors" data-nav="programs" href="programs.html">Programs</a>
+<a class="nav-link font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue transition-colors" data-nav="sponsor" href="sponsor.html">Sponsor a Child</a>
+<a class="nav-link font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue transition-colors" data-nav="gallery" href="gallery.html">Gallery</a>
+<a class="nav-link font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue transition-colors" data-nav="videos" href="video-gallery.html">Videos</a>
+<a class="nav-link font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue transition-colors" data-nav="involved" href="get-involved.html">Get Involved</a>
+<a class="nav-link font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue transition-colors" data-nav="contact" href="contact.html">Contact</a>
+</nav>
+<div class="flex items-center gap-3">
+<a href="donate.html" class="bg-vibrant-blue text-on-primary px-6 py-2.5 rounded-lg font-label-bold text-label-bold hover:bg-primary transition-colors active:scale-95 duration-200">Donate</a>
+<button class="lg:hidden text-deep-navy" onclick="document.getElementById('mobileMenu').classList.toggle('hidden')" aria-label="Toggle menu">
+<span class="material-symbols-outlined text-3xl">menu</span>
+</button>
+</div>
+</div>
+<div id="mobileMenu" class="hidden lg:hidden bg-white border-t border-soft-accent px-6 py-6 space-y-4">
+<a class="block font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue" href="index.html">Home</a>
+<a class="block font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue" href="about.html">About</a>
+<a class="block font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue" href="programs.html">Programs</a>
+<a class="block font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue" href="sponsor.html">Sponsor a Child</a>
+<a class="block font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue" href="gallery.html">Gallery</a>
+<a class="block font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue" href="video-gallery.html">Videos</a>
+<a class="block font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue" href="get-involved.html">Get Involved</a>
+<a class="block font-label-bold text-label-bold text-on-surface-variant hover:text-vibrant-blue" href="contact.html">Contact</a>
+</div>
+</header>
+
+<main class="pt-20">
+<section class="py-section-gap px-6 md:px-margin-desktop max-w-container-max mx-auto">
+<div class="text-center mb-16" data-reveal>
+<span class="font-label-bold text-label-bold text-vibrant-blue uppercase tracking-widest mb-4 block">Gallery</span>
+<h1 class="font-headline-lg text-headline-lg text-deep-navy mb-4">Moments of Impact</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">A look at the communities, classrooms, and families whose lives are being transformed every day.</p>
+</div>
+
+<div class="flex flex-wrap justify-center gap-3 mb-12" data-reveal>
+<button class="filter-btn active px-5 py-2 rounded-full font-label-bold text-label-bold bg-vibrant-blue text-white" data-filter="all">All</button>
+<button class="filter-btn px-5 py-2 rounded-full font-label-bold text-label-bold bg-white border border-soft-accent text-on-surface-variant hover:border-vibrant-blue" data-filter="education">Education</button>
+<button class="filter-btn px-5 py-2 rounded-full font-label-bold text-label-bold bg-white border border-soft-accent text-on-surface-variant hover:border-vibrant-blue" data-filter="health">Health</button>
+<button class="filter-btn px-5 py-2 rounded-full font-label-bold text-label-bold bg-white border border-soft-accent text-on-surface-variant hover:border-vibrant-blue" data-filter="food">Food Security</button>
+<button class="filter-btn px-5 py-2 rounded-full font-label-bold text-label-bold bg-white border border-soft-accent text-on-surface-variant hover:border-vibrant-blue" data-filter="women">Women &amp; Youth</button>
+<button class="filter-btn px-5 py-2 rounded-full font-label-bold text-label-bold bg-white border border-soft-accent text-on-surface-variant hover:border-vibrant-blue" data-filter="community">Community</button>
+</div>
+
+<div id="galleryGrid" class="columns-1 sm:columns-2 lg:columns-3 gap-6 space-y-6" data-reveal>
+<div class="gallery-item break-inside-avoid rounded-xl overflow-hidden cursor-pointer" data-cat="education"><img class="w-full h-auto hover:scale-105 transition-transform duration-500" src="images/classroom-writing.jpg" alt="A student writing in his notebook in class"/></div>
+<div class="gallery-item break-inside-avoid rounded-xl overflow-hidden cursor-pointer" data-cat="community"><img class="w-full h-auto hover:scale-105 transition-transform duration-500" src="images/hero-children.jpg" alt="A group of children laughing together"/></div>
+<div class="gallery-item break-inside-avoid rounded-xl overflow-hidden cursor-pointer" data-cat="health"><img class="w-full h-auto hover:scale-105 transition-transform duration-500" src="https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?q=80&w=800&auto=format&fit=crop" alt="Community health outreach"/></div>
+<div class="gallery-item break-inside-avoid rounded-xl overflow-hidden cursor-pointer" data-cat="food"><img class="w-full h-auto hover:scale-105 transition-transform duration-500" src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?q=80&w=800&auto=format&fit=crop" alt="Meal distribution"/></div>
+<div class="gallery-item break-inside-avoid rounded-xl overflow-hidden cursor-pointer" data-cat="women"><img class="w-full h-auto hover:scale-105 transition-transform duration-500" src="https://images.unsplash.com/photo-1573497620053-ea5300f94f21?q=80&w=800&auto=format&fit=crop" alt="Women's microfinance group"/></div>
+<div class="gallery-item break-inside-avoid rounded-xl overflow-hidden cursor-pointer" data-cat="education"><img class="w-full h-auto hover:scale-105 transition-transform duration-500" src="https://images.unsplash.com/photo-1509062522246-3755977927d7?q=80&w=800&auto=format&fit=crop" alt="New school building"/></div>
+<div class="gallery-item break-inside-avoid rounded-xl overflow-hidden cursor-pointer" data-cat="women"><img class="w-full h-auto hover:scale-105 transition-transform duration-500" src="https://images.unsplash.com/photo-1531482615713-2afd69097998?q=80&w=800&auto=format&fit=crop" alt="Youth mentorship workshop"/></div>
+<div class="gallery-item break-inside-avoid rounded-xl overflow-hidden cursor-pointer" data-cat="health"><img class="w-full h-auto hover:scale-105 transition-transform duration-500" src="https://images.unsplash.com/photo-1516574187841-cb9cc2ca948b?q=80&w=800&auto=format&fit=crop" alt="Healthcare worker with family"/></div>
+<div class="gallery-item break-inside-avoid rounded-xl overflow-hidden cursor-pointer" data-cat="food"><img class="w-full h-auto hover:scale-105 transition-transform duration-500" src="https://images.unsplash.com/photo-1509099836639-18ba1795216d?q=80&w=800&auto=format&fit=crop" alt="Children smiling outdoors"/></div>
+<div class="gallery-item break-inside-avoid rounded-xl overflow-hidden cursor-pointer" data-cat="community"><img class="w-full h-auto hover:scale-105 transition-transform duration-500" src="images/kids-embrace.jpg" alt="Children embracing together outdoors"/></div>
+<div class="gallery-item break-inside-avoid rounded-xl overflow-hidden cursor-pointer" data-cat="community"><img class="w-full h-auto hover:scale-105 transition-transform duration-500" src="images/school-celebration.jpg" alt="Students celebrating together at a partner school"/></div>
+</div>
+</section>
+
+<!-- Lightbox -->
+<div id="lightbox" class="fixed inset-0 bg-black/90 z-[100] hidden items-center justify-center p-6" onclick="this.classList.add('hidden'); this.classList.remove('flex')">
+<img id="lightboxImg" class="max-h-[85vh] max-w-full rounded-lg" src="" alt="Enlarged gallery photo"/>
+<button class="absolute top-6 right-6 text-white" aria-label="Close"><span class="material-symbols-outlined text-4xl">close</span></button>
+</div>
+
+<script>
+  document.querySelectorAll('.gallery-item img').forEach(img => {
+    img.addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.getElementById('lightboxImg').src = img.src;
+      const lb = document.getElementById('lightbox');
+      lb.classList.remove('hidden'); lb.classList.add('flex');
+    });
+  });
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(b => { b.classList.remove('active','bg-vibrant-blue','text-white'); b.classList.add('bg-white','border','border-soft-accent','text-on-surface-variant'); });
+      btn.classList.add('active','bg-vibrant-blue','text-white'); btn.classList.remove('bg-white','border','border-soft-accent','text-on-surface-variant');
+      const f = btn.dataset.filter;
+      document.querySelectorAll('.gallery-item').forEach(item => {
+        item.style.display = (f === 'all' || item.dataset.cat === f) ? '' : 'none';
+      });
+    });
+  });
+</script>
+
+</main>
+<footer class="bg-deep-navy text-on-primary w-full pt-section-gap pb-10">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-gutter px-6 md:px-margin-desktop max-w-container-max mx-auto">
+<div class="col-span-1 md:col-span-2">
+<div class="mb-6">
+<img src="images/kadesh-logo.png" alt="Kadesh Hope Mission of Africa" class="h-14 w-auto brightness-0 invert"/>
+</div>
+<p class="font-body-md text-body-md text-on-primary/70 max-w-sm mb-8">
+Founded in 2009, Kadesh Hope Mission transforms lives across Africa through education, healthcare, food security, and community empowerment &mdash; holistic support with lasting impact.
+</p>
+<div class="flex gap-4">
+<a class="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center hover:bg-hope-orange transition-colors" href="#" aria-label="Facebook"><span class="material-symbols-outlined text-[20px]">public</span></a>
+<a class="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center hover:bg-hope-orange transition-colors" href="#" aria-label="Twitter"><span class="material-symbols-outlined text-[20px]">share</span></a>
+<a class="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center hover:bg-hope-orange transition-colors" href="#" aria-label="YouTube"><span class="material-symbols-outlined text-[20px]">movie</span></a>
+<a class="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center hover:bg-hope-orange transition-colors" href="#" aria-label="LinkedIn"><span class="material-symbols-outlined text-[20px]">business_center</span></a>
+</div>
+</div>
+<div>
+<h4 class="font-label-bold text-label-bold text-white uppercase tracking-wider mb-6">Explore</h4>
+<ul class="space-y-4">
+<li><a class="font-body-md text-body-md text-on-primary/70 hover:text-hope-orange transition-colors" href="programs.html">Our Programs</a></li>
+<li><a class="font-body-md text-body-md text-on-primary/70 hover:text-hope-orange transition-colors" href="sponsor.html">Sponsor a Child</a></li>
+<li><a class="font-body-md text-body-md text-on-primary/70 hover:text-hope-orange transition-colors" href="gallery.html">Gallery</a></li>
+<li><a class="font-body-md text-body-md text-on-primary/70 hover:text-hope-orange transition-colors" href="get-involved.html">Volunteer</a></li>
+</ul>
+</div>
+<div>
+<h4 class="font-label-bold text-label-bold text-white uppercase tracking-wider mb-6">Organization</h4>
+<ul class="space-y-4">
+<li><a class="font-body-md text-body-md text-on-primary/70 hover:text-hope-orange transition-colors" href="about.html">About Us</a></li>
+<li><a class="font-body-md text-body-md text-on-primary/70 hover:text-hope-orange transition-colors" href="contact.html">Contact Us</a></li>
+<li><a class="font-body-md text-body-md text-on-primary/70 hover:text-hope-orange transition-colors" href="#">Financial Reports</a></li>
+<li><a class="font-body-md text-body-md text-on-primary/70 hover:text-hope-orange transition-colors" href="#">Privacy Policy</a></li>
+</ul>
+</div>
+</div>
+<div class="px-6 md:px-margin-desktop max-w-container-max mx-auto mt-20 pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4">
+<p class="font-caption text-caption text-on-primary/50 text-center md:text-left">&copy; 2026 Kadesh Hope Mission. Empowering communities through transparency and love.</p>
+<div class="flex gap-8 text-on-primary/50 font-caption text-caption">
+<a class="hover:text-white transition-colors" href="#">Terms of Service</a>
+<a class="hover:text-white transition-colors" href="#">Cookie Policy</a>
+</div>
+</div>
+</footer>
+<nav class="lg:hidden fixed bottom-0 left-0 w-full flex justify-around items-center h-16 bg-surface shadow-[0_-4px_40px_rgba(0,0,0,0.06)] z-50 rounded-t-xl px-4 border-t border-soft-accent/40">
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 font-label-bold text-[10px]" href="index.html"><span class="material-symbols-outlined mb-0.5">home</span>Home</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 font-label-bold text-[10px]" href="programs.html"><span class="material-symbols-outlined mb-0.5">volunteer_activism</span>Programs</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 font-label-bold text-[10px]" href="sponsor.html"><span class="material-symbols-outlined mb-0.5">child_care</span>Sponsor</a>
+<a class="flex flex-col items-center justify-center text-vibrant-blue font-label-bold text-[10px]" href="donate.html"><span class="material-symbols-outlined mb-0.5">favorite</span>Donate</a>
+</nav>
+<div class="fixed bottom-20 right-6 lg:bottom-8 z-40">
+<a href="https://wa.me/message" class="bg-[#25D366] text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center active:scale-95 transition-transform" aria-label="Chat on WhatsApp">
+<span class="material-symbols-outlined">chat_bubble</span>
+</a>
+</div>
+<script>
+  // Active nav highlight
+  (function(){
+    const path = window.location.pathname.split('/').pop() || 'index.html';
+    document.querySelectorAll('.nav-link').forEach(a => {
+      if (a.getAttribute('href') === path) {
+        a.classList.add('text-vibrant-blue','font-bold','border-b-2','border-vibrant-blue','pb-1');
+        a.classList.remove('text-on-surface-variant');
+      }
+    });
+  })();
+  // Fade-up section reveals
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('opacity-100','translate-y-0'); e.target.classList.remove('opacity-0','translate-y-8'); } });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('[data-reveal]').forEach(el => {
+    el.classList.add('transition-all','duration-700','ease-out','opacity-0','translate-y-8');
+    io.observe(el);
+  });
+  // Counter animation
+  document.querySelectorAll('[data-counter]').forEach(el => {
+    const target = parseFloat(el.getAttribute('data-counter'));
+    const suffix = el.getAttribute('data-suffix') || '';
+    const io2 = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && !el.dataset.done) {
+          el.dataset.done = "1";
+          let cur = 0; const steps = 40; const inc = target/steps;
+          const t = setInterval(() => { cur += inc; if (cur >= target) { cur = target; clearInterval(t);} el.textContent = Math.round(cur).toLocaleString() + suffix; }, 30);
+        }
+      });
+    }, {threshold:0.3});
+    io2.observe(el);
+  });
+</script>
+
+</body>
+</html>

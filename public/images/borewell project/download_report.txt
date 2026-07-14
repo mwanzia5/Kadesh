@@ -1,0 +1,40 @@
+================================================================================
+                      IMAGE EXTRACTOR - DOWNLOAD REPORT
+================================================================================
+Page URL:   https://kadeshhopemission.org/borewell-project/
+Base Name:  borewell project
+Started:    2026-07-14 10:17
+Completed:  2026-07-14 10:17
+
+================================================================================
+                                 SUMMARY
+================================================================================
+Total Selected:     5
+Downloaded:         5
+
+================================================================================
+                     DOWNLOADED FILES - FILENAME → URL
+================================================================================
+borewell project_1.jpg
+  → https://kadeshhopemission.org/wp-content/uploads/2024/12/9.jpg
+
+borewell project_2.jpg
+  → https://kadeshhopemission.org/wp-content/uploads/2024/12/7.jpg
+
+borewell project_3.jpg
+  → https://kadeshhopemission.org/wp-content/uploads/2024/12/1.jpg
+
+borewell project_4.jpg
+  → https://kadeshhopemission.org/wp-content/uploads/2024/12/4-1.jpg
+
+borewell project_5.jpg
+  → https://kadeshhopemission.org/wp-content/uploads/2024/12/5.jpg
+
+================================================================================
+                       COPY-PASTE URLS (DOWNLOADED)
+================================================================================
+https://kadeshhopemission.org/wp-content/uploads/2024/12/9.jpg
+https://kadeshhopemission.org/wp-content/uploads/2024/12/7.jpg
+https://kadeshhopemission.org/wp-content/uploads/2024/12/1.jpg
+https://kadeshhopemission.org/wp-content/uploads/2024/12/4-1.jpg
+https://kadeshhopemission.org/wp-content/uploads/2024/12/5.jpg
