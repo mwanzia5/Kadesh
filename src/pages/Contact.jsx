@@ -50,7 +50,7 @@ export default function Contact() {
             subtitle="Reach out for sponsorship, donations, volunteering, or partnerships"
           />
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 mt-16">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 mt-16 items-start">
             {/* Contact Form */}
             <div className="lg:col-span-7">
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -223,7 +223,7 @@ export default function Contact() {
               </div>
 
               {/* Social Media Card */}
-              <div className="bg-white rounded-2xl p-8 shadow-sm">
+              <div className="bg-white rounded-2xl p-8 shadow-sm border border-soft-accent">
                 <h3 className="text-xl font-display font-bold text-navy mb-6">Follow Us</h3>
                 <div className="flex gap-4">
                   {[

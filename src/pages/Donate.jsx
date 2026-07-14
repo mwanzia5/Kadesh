@@ -71,11 +71,14 @@ export default function Donate() {
 
     setProcessing(true);
 
+    const USD_TO_NGN = 1500;
+    const amountInKobo = Math.round(baseAmount * USD_TO_NGN * 100);
+
     const handler = PaystackPop.setup({
       key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
       email: donorEmail,
-      amount: baseAmount * 100,
-      currency: "USD",
+      amount: amountInKobo,
+      currency: "NGN",
       ref: `KHM-${Date.now()}`,
       metadata: {
         custom_fields: [
@@ -83,6 +86,7 @@ export default function Donate() {
           { display_name: "Frequency", variable_name: "frequency", value: frequency },
           { display_name: "Selected Currency", variable_name: "currency", value: currency.code },
           { display_name: "Converted Amount", variable_name: "converted_amount", value: convertedAmount },
+          { display_name: "USD Equivalent", variable_name: "usd_equivalent", value: baseAmount },
         ],
       },
       onSuccess: (transaction) => {

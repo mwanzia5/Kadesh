@@ -77,13 +77,13 @@ export default function Home() {
     <PageTransition>
       <HeroSection />
       <PillarsSection />
+      <PartnersSection />
       <WhoWeAreSection />
       <ImpactSection />
       <ProjectsSection />
       <GallerySection />
       <TestimonialsSection />
       <DonationCTASection />
-      <PartnersSection />
     </PageTransition>
   );
 }
