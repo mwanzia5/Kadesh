@@ -68,6 +68,7 @@ export const NAV_LINKS = [
     ],
   },
   { label: "Partners", href: "/partners" },
+  { label: "Impact", href: "/impact" },
   { label: "Team", href: "/teams" },
   { label: "Contact", href: "/contact" },
 ];

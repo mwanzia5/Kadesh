@@ -107,7 +107,7 @@ function HeroSection() {
 
             <div className="max-w-4xl mb-8">
               <SplitText
-                text="Child Education Project"
+                text="Children Education Project"
                 className="font-display text-4xl md:text-6xl lg:text-7xl font-bold leading-tight block"
                 delay={0.5}
                 duration={0.8}
@@ -121,7 +121,7 @@ function HeroSection() {
               transition={{ duration: 0.6, delay: 1.0 }}
               className="font-body text-body-lg md:text-xl max-w-2xl text-white/80 mb-10"
             >
-              Empowering children through quality education and the resources they need to succeed
+              Nurturing young minds by addressing their most pressing educational and developmental needs
             </motion.p>
 
             <motion.div
@@ -167,32 +167,35 @@ function StorySection() {
                 <GraduationCap className="h-6 w-6 text-vibrant-blue" />
               </div>
               <span className="font-body text-label-bold text-vibrant-blue uppercase tracking-wider">
-                Our Story
+                Our Mission
               </span>
             </div>
 
             <h2 className="font-display text-3xl md:text-4xl lg:text-5xl text-deep-navy mb-8">
-              Building Futures Through Education
+              Children Education Projects
             </h2>
           </ScrollReveal>
 
           <ScrollReveal delay={0.2}>
             <div className="space-y-6 font-body text-body-lg text-on-surface leading-relaxed">
               <p>
-                This initiative is dedicated to ensuring that every child has access to quality education. Since our founding in 2009, we have worked tirelessly to keep children in school, providing them with the tools, resources, and support they need to succeed.
+                Our Children Education Projects are dedicated to nurturing young minds by addressing their most pressing educational and developmental needs.
               </p>
               <p>
-                Through school construction, scholarship programs, and community engagement, we have helped over 300 children stay in school and pursue their dreams. Our approach combines academic support with mentorship, ensuring holistic development.
+                We focus on improving access to quality education, ensuring children have the resources to thrive academically and socially. Through partnerships with schools and local organizations, we facilitate scholarships, provide learning materials, and organize mentorship programs to support students in their educational journey.
               </p>
               <p>
-                Every child deserves the opportunity to learn, grow, and compete globally. By investing in education today, we are building the leaders of tomorrow.
+                Beyond academics, we emphasize holistic development by introducing extracurricular activities that foster confidence, teamwork, and creativity. Our initiatives create safe and supportive spaces where children can grow, learn, and unlock their full potential.
+              </p>
+              <p>
+                By investing in children today, we pave the way for a brighter, more prosperous future. Every child deserves the opportunity to dream, learn, and succeed, and our Children Education Projects are committed to making that vision a reality.
               </p>
             </div>
           </ScrollReveal>
 
           <ScrollReveal delay={0.3} className="mt-10">
             <div className="flex flex-wrap gap-4">
-              {["Scholarships", "School Construction", "Mentorship", "Community Engagement"].map(
+              {["Scholarships", "Learning Materials", "Mentorship Programs", "Extracurricular Activities"].map(
                 (tag) => (
                   <span
                     key={tag}

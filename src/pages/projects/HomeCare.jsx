@@ -117,7 +117,7 @@ function HeroSection() {
               transition={{ duration: 0.6, delay: 1.0 }}
               className="font-body text-body-lg md:text-xl max-w-2xl text-white/80 mb-10"
             >
-              Bringing healthcare directly to underserved communities across Africa
+              Transforming lives by providing compassionate home care for the elderly and vulnerable
             </motion.p>
 
             <motion.div
@@ -163,32 +163,35 @@ function StorySection() {
                 <Stethoscope className="h-6 w-6 text-hope-orange" />
               </div>
               <span className="font-body text-label-bold text-hope-orange uppercase tracking-wider">
-                Our Story
+                About The Program
               </span>
             </div>
 
             <h2 className="font-display text-3xl md:text-4xl lg:text-5xl text-deep-navy mb-8">
-              Healthcare at Your Doorstep
+              Home Care
             </h2>
           </ScrollReveal>
 
           <ScrollReveal delay={0.2}>
             <div className="space-y-6 font-body text-body-lg text-on-surface leading-relaxed">
               <p>
-                Our Home Care program brings healthcare directly to underserved communities. Recognizing that many families cannot access traditional healthcare facilities, our trained health workers conduct home visits, providing essential medical services and health education.
+                As a non-profit organization, we are dedicated to transforming lives by providing compassionate home care for the elderly and vulnerable. Our mission ensures that those in need receive dignified care, access to essential services, and a supportive environment where they can thrive.
               </p>
               <p>
-                From basic health screenings to chronic disease management, our mobile health clinics reach the most vulnerable populations. We focus on preventive care, early detection, and community health education.
+                We remain committed to uplifting underprivileged individuals by addressing key areas such as healthcare, nutrition, emotional well-being, and sustainable support systems. Beyond meeting physical needs, we offer psychological and moral support, ensuring that the elderly and vulnerable feel valued, safe, and cared for. Additionally, we promote employment opportunities in caregiving, empowering communities while improving the quality of life for those under our care.
               </p>
               <p>
-                Since inception, our health programs have reached thousands of families across DR Congo, Uganda, and Kenya, significantly improving health outcomes in the communities we serve.
+                At the heart of our mission is the belief that everyone deserves respect, comfort, and companionship. We actively support initiatives that provide home-based care, medical assistance, and daily living support to ensure dignity in aging and resilience for the vulnerable.
+              </p>
+              <p>
+                Furthermore, we uphold financial integrity and accountability, ensuring that all contributions directly impact those in need, creating lasting and meaningful change in their lives.
               </p>
             </div>
           </ScrollReveal>
 
           <ScrollReveal delay={0.3} className="mt-10">
             <div className="flex flex-wrap gap-4">
-              {["Preventive Care", "Health Screenings", "Chronic Disease Management", "Health Education"].map(
+              {["Healthcare & Nutrition", "Emotional Well-being", "Dignified Care", "Financial Integrity"].map(
                 (tag) => (
                   <span
                     key={tag}

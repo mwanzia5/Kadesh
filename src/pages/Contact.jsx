@@ -1,266 +1,322 @@
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Mail, Phone, MapPin, Send } from "lucide-react";
+import { useState } from "react";
+import { Mail, Phone, MapPin, Send, Loader2, CheckCircle2, AlertCircle, ChevronDown } from "lucide-react";
 import { FacebookIcon, TwitterIcon, YoutubeIcon, LinkedinIcon } from "@/components/ui/SocialIcons";
 import PageTransition from "@/animations/PageTransition";
+import Container from "@/components/ui/Container";
 import Section from "@/components/ui/Section";
-import SectionHeading from "@/components/ui/SectionHeading";
 import Button from "@/components/ui/Button";
+import ScrollReveal from "@/components/ui/ScrollReveal";
 
-const contactSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  email: z.string().min(1, "Email is required").email("Invalid email address"),
-  subject: z.string().min(1, "Please select a subject"),
-  message: z.string().min(10, "Message must be at least 10 characters"),
-});
+const offices = {
+  uganda: {
+    label: "Uganda",
+    flag: "\uD83C\uDDFA\uD83C\uDDEC",
+    name: "Head Office \u2014 Uganda",
+    address: ["Kadesh Hope Mission of Africa", "Bulemezi Block 30, Plot No. 106,", "Nakaseta (Mpande), Kalule, Uganda."],
+    phone: "+256 753 407 379",
+    phoneHref: "tel:+256753407379",
+    email: "kadeshhope.africa@gmail.com",
+    mapQuery: "Nakaseta+Mpande+Kalule+Uganda",
+  },
+  kenya: {
+    label: "Kenya",
+    flag: "\uD83C\uDDF0\uD83C\uDDEA",
+    name: "Regional Office \u2014 Kenya",
+    address: ["Kadesh Hope Mission of Africa", "Uasin Gishu, 146, Near Lexo Junction,", "14/1272, Eldoret, Kenya."],
+    phone: "+254 706 959 383",
+    phoneHref: "tel:+254706959383",
+    email: "kadesh.kenya@gmail.com",
+    mapQuery: "Uasin+Gishu+Near+Lexo+Junction+Eldoret+Kenya",
+  },
+};
 
-const inputClasses =
-  "w-full px-4 py-3 rounded-lg border border-soft-accent bg-white font-body text-on-background placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-vibrant-blue/50 focus:border-vibrant-blue transition-all";
+const subjects = [
+  "Sponsorship Question",
+  "Donation Question",
+  "Volunteering",
+  "Partnership",
+  "Press Inquiry",
+  "Other",
+];
 
 export default function Contact() {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-  } = useForm({
-    resolver: zodResolver(contactSchema),
-    defaultValues: {
-      firstName: "",
-      lastName: "",
-      email: "",
-      subject: "",
-      message: "",
-    },
+  const [status, setStatus] = useState("idle");
+  const [activeOffice, setActiveOffice] = useState("uganda");
+  const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    subject: "",
+    message: "",
   });
 
-  const onSubmit = (data) => {
-    alert("Thank you for reaching out! We'll get back to you soon.");
-    reset();
+  const handleChange = (e) => {
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setStatus("submitting");
+    setTimeout(() => {
+      setStatus("success");
+      setForm({ firstName: "", lastName: "", email: "", subject: "", message: "" });
+      setTimeout(() => setStatus("idle"), 4000);
+    }, 900);
+  };
+
+  const office = offices[activeOffice];
 
   return (
     <PageTransition>
-      <Section className="pt-32 pb-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <SectionHeading
-            title="We'd love to hear from you"
-            subtitle="Reach out for sponsorship, donations, volunteering, or partnerships"
-          />
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 mt-16 items-start">
-            {/* Contact Form */}
-            <div className="lg:col-span-7">
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div>
-                    <label htmlFor="firstName" className="block text-sm font-medium text-on-background mb-2">
-                      First Name
-                    </label>
-                    <input
-                      id="firstName"
-                      type="text"
-                      placeholder="John"
-                      className={inputClasses}
-                      {...register("firstName")}
-                    />
-                    {errors.firstName && (
-                      <p className="mt-1 text-sm text-red-500">{errors.firstName.message}</p>
-                    )}
-                  </div>
-                  <div>
-                    <label htmlFor="lastName" className="block text-sm font-medium text-on-background mb-2">
-                      Last Name
-                    </label>
-                    <input
-                      id="lastName"
-                      type="text"
-                      placeholder="Doe"
-                      className={inputClasses}
-                      {...register("lastName")}
-                    />
-                    {errors.lastName && (
-                      <p className="mt-1 text-sm text-red-500">{errors.lastName.message}</p>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-on-background mb-2">
-                    Email
-                  </label>
-                  <input
-                    id="email"
-                    type="email"
-                    placeholder="john@example.com"
-                    className={inputClasses}
-                    {...register("email")}
-                  />
-                  {errors.email && (
-                    <p className="mt-1 text-sm text-red-500">{errors.email.message}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label htmlFor="subject" className="block text-sm font-medium text-on-background mb-2">
-                    Subject
-                  </label>
-                  <select
-                    id="subject"
-                    className={inputClasses}
-                    {...register("subject")}
-                  >
-                    <option value="">Select a subject</option>
-                    <option value="Sponsorship">Sponsorship</option>
-                    <option value="Donation">Donation</option>
-                    <option value="Volunteering">Volunteering</option>
-                    <option value="Partnership">Partnership</option>
-                    <option value="Press">Press</option>
-                    <option value="Other">Other</option>
-                  </select>
-                  {errors.subject && (
-                    <p className="mt-1 text-sm text-red-500">{errors.subject.message}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label htmlFor="message" className="block text-sm font-medium text-on-background mb-2">
-                    Message
-                  </label>
-                  <textarea
-                    id="message"
-                    rows={5}
-                    placeholder="Tell us how you'd like to get involved..."
-                    className={inputClasses}
-                    {...register("message")}
-                  />
-                  {errors.message && (
-                    <p className="mt-1 text-sm text-red-500">{errors.message.message}</p>
-                  )}
-                </div>
-
-                <Button type="submit" className="flex items-center gap-2">
-                  <Send className="w-4 h-4" />
-                  Send Message
-                </Button>
-              </form>
+      <Section className="pt-32 pb-20 px-6 md:px-16">
+        <Container>
+          {/* Header */}
+          <ScrollReveal>
+            <div className="text-center mb-16">
+              <span className="font-body text-label-bold text-vibrant-blue uppercase tracking-widest mb-4 block">
+                Contact Us
+              </span>
+              <h1 className="font-display text-headline-lg md:text-display-lg-mobile text-deep-navy mb-4">
+                We&#39;d love to hear from you
+              </h1>
+              <p className="font-body text-body-lg text-on-surface-variant max-w-2xl mx-auto">
+                Questions about sponsorship, donations, volunteering, or partnerships &mdash; reach out and our team will respond soon.
+              </p>
             </div>
+          </ScrollReveal>
+
+          <div className="grid lg:grid-cols-12 gap-12">
+            {/* Contact Form */}
+            <ScrollReveal className="lg:col-span-7">
+              <div className="bg-white rounded-2xl border border-soft-accent p-8 md:p-10">
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <input
+                      required
+                      type="text"
+                      name="firstName"
+                      placeholder="First Name"
+                      value={form.firstName}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 rounded-lg border border-soft-accent focus:ring-2 focus:ring-vibrant-blue focus:outline-none font-body"
+                    />
+                    <input
+                      required
+                      type="text"
+                      name="lastName"
+                      placeholder="Last Name"
+                      value={form.lastName}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 rounded-lg border border-soft-accent focus:ring-2 focus:ring-vibrant-blue focus:outline-none font-body"
+                    />
+                  </div>
+                  <input
+                    required
+                    type="email"
+                    name="email"
+                    placeholder="Email Address"
+                    value={form.email}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 rounded-lg border border-soft-accent focus:ring-2 focus:ring-vibrant-blue focus:outline-none font-body"
+                  />
+                  <div className="relative">
+                    <select
+                      name="subject"
+                      value={form.subject}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-4 py-3 rounded-lg border border-soft-accent focus:ring-2 focus:ring-vibrant-blue focus:outline-none font-body text-on-surface-variant appearance-none"
+                    >
+                      <option value="" disabled>
+                        Subject
+                      </option>
+                      {subjects.map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-on-surface-variant pointer-events-none" />
+                  </div>
+                  <textarea
+                    required
+                    name="message"
+                    placeholder="Your message"
+                    rows={6}
+                    value={form.message}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 rounded-lg border border-soft-accent focus:ring-2 focus:ring-vibrant-blue focus:outline-none font-body resize-none"
+                  />
+                  <Button
+                    type="submit"
+                    disabled={status === "submitting"}
+                    variant="orange"
+                    size="lg"
+                    className="w-full"
+                  >
+                    {status === "submitting" ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-5 w-5 mr-2" />
+                        Send Message
+                      </>
+                    )}
+                  </Button>
+
+                  {status === "success" && (
+                    <div
+                      role="status"
+                      className="flex items-center gap-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3"
+                    >
+                      <CheckCircle2 className="h-4 w-4 shrink-0" />
+                      Thanks for reaching out! We will respond within 2 business days.
+                    </div>
+                  )}
+                  {status === "error" && (
+                    <div
+                      role="alert"
+                      className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-3"
+                    >
+                      <AlertCircle className="h-4 w-4 shrink-0" />
+                      Something went wrong. Please try again or email us directly.
+                    </div>
+                  )}
+                </form>
+              </div>
+            </ScrollReveal>
 
             {/* Info Cards */}
-            <div className="lg:col-span-5 space-y-6">
-              {/* Head Office Card */}
-              <div className="bg-navy text-white rounded-2xl p-8">
-                <h3 className="text-xl font-display font-bold mb-6">Head Office — Uganda</h3>
-                <div className="space-y-5">
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
-                      <MapPin className="w-5 h-5" />
-                    </div>
+            <ScrollReveal delay={0.2} className="lg:col-span-5 space-y-6">
+              {/* Get in Touch Card */}
+              <div className="bg-deep-navy text-white rounded-2xl p-8">
+                <h3 className="font-display text-headline-md mb-6">Get in Touch</h3>
+                <ul className="space-y-5">
+                  <li className="flex gap-4">
+                    <Mail className="h-5 w-5 text-hope-orange shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-sm text-white/70">Address</p>
-                      <p className="font-body">Kadesh Hope Mission of Africa</p>
-                      <p className="font-body">Bulemezi Block 30, Plot No. 106,</p>
-                      <p className="font-body">Nakaseta (Mpande), Kalule, Uganda.</p>
+                      <p className="font-body text-label-bold opacity-70 mb-1">EMAIL</p>
+                      <p className="font-body text-body-md">info@kadeshhopemission.org</p>
                     </div>
-                  </div>
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
-                      <Phone className="w-5 h-5" />
-                    </div>
+                  </li>
+                  <li className="flex gap-4">
+                    <Phone className="h-5 w-5 text-hope-orange shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-sm text-white/70">Phone</p>
-                      <p className="font-body">+256-753407379</p>
+                      <p className="font-body text-label-bold opacity-70 mb-1">PHONE</p>
+                      <p className="font-body text-body-md">+243 000 000 000</p>
                     </div>
-                  </div>
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
-                      <Mail className="w-5 h-5" />
-                    </div>
+                  </li>
+                  <li className="flex gap-4">
+                    <MapPin className="h-5 w-5 text-hope-orange shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-sm text-white/70">Email</p>
-                      <p className="font-body">kadeshhope.africa@gmail.com</p>
+                      <p className="font-body text-label-bold opacity-70 mb-1">REGIONS</p>
+                      <p className="font-body text-body-md">Democratic Republic of Congo &middot; Uganda &middot; Kenya</p>
                     </div>
-                  </div>
-                </div>
+                  </li>
+                </ul>
               </div>
 
-              {/* Regional Office Card */}
-              <div className="bg-cream rounded-2xl p-8">
-                <h3 className="text-xl font-display font-bold text-navy mb-6">Regional Office — Kenya</h3>
-                <div className="space-y-5">
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-full bg-navy/10 flex items-center justify-center flex-shrink-0">
-                      <MapPin className="w-5 h-5 text-navy" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-navy/60">Address</p>
-                      <p className="font-body text-navy">Kadesh Hope Mission of Africa</p>
-                      <p className="font-body text-navy">Uasin Gishu, 146, Near Lexo Junction,</p>
-                      <p className="font-body text-navy">14/1272, Eldoret, Kenya.</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-full bg-navy/10 flex items-center justify-center flex-shrink-0">
-                      <Phone className="w-5 h-5 text-navy" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-navy/60">Phone</p>
-                      <p className="font-body text-navy">(+254) 706 959 383</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-full bg-navy/10 flex items-center justify-center flex-shrink-0">
-                      <Mail className="w-5 h-5 text-navy" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-navy/60">Email</p>
-                      <p className="font-body text-navy">kadesh.kenya@gmail.com</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Social Media Card */}
-              <div className="bg-white rounded-2xl p-8 shadow-sm border border-soft-accent">
-                <h3 className="text-xl font-display font-bold text-navy mb-6">Follow Us</h3>
+              {/* Social Card */}
+              <div className="bg-surface rounded-2xl p-8 border border-soft-accent">
+                <h4 className="font-display text-headline-md text-deep-navy mb-4">Follow Our Work</h4>
                 <div className="flex gap-4">
                   {[
-                    { icon: FacebookIcon, href: "#", label: "Facebook" },
-                    { icon: TwitterIcon, href: "#", label: "Twitter" },
-                    { icon: YoutubeIcon, href: "#", label: "YouTube" },
-                    { icon: LinkedinIcon, href: "#", label: "LinkedIn" },
-                  ].map(({ icon: Icon, href, label }) => (
+                    { icon: FacebookIcon, label: "Facebook" },
+                    { icon: TwitterIcon, label: "Twitter" },
+                    { icon: YoutubeIcon, label: "YouTube" },
+                    { icon: LinkedinIcon, label: "LinkedIn" },
+                  ].map(({ icon: Icon, label }) => (
                     <a
                       key={label}
-                      href={href}
+                      href="#"
                       aria-label={label}
-                      className="w-12 h-12 rounded-full bg-navy text-white flex items-center justify-center hover:bg-vibrant-blue transition-colors"
+                      className="w-11 h-11 rounded-full bg-vibrant-blue/10 text-vibrant-blue flex items-center justify-center hover:bg-vibrant-blue hover:text-white transition-all"
                     >
-                      <Icon className="w-5 h-5" />
+                      <Icon className="h-5 w-5" />
                     </a>
                   ))}
                 </div>
               </div>
-            </div>
+            </ScrollReveal>
           </div>
 
-          {/* Google Map */}
-          <div className="mt-16 rounded-2xl overflow-hidden shadow-sm">
-            <iframe
-              title="Kadesh Hope Mission - Head Office Uganda"
-              src="https://www.google.com/maps?q=Nakaseta+Mpande+Kalule+Uganda&output=embed"
-              width="100%"
-              height="450"
-              style={{ border: 0 }}
-              allowFullScreen=""
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              className="w-full"
-            />
-          </div>
-        </div>
+          {/* Office Toggle + Map */}
+          <ScrollReveal delay={0.3} className="mt-16">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+              <h2 className="font-display text-headline-md text-deep-navy">
+                Our Offices
+              </h2>
+              <div className="flex gap-2">
+                {Object.entries(offices).map(([key, o]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setActiveOffice(key)}
+                    aria-pressed={activeOffice === key}
+                    className={`px-5 py-2.5 rounded-xl font-body text-label-bold transition-all ${
+                      activeOffice === key
+                        ? "bg-deep-navy text-white shadow-lg"
+                        : "bg-white text-deep-navy border border-soft-accent hover:bg-surface"
+                    }`}
+                  >
+                    <span className="mr-2">{o.flag}</span>
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Office details */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div className="bg-white rounded-2xl border border-soft-accent p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                    activeOffice === "uganda" ? "bg-deep-navy text-white" : "bg-vibrant-blue/10 text-vibrant-blue"
+                  }`}>
+                    <MapPin className="h-5 w-5" />
+                  </div>
+                  <h3 className="font-display text-lg font-semibold text-deep-navy">
+                    {office.name}
+                  </h3>
+                </div>
+                <div className="space-y-3 font-body text-body-md text-on-surface-variant">
+                  {office.address.map((line) => (
+                    <p key={line}>{line}</p>
+                  ))}
+                  <div className="flex items-center gap-2 pt-2">
+                    <Phone className="h-4 w-4 text-hope-orange" />
+                    <a href={office.phoneHref} className="hover:text-vibrant-blue transition-colors">
+                      {office.phone}
+                    </a>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-hope-orange" />
+                    <a href={`mailto:${office.email}`} className="hover:text-vibrant-blue transition-colors">
+                      {office.email}
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-2xl overflow-hidden shadow-sm border border-soft-accent">
+                <iframe
+                  title={`Kadesh Hope Mission - ${office.name}`}
+                  src={`https://www.google.com/maps?q=${office.mapQuery}&output=embed`}
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0, minHeight: "250px" }}
+                  allowFullScreen=""
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="w-full"
+                />
+              </div>
+            </div>
+          </ScrollReveal>
+        </Container>
       </Section>
     </PageTransition>
   );

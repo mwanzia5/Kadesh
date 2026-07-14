@@ -117,7 +117,7 @@ function HeroSection() {
               transition={{ duration: 0.6, delay: 1.0 }}
               className="font-body text-body-lg md:text-xl max-w-2xl text-white/80 mb-10"
             >
-              Empowering women to become economic drivers in their communities
+              Recognizing the pivotal role of women in community development
             </motion.p>
 
             <motion.div
@@ -163,32 +163,35 @@ function StorySection() {
                 <Users className="h-6 w-6 text-hope-orange" />
               </div>
               <span className="font-body text-label-bold text-hope-orange uppercase tracking-wider">
-                Our Story
+                About The Project
               </span>
             </div>
 
             <h2 className="font-display text-3xl md:text-4xl lg:text-5xl text-deep-navy mb-8">
-              Empowering Women, Uplifting Communities
+              Women Projects
             </h2>
           </ScrollReveal>
 
           <ScrollReveal delay={0.2}>
             <div className="space-y-6 font-body text-body-lg text-on-surface leading-relaxed">
               <p>
-                Empowering women is central to building thriving communities. Our Women Projects provide micro-financing, skills training, and mentorship to women across Africa, enabling them to start businesses and achieve financial independence.
+                Our Women Projects initiative recognizes the pivotal role of women in community development.
               </p>
               <p>
-                Through these initiatives, women gain the tools and confidence to become economic drivers in their families and communities. From tailoring and agriculture to digital skills and entrepreneurship, our programs open doors to new possibilities.
+                We strive to empower women through education, entrepreneurship training, and access to resources that enhance their economic and social standing.
               </p>
               <p>
-                The impact extends beyond individual women—it strengthens families, uplifts communities, and creates a ripple effect of positive change across generations.
+                Programs include vocational training, microfinance support, and advocacy for gender equality. By enabling women to pursue their aspirations, we create ripple effects that benefit families and communities as a whole.
+              </p>
+              <p>
+                The Women Projects initiative embodies our commitment to fostering an inclusive society where every woman has the opportunity to thrive, lead, and contribute meaningfully to collective progress.
               </p>
             </div>
           </ScrollReveal>
 
           <ScrollReveal delay={0.3} className="mt-10">
             <div className="flex flex-wrap gap-4">
-              {["Micro-Financing", "Skills Training", "Mentorship", "Entrepreneurship"].map(
+              {["Education", "Entrepreneurship Training", "Vocational Training", "Gender Equality"].map(
                 (tag) => (
                   <span
                     key={tag}

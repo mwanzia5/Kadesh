@@ -118,7 +118,7 @@ function HeroSection() {
               transition={{ duration: 0.6, delay: 1.0 }}
               className="font-body text-body-lg md:text-xl max-w-2xl text-white/80 mb-10"
             >
-              Providing clean, safe drinking water to communities across Africa
+              Water is life, and our Borewell Project ensures communities can access clean and safe drinking water
             </motion.p>
 
             <motion.div
@@ -164,32 +164,35 @@ function StorySection() {
                 <Droplets className="h-6 w-6 text-vibrant-blue" />
               </div>
               <span className="font-body text-label-bold text-vibrant-blue uppercase tracking-wider">
-                Our Story
+                About The Project
               </span>
             </div>
 
             <h2 className="font-display text-3xl md:text-4xl lg:text-5xl text-deep-navy mb-8">
-              Bringing Clean Water to Every Community
+              Borewell Project
             </h2>
           </ScrollReveal>
 
           <ScrollReveal delay={0.2}>
             <div className="space-y-6 font-body text-body-lg text-on-surface leading-relaxed">
               <p>
-                Access to clean water is a fundamental human right, yet millions in Africa lack this basic necessity. Our Borewell Project addresses this critical need by drilling borewells and installing water purification systems in water-scarce communities.
+                Water is life, and our Borewell Project ensures communities can access clean and safe drinking water.
               </p>
               <p>
-                Each borewell serves hundreds of families, providing reliable access to clean, safe drinking water. This reduces waterborne diseases, saves hours previously spent collecting water, and enables communities to focus on education and economic development.
+                This initiative focuses on drilling borewells, installing hand pumps, and implementing water conservation techniques in areas where water scarcity is a critical issue.
               </p>
               <p>
-                Since the project's inception, we have installed borewells across multiple regions in DR Congo, Uganda, and Kenya, transforming the lives of thousands.
+                The project involves engaging local communities in maintaining and managing water resources, fostering a sense of ownership and responsibility. By providing access to clean water, we help reduce waterborne diseases and improve overall health and productivity.
+              </p>
+              <p>
+                Our Borewell Project is not just about access to water; it's about transforming lives by ensuring that families no longer have to spend hours fetching water, allowing them more time to pursue education and economic activities.
               </p>
             </div>
           </ScrollReveal>
 
           <ScrollReveal delay={0.3} className="mt-10">
             <div className="flex flex-wrap gap-4">
-              {["Borewell Drilling", "Water Purification", "Disease Prevention", "Community Empowerment"].map(
+              {["Clean Water Access", "Water Conservation", "Community Management", "Health & Productivity"].map(
                 (tag) => (
                   <span
                     key={tag}

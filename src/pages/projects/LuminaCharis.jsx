@@ -123,7 +123,7 @@ function HeroSection() {
               transition={{ duration: 0.6, delay: 1.0 }}
               className="font-body text-body-lg md:text-xl max-w-2xl text-white/80 mb-10"
             >
-              A beacon of hope providing world-class education on the African continent
+              Providing transformative education to illuminate young minds with knowledge, inspire hearts with love and values, and empower compassionate leaders
             </motion.p>
 
             <motion.div
@@ -169,32 +169,35 @@ function StorySection() {
                 <School className="h-6 w-6 text-vibrant-blue" />
               </div>
               <span className="font-body text-label-bold text-vibrant-blue uppercase tracking-wider">
-                Our Story
+                About The School
               </span>
             </div>
 
             <h2 className="font-display text-3xl md:text-4xl lg:text-5xl text-deep-navy mb-8">
-              Building World-Class Education in Africa
+              Lumina Charis School of Africa
             </h2>
           </ScrollReveal>
 
           <ScrollReveal delay={0.2}>
             <div className="space-y-6 font-body text-body-lg text-on-surface leading-relaxed">
               <p>
-                Lumina Charis School of Africa represents our commitment to building world-class educational institutions on the African continent. This flagship school project combines modern infrastructure with culturally relevant curriculum to equip African youth for global competitiveness.
+                Located in Kulele, Luwero District, Uganda, the newly completed Lumina Charis School of Africa, is one of the most successful educational projects we have done.
               </p>
               <p>
-                The school provides comprehensive education from primary through secondary levels, incorporating technology, arts, and vocational training alongside traditional academics. Our dedicated teachers and mentors create an environment where students can thrive.
+                The institution provides transformative education designed to illuminate young minds with knowledge, inspire hearts with love and values, and empower them to become responsible, compassionate leaders equipped to impact their communities and the world.
               </p>
               <p>
-                With state-of-the-art classrooms, libraries, and computer labs, Lumina Charis is more than a school—it is a beacon of hope for the community.
+                Currently, the school offers classes from Nursery school to Primary 5 (P5). It is well-equipped with modern facilities, ensuring that African children receive a world-class education that enables them to compete on a global stage.
+              </p>
+              <p>
+                The school's objectives focus on nurturing students in the following key areas:
               </p>
             </div>
           </ScrollReveal>
 
           <ScrollReveal delay={0.3} className="mt-10">
             <div className="flex flex-wrap gap-4">
-              {["Modern Infrastructure", "Technology Integration", "Arts & Vocational Training", "Culturally Relevant Curriculum"].map(
+              {["Knowledge & Academic Excellence", "Love & Values", "Responsible Leadership", "Global Competitiveness"].map(
                 (tag) => (
                   <span
                     key={tag}

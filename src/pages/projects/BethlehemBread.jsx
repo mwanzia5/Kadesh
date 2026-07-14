@@ -120,7 +120,7 @@ function HeroSection() {
               transition={{ duration: 0.6, delay: 1.0 }}
               className="font-body text-body-lg md:text-xl max-w-2xl text-white/80 mb-10"
             >
-              Ensuring no family goes to bed hungry through daily meals and food security programs
+              Manufacturing and distributing bread to feed people experiencing poverty and food insecurity
             </motion.p>
 
             <motion.div
@@ -166,32 +166,49 @@ function StorySection() {
                 <Wheat className="h-6 w-6 text-hope-orange" />
               </div>
               <span className="font-body text-label-bold text-hope-orange uppercase tracking-wider">
-                Our Story
+                About The Project
               </span>
             </div>
 
             <h2 className="font-display text-3xl md:text-4xl lg:text-5xl text-deep-navy mb-8">
-              Nourishing Communities, One Meal at a Time
+              Bethlehem Bread
             </h2>
           </ScrollReveal>
 
           <ScrollReveal delay={0.2}>
             <div className="space-y-6 font-body text-body-lg text-on-surface leading-relaxed">
               <p>
-                Hunger remains one of the most pressing challenges facing communities in Africa. Our Bethlehem Bread Project provides daily meals and food security for vulnerable communities, ensuring that no family goes to bed hungry.
+                We started to manufacture and distribute bread to feed people experiencing poverty. For many individuals and families facing food insecurity, a loaf of bread represents more than just a meal; it embodies the promise of survival, stability, and dignity.
               </p>
               <p>
-                Through partnerships with local farmers and community organizations, we source fresh ingredients and provide nutritious meals to over 500 families every week. The project also includes nutrition education and agricultural training to promote long-term food security.
+                This is helping in addressing food insecurity and malnutrition. Its potential benefits include:
               </p>
-              <p>
-                Named after the biblical story of bread sharing, this project embodies our belief that every person deserves access to adequate nutrition.
-              </p>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="h-5 w-5 text-hope-orange shrink-0 mt-1" />
+                  <div>
+                    <span className="font-semibold">Improved nutrition:</span> Bread can provide essential nutrients like carbohydrates, proteins, and vitamins, helping to combat malnutrition and improve overall health.
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="h-5 w-5 text-hope-orange shrink-0 mt-1" />
+                  <div>
+                    <span className="font-semibold">Food security:</span> Regular access to bread can help alleviate hunger and provide a stable source of nourishment for vulnerable populations.
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="h-5 w-5 text-hope-orange shrink-0 mt-1" />
+                  <div>
+                    <span className="font-semibold">Economic opportunities:</span> Establishing bread manufacturing facilities can create employment opportunities, support local economies, and empower communities.
+                  </div>
+                </div>
+              </div>
             </div>
           </ScrollReveal>
 
           <ScrollReveal delay={0.3} className="mt-10">
             <div className="flex flex-wrap gap-4">
-              {["Daily Meals", "Nutrition Education", "Agricultural Training", "Local Partnerships"].map(
+              {["Improved Nutrition", "Food Security", "Economic Opportunities", "Community Empowerment"].map(
                 (tag) => (
                   <span
                     key={tag}
