@@ -19,6 +19,8 @@ const Community = lazy(() => import("@/pages/projects/Community"));
 const Borewell = lazy(() => import("@/pages/projects/Borewell"));
 const WomenProjects = lazy(() => import("@/pages/projects/WomenProjects"));
 const ImpactStatistics = lazy(() => import("@/pages/ImpactStatistics"));
+const News = lazy(() => import("@/pages/News"));
+const NewsArticle = lazy(() => import("@/pages/NewsArticle"));
 const BethlehemBread = lazy(() => import("@/pages/projects/BethlehemBread"));
 const AdminDashboard = lazy(() => import("@/pages/admin/Dashboard"));
 const AdminLoginPage = lazy(() => import("@/pages/admin/AdminLoginPage"));
@@ -44,6 +46,8 @@ export default function App() {
       <Route path="/projects/borewell" element={<Borewell />} />
       <Route path="/projects/women" element={<WomenProjects />} />
       <Route path="/impact" element={<ImpactStatistics />} />
+      <Route path="/news" element={<News />} />
+      <Route path="/news/:id" element={<NewsArticle />} />
       <Route path="/projects/bethlehem-bread" element={<BethlehemBread />} />
       <Route path="/admin/login" element={<AdminLoginPage />} />
       <Route path="/admin/*" element={<AdminDashboard />} />

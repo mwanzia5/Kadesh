@@ -7,6 +7,7 @@ import ProjectsManager from "./ProjectsManager";
 import MessagesPage from "./MessagesPage";
 import SettingsPage from "./SettingsPage";
 import VideosManager from "./VideosManager";
+import NewsManager from "./NewsManager";
 
 export default function Dashboard() {
   return (
@@ -17,10 +18,10 @@ export default function Dashboard() {
         <Route path="media" element={<MediaLibrary />} />
         <Route path="projects" element={<ProjectsManager />} />
         <Route path="videos" element={<VideosManager />} />
+        <Route path="news" element={<NewsManager />} />
         <Route path="messages" element={<MessagesPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="testimonials" element={<PlaceholderPage title="Testimonials" />} />
-        <Route path="news" element={<PlaceholderPage title="News" />} />
         <Route path="users" element={<PlaceholderPage title="Users" />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>

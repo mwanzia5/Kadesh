@@ -14,6 +14,7 @@ const exploreLinks = [
   { label: "About", href: "/about" },
   { label: "Programs", href: "/projects/child-education" },
   { label: "Gallery", href: "/gallery" },
+  { label: "News", href: "/news" },
 ];
 
 const orgLinks = [
