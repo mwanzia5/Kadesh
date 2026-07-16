@@ -13,15 +13,8 @@ import {
   Link2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const MOCK_IMAGES = [
-  { id: 1, name: "african-children-having-fun-with-jumping-rope-in-a-village-in-northern-kenya-east-africa.webp", src: "/images/others/african-children-having-fun-with-jumping-rope-in-a-village-in-northern-kenya-east-africa.webp", category: "Gallery", size: "2.4 MB", dimensions: "1920 × 1080", date: "2024-01-15" },
-  { id: 2, name: "kadesh images_02.jpg", src: "/images/kadesh images_02.jpg", category: "Projects", size: "1.8 MB", dimensions: "1600 × 900", date: "2024-01-14" },
-  { id: 3, name: "kadesh images_03.jpg", src: "/images/kadesh images_03.jpg", category: "Gallery", size: "3.1 MB", dimensions: "1920 × 1280", date: "2024-01-13" },
-  { id: 4, name: "kadesh images_04.jpg", src: "/images/kadesh images_04.jpg", category: "Partners", size: "1.5 MB", dimensions: "1200 × 800", date: "2024-01-12" },
-  { id: 5, name: "kadesh images_05.jpg", src: "/images/kadesh images_05.jpg", category: "Gallery", size: "2.7 MB", dimensions: "1920 × 1440", date: "2024-01-11" },
-  { id: 6, name: "kadesh images_06.jpg", src: "/images/kadesh images_06.jpg", category: "Projects", size: "2.0 MB", dimensions: "1600 × 1067", date: "2024-01-10" },
-];
+import { useGalleryImages, useCreateGalleryImage, useDeleteGalleryImage } from "@/hooks/useGallery";
+import { uploadImage, getPublicUrl } from "@/services/upload";
 
 const FILTERS = ["All", "Gallery", "Projects", "Partners"];
 
@@ -31,7 +24,10 @@ const itemVariants = {
 };
 
 export default function MediaLibrary() {
-  const [images, setImages] = useState(MOCK_IMAGES);
+  const { data: galleryData, isLoading } = useGalleryImages();
+  const createGalleryImage = useCreateGalleryImage();
+  const deleteGalleryImage = useDeleteGalleryImage();
+
   const [selectedImage, setSelectedImage] = useState(null);
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
@@ -42,41 +38,61 @@ export default function MediaLibrary() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const fileInputRef = useRef(null);
 
+  const images = galleryData?.data?.map(img => ({
+    ...img,
+    src: img.image_url,
+    name: img.title || "Untitled Image",
+    date: new Date(img.created_at).toISOString().split("T")[0],
+  })) || [];
+
   const filteredImages = images.filter((img) => {
     const matchesFilter = filter === "All" || img.category === filter;
     const matchesSearch = img.name.toLowerCase().includes(search.toLowerCase());
     return matchesFilter && matchesSearch;
   });
 
-  const simulateUpload = (file) => {
+  const handleUpload = async (file) => {
     setUploading(true);
     setUploadProgress(0);
-    const interval = setInterval(() => {
-      setUploadProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setUploading(false);
-          const newImage = {
-            id: Date.now(),
-            name: file.name,
-            src: URL.createObjectURL(file),
-            category: "Gallery",
-            size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
-            dimensions: "—",
-            date: new Date().toISOString().split("T")[0],
-          };
-          setImages((prev) => [newImage, ...prev]);
-          return 0;
-        }
-        return prev + 10;
+
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `gallery/${Date.now()}.${ext}`;
+      
+      // Simulate progress
+      const progressInterval = setInterval(() => {
+        setUploadProgress((prev) => (prev >= 90 ? 90 : prev + 10));
+      }, 150);
+
+      const { error: uploadErr } = await uploadImage(file, "images", path);
+      clearInterval(progressInterval);
+
+      if (uploadErr) throw uploadErr;
+
+      const publicUrl = getPublicUrl("images", path);
+      
+      setUploadProgress(100);
+
+      await createGalleryImage.mutateAsync({
+        title: file.name,
+        image_url: publicUrl,
+        category: "Gallery",
+        sort_order: 0
       });
-    }, 150);
+
+    } catch (err) {
+      console.error("Upload failed:", err);
+      alert("Upload failed: " + err.message);
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
+    }
   };
 
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
     if (file && file.type.startsWith("image/")) {
-      simulateUpload(file);
+      handleUpload(file);
     }
   };
 
@@ -85,14 +101,18 @@ export default function MediaLibrary() {
     setDragOver(false);
     const file = e.dataTransfer.files?.[0];
     if (file && file.type.startsWith("image/")) {
-      simulateUpload(file);
+      handleUpload(file);
     }
   };
 
-  const handleDelete = (id) => {
-    setImages((prev) => prev.filter((img) => img.id !== id));
-    setShowDeleteConfirm(null);
-    if (selectedImage?.id === id) setSelectedImage(null);
+  const handleDelete = async (id) => {
+    try {
+      await deleteGalleryImage.mutateAsync(id);
+      setShowDeleteConfirm(null);
+      if (selectedImage?.id === id) setSelectedImage(null);
+    } catch (err) {
+      console.error("Delete failed:", err);
+    }
   };
 
   return (
@@ -103,7 +123,8 @@ export default function MediaLibrary() {
         </h2>
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-vibrant-blue text-white rounded-lg font-body text-sm font-semibold hover:bg-vibrant-blue/90 transition-colors"
+          disabled={uploading}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-vibrant-blue text-white rounded-lg font-body text-sm font-semibold hover:bg-vibrant-blue/90 transition-colors disabled:opacity-50"
         >
           <Upload className="h-4 w-4" />
           Upload Image

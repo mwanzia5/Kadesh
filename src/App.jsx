@@ -3,11 +3,13 @@ import { Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import Layout from "@/components/layout/Layout";
 import PageLoader from "@/components/ui/PageLoader";
+import { DonorAuthProvider } from "@/context/DonorAuthContext";
 
 const Home = lazy(() => import("@/pages/Home"));
 const About = lazy(() => import("@/pages/About"));
 const Contact = lazy(() => import("@/pages/Contact"));
 const Donate = lazy(() => import("@/pages/Donate"));
+const DonorAuth = lazy(() => import("@/pages/DonorAuth"));
 const Gallery = lazy(() => import("@/pages/Gallery"));
 const Videos = lazy(() => import("@/pages/Videos"));
 const Partners = lazy(() => import("@/pages/Partners"));
@@ -35,6 +37,7 @@ export default function App() {
       <Route path="/about" element={<About />} />
       <Route path="/contact" element={<Contact />} />
       <Route path="/donate" element={<Donate />} />
+      <Route path="/donor-auth" element={<DonorAuth />} />
       <Route path="/gallery" element={<Gallery />} />
       <Route path="/videos" element={<Videos />} />
       <Route path="/partners" element={<Partners />} />
@@ -63,10 +66,12 @@ export default function App() {
   }
 
   return (
-    <Layout>
-      <AnimatePresence mode="wait">
-        <Suspense fallback={<PageLoader />}>{routes}</Suspense>
-      </AnimatePresence>
-    </Layout>
+    <DonorAuthProvider>
+      <Layout>
+        <AnimatePresence mode="wait">
+          <Suspense fallback={<PageLoader />}>{routes}</Suspense>
+        </AnimatePresence>
+      </Layout>
+    </DonorAuthProvider>
   );
 }

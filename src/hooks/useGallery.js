@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getGalleryImages,
   createGalleryImage,
+  updateGalleryImage,
   deleteGalleryImage,
 } from "@/services/gallery";
 
@@ -30,6 +31,17 @@ export function useDeleteGalleryImage() {
 
   return useMutation({
     mutationFn: deleteGalleryImage,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["gallery"] });
+    },
+  });
+}
+
+export function useUpdateGalleryImage() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, updates }) => updateGalleryImage(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["gallery"] });
     },

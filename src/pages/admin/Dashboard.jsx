@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import AdminLayout from "@/components/admin/AdminLayout";
 import DashboardHome from "./DashboardHome";
+import DonationsManager from "./DonationsManager";
 import CMSPage from "./CMSPage";
 import MediaLibrary from "./MediaLibrary";
 import ProjectsManager from "./ProjectsManager";
@@ -14,6 +15,7 @@ export default function Dashboard() {
     <AdminLayout>
       <Routes>
         <Route index element={<DashboardHome />} />
+        <Route path="donations" element={<DonationsManager />} />
         <Route path="cms" element={<CMSPage />} />
         <Route path="media" element={<MediaLibrary />} />
         <Route path="projects" element={<ProjectsManager />} />

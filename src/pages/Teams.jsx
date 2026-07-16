@@ -164,6 +164,26 @@ export default function Teams() {
           font-size: 0.875rem;
           color: rgba(255, 255, 255, 0.8);
         }
+
+        @media (max-width: 640px) {
+          .team-card:hover {
+            transform: none;
+            box-shadow: none;
+          }
+          .team-card__content {
+            transform: translateY(0);
+            padding: 16px;
+          }
+          .team-card__overlay {
+            background: rgba(13, 27, 62, 0.6);
+          }
+          .team-card__name {
+            font-size: 1.1rem;
+          }
+          .team-card__role {
+            font-size: 0.8rem;
+          }
+        }
       `}</style>
     </PageTransition>
   );

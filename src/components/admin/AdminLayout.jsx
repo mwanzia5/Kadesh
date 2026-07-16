@@ -12,6 +12,7 @@ import {
   Newspaper,
   Users,
   Settings,
+  Heart,
   ExternalLink,
   LogOut,
   Menu,
@@ -29,6 +30,7 @@ export function useAdminAuth() {
 
 const NAV_ITEMS = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/admin" },
+  { label: "Donations", icon: Heart, path: "/admin/donations" },
   { label: "CMS", icon: FileText, path: "/admin/cms" },
   { label: "Media Library", icon: Image, path: "/admin/media" },
   { label: "Projects", icon: FolderOpen, path: "/admin/projects" },

@@ -1,22 +1,14 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Search,
-  X,
-  ChevronLeft,
-  ChevronRight,
-  Camera,
-} from "lucide-react";
+import { useState, useMemo } from "react";
+import { Search, Camera, Loader2 } from "lucide-react";
 
 import PageTransition from "@/animations/PageTransition";
-import { staggerContainer, slideUp } from "@/animations/variants";
-
 import Container from "@/components/ui/Container";
 import Section from "@/components/ui/Section";
-import OptimizedImage from "@/components/ui/OptimizedImage";
-import GlareHover from "@/components/ui/GlareHover";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import SectionHeading from "@/components/ui/SectionHeading";
+import DomeGallery from "@/components/ui/DomeGallery";
+import useMediaQuery from "@/hooks/useMediaQuery";
+import { useGalleryImages } from "@/hooks/useGallery";
 import { cn } from "@/lib/utils";
 
 const CATEGORIES = [
@@ -28,189 +20,92 @@ const CATEGORIES = [
   "Community",
 ];
 
-const GALLERY_IMAGES = [
-  {
-    src: "/images/others/group-of-girls-playing.webp",
-    title: "Community Outreach",
-    category: "community",
-  },
-  {
-    src: "/images/kadesh images_02.jpg",
-    title: "Healthcare Services",
-    category: "health",
-  },
-  {
-    src: "/images/kadesh images_03.png",
-    title: "Education Program",
-    category: "education",
-  },
-  {
-    src: "/images/kadesh images_04.jpg",
-    title: "Food Distribution",
-    category: "food",
-  },
-  {
-    src: "/images/kadesh images_05.jpg",
-    title: "Community Gathering",
-    category: "community",
-  },
-  {
-    src: "/images/kadesh images_06.jpg",
-    title: "Medical Camp",
-    category: "health",
-  },
-  {
-    src: "/images/kadesh images_07.jpg",
-    title: "Women Empowerment",
-    category: "women",
-  },
-  {
-    src: "/images/kadesh images_08.jpg",
-    title: "School Learning",
-    category: "education",
-  },
-  {
-    src: "/images/kadesh images_09.jpg",
-    title: "Agricultural Training",
-    category: "food",
-  },
-  {
-    src: "/images/kadesh images_10.jpg",
-    title: "Volunteer Work",
-    category: "community",
-  },
-  {
-    src: "/images/kadesh images_11.jpg",
-    title: "Youth Development",
-    category: "women",
-  },
-  {
-    src: "/images/kadesh images_12.jpg",
-    title: "Community Health",
-    category: "health",
-  },
-  {
-    src: "/images/healthcare/healthcare_1.jpg",
-    title: "Healthcare Initiative",
-    category: "health",
-  },
-  {
-    src: "/images/child to school/child project_1.jpeg",
-    title: "Child Education",
-    category: "education",
-  },
-  {
-    src: "/images/Lumina School/Lumina School_01.jpeg",
-    title: "Lumina School",
-    category: "education",
-  },
-  {
-    src: "/images/womensproject_1.jpeg",
-    title: "Women's Project",
-    category: "women",
-  },
-];
+const CATEGORY_MAP = {
+  education: "Education",
+  health: "Health",
+  food: "Food Security",
+  foodsecurity: "Food Security",
+  women: "Women & Youth",
+  youth: "Women & Youth",
+  community: "Community",
+};
 
-const ASPECT_CLASSES = [
-  "aspect-[3/4]",
-  "aspect-square",
-  "aspect-[4/3]",
-  "aspect-[3/4]",
-  "aspect-square",
-  "aspect-[4/3]",
-  "aspect-[3/4]",
-  "aspect-square",
+const FALLBACK_IMAGES = [
+  { src: "/images/others/group-of-girls-playing.webp", title: "Community Outreach", category: "community" },
+  { src: "/images/kadesh images_02.jpg", title: "Healthcare Services", category: "health" },
+  { src: "/images/kadesh images_03.png", title: "Education Program", category: "education" },
+  { src: "/images/kadesh images_04.jpg", title: "Food Distribution", category: "food" },
+  { src: "/images/kadesh images_05.jpg", title: "Community Gathering", category: "community" },
+  { src: "/images/kadesh images_06.jpg", title: "Medical Camp", category: "health" },
+  { src: "/images/kadesh images_07.jpg", title: "Women Empowerment", category: "women" },
+  { src: "/images/kadesh images_08.jpg", title: "School Learning", category: "education" },
+  { src: "/images/kadesh images_09.jpg", title: "Agricultural Training", category: "food" },
+  { src: "/images/kadesh images_10.jpg", title: "Volunteer Work", category: "community" },
+  { src: "/images/kadesh images_11.jpg", title: "Youth Development", category: "women" },
+  { src: "/images/kadesh images_12.jpg", title: "Community Health", category: "health" },
+  { src: "/images/healthcare/healthcare_1.jpg", title: "Healthcare Initiative", category: "health" },
+  { src: "/images/child to school/child project_1.jpeg", title: "Child Education", category: "education" },
+  { src: "/images/Lumina School/Lumina School_01.jpeg", title: "Lumina School", category: "education" },
+  { src: "/images/womensproject_1.jpeg", title: "Women's Project", category: "women" },
 ];
-
-const INITIAL_COUNT = 9;
-const LOAD_MORE_COUNT = 6;
 
 export default function Gallery() {
   const [activeFilter, setActiveFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
-  const [visibleCount, setVisibleCount] = useState(INITIAL_COUNT);
-  const [lightbox, setLightbox] = useState({ isOpen: false, currentIndex: 0 });
+  const isMobile = useMediaQuery("(max-width: 768px)");
+  const { data: dbImages, isLoading } = useGalleryImages();
+
+  const allImages = useMemo(() => {
+    const dbList = dbImages?.data;
+    if (dbList && dbList.length > 0) {
+      return dbList.map((img) => ({
+        src: img.image_url,
+        title: img.title,
+        category: img.category,
+        id: img.id,
+      }));
+    }
+    return FALLBACK_IMAGES;
+  }, [dbImages]);
 
   const filteredImages = useMemo(() => {
-    return GALLERY_IMAGES.filter((img) => {
+    return allImages.filter((img) => {
+      const imgCat = CATEGORY_MAP[img.category?.toLowerCase()] || img.category;
       const matchesCategory =
         activeFilter === "All" ||
-        img.category.toLowerCase() === activeFilter.toLowerCase() ||
-        (activeFilter === "Women & Youth" &&
-          img.category === "women");
+        imgCat?.toLowerCase() === activeFilter.toLowerCase();
 
       const matchesSearch =
         searchQuery === "" ||
-        img.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        img.category.toLowerCase().includes(searchQuery.toLowerCase());
+        img.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        img.category?.toLowerCase().includes(searchQuery.toLowerCase());
 
       return matchesCategory && matchesSearch;
     });
-  }, [activeFilter, searchQuery]);
+  }, [allImages, activeFilter, searchQuery]);
 
-  const visibleImages = useMemo(
-    () => filteredImages.slice(0, visibleCount),
-    [filteredImages, visibleCount]
+  const domeImages = useMemo(
+    () => filteredImages.map((img) => ({ src: img.src, alt: img.title })),
+    [filteredImages]
   );
 
-  const hasMore = visibleCount < filteredImages.length;
-
-  const handleFilterChange = useCallback((filter) => {
-    setActiveFilter(filter);
-    setVisibleCount(INITIAL_COUNT);
-  }, []);
-
-  const handleSearchChange = useCallback((e) => {
-    setSearchQuery(e.target.value);
-    setVisibleCount(INITIAL_COUNT);
-  }, []);
-
-  const openLightbox = useCallback(
-    (index) => {
-      setLightbox({ isOpen: true, currentIndex: index });
-    },
-    []
+  const imageCategories = useMemo(
+    () =>
+      filteredImages.map((img) => {
+        const mapped = CATEGORY_MAP[img.category?.toLowerCase()];
+        return mapped || img.category || "Other";
+      }),
+    [filteredImages]
   );
 
-  const closeLightbox = useCallback(() => {
-    setLightbox((prev) => ({ ...prev, isOpen: false }));
-  }, []);
-
-  const navigateLightbox = useCallback(
-    (direction) => {
-      setLightbox((prev) => ({
-        ...prev,
-        currentIndex:
-          (prev.currentIndex + direction + visibleImages.length) %
-          visibleImages.length,
-      }));
-    },
-    [visibleImages.length]
-  );
-
-  useEffect(() => {
-    if (!lightbox.isOpen) return;
-
-    const handleKeyDown = (e) => {
-      if (e.key === "Escape") closeLightbox();
-      if (e.key === "ArrowLeft") navigateLightbox(-1);
-      if (e.key === "ArrowRight") navigateLightbox(1);
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "";
-    };
-  }, [lightbox.isOpen, closeLightbox, navigateLightbox]);
+  const highlightCat =
+    activeFilter === "All" ? null : activeFilter;
 
   return (
     <PageTransition>
       <HeroSection />
 
-      <Section background="white" className="section-padding">
+      <Section background="white" className="pt-16 pb-10">
         <Container>
           <div className="max-w-xl mx-auto mb-10">
             <div className="relative">
@@ -218,18 +113,18 @@ export default function Gallery() {
               <input
                 type="text"
                 value={searchQuery}
-                onChange={handleSearchChange}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search photos..."
                 className="w-full pl-12 pr-4 py-3 rounded-xl border border-soft-accent/60 bg-surface font-body text-body-md text-deep-navy placeholder:text-on-surface-variant/60 focus:outline-none focus:ring-2 focus:ring-vibrant-blue/40 focus:border-vibrant-blue transition-all"
               />
             </div>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-3 mb-12">
+          <div className="flex flex-wrap justify-center gap-3">
             {CATEGORIES.map((category) => (
               <button
                 key={category}
-                onClick={() => handleFilterChange(category)}
+                onClick={() => setActiveFilter(category)}
                 className={cn(
                   "px-5 py-2 rounded-full font-body text-label-bold transition-all duration-300",
                   activeFilter === category
@@ -241,91 +136,38 @@ export default function Gallery() {
               </button>
             ))}
           </div>
-
-          <AnimatePresence mode="popLayout">
-            <motion.div
-              layout
-              className="columns-1 sm:columns-2 lg:columns-3 gap-4"
-            >
-              {visibleImages.map((image, index) => {
-                const aspectClass =
-                  ASPECT_CLASSES[index % ASPECT_CLASSES.length];
-
-                return (
-                  <motion.div
-                    key={image.src}
-                    layout
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{
-                      duration: 0.4,
-                      delay: (index % LOAD_MORE_COUNT) * 0.05,
-                    }}
-                    className="break-inside-avoid mb-4"
-                  >
-                    <GlareHover
-                      glareColor="#2563EB"
-                      className="group rounded-xl overflow-hidden cursor-pointer"
-                      onClick={() => openLightbox(index)}
-                    >
-                      <div className={cn("relative overflow-hidden", aspectClass)}>
-                        <OptimizedImage
-                          src={image.src}
-                          alt={image.title}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-5">
-                          <div>
-                            <span className="inline-block px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-sm text-white/90 text-xs font-body mb-2 capitalize">
-                              {image.category}
-                            </span>
-                            <h3 className="font-display text-white text-lg">
-                              {image.title}
-                            </h3>
-                          </div>
-                        </div>
-                      </div>
-                    </GlareHover>
-                  </motion.div>
-                );
-              })}
-            </motion.div>
-          </AnimatePresence>
-
-          {visibleImages.length === 0 && (
-            <div className="text-center py-20">
-              <Camera className="h-16 w-16 text-on-surface-variant/30 mx-auto mb-4" />
-              <p className="font-body text-body-lg text-on-surface-variant">
-                No photos found. Try a different search or filter.
-              </p>
-            </div>
-          )}
-
-          {hasMore && (
-            <div className="text-center mt-12">
-              <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() =>
-                  setVisibleCount((prev) => prev + LOAD_MORE_COUNT)
-                }
-                className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-vibrant-blue text-white font-body text-body-md font-semibold shadow-md hover:bg-vibrant-blue/90 transition-colors"
-              >
-                Load More
-              </motion.button>
-            </div>
-          )}
         </Container>
       </Section>
 
-      <Lightbox
-        isOpen={lightbox.isOpen}
-        currentIndex={lightbox.currentIndex}
-        images={visibleImages}
-        onClose={closeLightbox}
-        onNavigate={navigateLightbox}
-      />
+      <section className="relative w-full h-[60vh] sm:h-[75vh] md:h-[85vh] min-h-[400px] sm:min-h-[500px] md:min-h-[600px] bg-deep-navy overflow-hidden">
+        {isLoading ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-white/60 px-6 text-center">
+            <Loader2 className="h-12 w-12 mb-4 animate-spin opacity-60" />
+            <p className="font-body text-body-lg">Loading gallery...</p>
+          </div>
+        ) : domeImages.length > 0 ? (
+          <DomeGallery
+            images={domeImages}
+            fit={0.8}
+            minRadius={isMobile ? 300 : 600}
+            maxVerticalRotationDeg={0}
+            segments={isMobile ? 20 : 34}
+            dragDampening={2}
+            grayscale={false}
+            autoRotate
+            autoRotateSpeed={isMobile ? 0.1 : 0.15}
+            highlightCategory={highlightCat}
+            imageCategories={imageCategories}
+          />
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-white/60 px-6 text-center">
+            <Camera className="h-16 w-16 mb-4 opacity-40" />
+            <p className="font-body text-body-lg">
+              No photos found. Try a different search or filter.
+            </p>
+          </div>
+        )}
+      </section>
     </PageTransition>
   );
 }
@@ -372,82 +214,5 @@ function HeroSection() {
         </svg>
       </div>
     </section>
-  );
-}
-
-function Lightbox({ isOpen, currentIndex, images, onClose, onNavigate }) {
-  const currentImage = images[currentIndex];
-
-  return (
-    <AnimatePresence>
-      {isOpen && currentImage && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
-          onClick={onClose}
-        >
-          <button
-            onClick={onClose}
-            className="absolute top-6 right-6 z-50 p-2 rounded-full bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 transition-colors"
-          >
-            <X className="h-6 w-6" />
-          </button>
-
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onNavigate(-1);
-            }}
-            className="absolute left-4 md:left-8 z-50 p-3 rounded-full bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 transition-colors"
-          >
-            <ChevronLeft className="h-6 w-6" />
-          </button>
-
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onNavigate(1);
-            }}
-            className="absolute right-4 md:right-8 z-50 p-3 rounded-full bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 transition-colors"
-          >
-            <ChevronRight className="h-6 w-6" />
-          </button>
-
-          <motion.div
-            key={currentIndex}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ duration: 0.3 }}
-            className="relative max-w-5xl w-full mx-4 md:mx-16 max-h-[85vh]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <OptimizedImage
-              src={currentImage.src}
-              alt={currentImage.title}
-              className="w-full h-full object-contain rounded-lg"
-            />
-            <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/60 to-transparent rounded-b-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="inline-block px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-sm text-white/90 text-xs font-body mb-1 capitalize">
-                    {currentImage.category}
-                  </span>
-                  <h3 className="font-display text-white text-xl">
-                    {currentImage.title}
-                  </h3>
-                </div>
-                <span className="text-white/70 font-body text-sm">
-                  {currentIndex + 1} / {images.length}
-                </span>
-              </div>
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
   );
 }

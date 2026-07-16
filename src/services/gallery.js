@@ -47,6 +47,21 @@ export async function createGalleryImage(imageData) {
   }
 }
 
+export async function updateGalleryImage(id, updates) {
+  try {
+    const { data, error } = await supabase
+      .from("gallery")
+      .update(updates)
+      .eq("id", id)
+      .select()
+      .single();
+
+    return { data, error };
+  } catch (err) {
+    return { data: null, error: err };
+  }
+}
+
 export async function deleteGalleryImage(id) {
   try {
     const { data, error } = await supabase
