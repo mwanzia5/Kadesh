@@ -193,7 +193,7 @@ export default function DonorAuth() {
 
                 <Button
                   type="submit"
-                  variant="orange"
+                  variant="primary"
                   size="lg"
                   className="w-full"
                   disabled={loading}

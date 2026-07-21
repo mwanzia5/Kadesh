@@ -6,7 +6,8 @@ const variants = {
   primary: "bg-vibrant-blue text-white hover:bg-vibrant-blue/90 shadow-md hover:shadow-lg",
   secondary:
     "border-2 border-vibrant-blue text-vibrant-blue hover:bg-vibrant-blue/10",
-  orange: "bg-hope-orange text-white hover:bg-hope-orange/90 shadow-md hover:shadow-lg",
+  orange: "bg-deep-navy text-white hover:bg-vibrant-blue shadow-md hover:shadow-lg",
+  lightblue: "bg-lightblue text-white hover:bg-vibrant-blue shadow-md hover:shadow-lg",
   ghost: "bg-transparent text-on-surface hover:bg-surface-dim",
 };
 

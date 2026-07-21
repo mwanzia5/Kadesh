@@ -10,6 +10,7 @@ export default {
           container: "#1a469d",
         },
         "vibrant-blue": "#2563EB",
+        "lightblue": "#5BA4E6",
         "hope-orange": {
           DEFAULT: "#F37021",
           dark: "#a04100",

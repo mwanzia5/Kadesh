@@ -291,7 +291,7 @@ function BecomePartnerCTA() {
               impact, build lasting relationships, and be part of a mission
               driven by faith and compassion.
             </p>
-            <Button variant="orange" size="lg" as={Link} to="/contact">
+            <Button variant="primary" size="lg" as={Link} to="/contact">
               Apply Now
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
@@ -341,7 +341,7 @@ function SponsorSection() {
                       {item.description}
                     </p>
                     <Button
-                      variant="orange"
+                      variant="primary"
                       size="sm"
                       as={Link}
                       to={item.link}

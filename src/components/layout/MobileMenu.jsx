@@ -208,7 +208,7 @@ export default function MobileMenu({ isOpen, onClose }) {
             </nav>
 
             <div className="p-5 border-t border-soft-accent">
-              <Button as={Link} to="/donate" variant="orange" size="md" className="w-full">
+              <Button as={Link} to="/donate" variant="lightblue" size="md" className="w-full">
                 Donate
               </Button>
             </div>

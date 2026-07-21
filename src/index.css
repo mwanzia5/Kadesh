@@ -63,7 +63,7 @@
   }
 
   .btn-orange {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-hope-orange px-6 py-3 font-body text-sm font-semibold text-on-primary transition-all duration-300 hover:bg-hope-orange-dark hover:shadow-lg hover:shadow-hope-orange/25 active:scale-[0.98];
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-lightblue px-6 py-3 font-body text-sm font-semibold text-white transition-all duration-300 hover:bg-vibrant-blue hover:shadow-lg hover:shadow-lightblue/25 active:scale-[0.98];
   }
 
   .card-shadow {

@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils";
 import Button from "@/components/ui/Button";
 import { NAV_LINKS } from "@/constants";
 import MobileMenu from "./MobileMenu";
-
 const dropdownVariants = {
   hidden: { opacity: 0, y: 8, scale: 0.98 },
   visible: { opacity: 1, y: 0, scale: 1 },
@@ -60,9 +59,9 @@ export default function Navbar() {
         )}
       >
         <div className="mx-auto flex items-center justify-between h-20 px-5 md:px-16 max-w-[1280px]">
-          <Link to="/" className="flex-shrink-0">
-            <img src="/images/kadesh-logo.png" alt="Kadesh Hope Mission" className="h-11" />
-          </Link>
+         <Link to="/" className="flex-shrink-0">
+  <img src="/images/kadesh-logo.png" alt="Kadesh Hope Mission" className="h-16" />
+</Link>
 
           {/* Desktop links */}
           <div className="hidden lg:flex items-center gap-1">
@@ -189,7 +188,7 @@ export default function Navbar() {
           </div>
 
           <div className="hidden lg:block">
-            <Button as={Link} to="/donate" variant="orange" size="sm">
+            <Button as={Link} to="/donate" variant="lightblue" size="sm">
               Donate
             </Button>
           </div>

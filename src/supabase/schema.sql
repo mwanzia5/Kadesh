@@ -123,6 +123,20 @@ CREATE TABLE donations (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
+CREATE TABLE children (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  first_name TEXT NOT NULL,
+  age INTEGER NOT NULL,
+  gender TEXT NOT NULL,
+  location TEXT NOT NULL,
+  photo_url TEXT,
+  bio TEXT,
+  needs TEXT,
+  sponsorship_status TEXT DEFAULT 'available' CHECK (sponsorship_status IN ('available', 'sponsored', 'pending')),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
 -- -------------------------------------------
 -- INDEXES
 -- -------------------------------------------
@@ -154,6 +168,11 @@ CREATE INDEX idx_page_content_page_slug ON page_content(page_slug);
 
 CREATE INDEX idx_donations_status ON donations(status);
 
+CREATE INDEX idx_children_sponsorship_status ON children(sponsorship_status);
+CREATE INDEX idx_children_gender ON children(gender);
+CREATE INDEX idx_children_location ON children(location);
+CREATE INDEX idx_children_age ON children(age);
+
 -- -------------------------------------------
 -- UPDATED_AT TRIGGER
 -- -------------------------------------------
@@ -182,6 +201,10 @@ CREATE TRIGGER set_page_content_updated_at
   BEFORE UPDATE ON page_content
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER set_children_updated_at
+  BEFORE UPDATE ON children
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 -- -------------------------------------------
 -- ROW LEVEL SECURITY
 -- -------------------------------------------
@@ -197,6 +220,7 @@ ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE page_content ENABLE ROW LEVEL SECURITY;
 ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE donations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE children ENABLE ROW LEVEL SECURITY;
 
 -- Public read policies (anon + authenticated can read)
 
@@ -230,6 +254,10 @@ CREATE POLICY "Public can view settings"
 
 CREATE POLICY "Public can view page content"
   ON page_content FOR SELECT
+  USING (true);
+
+CREATE POLICY "Public can view children"
+  ON children FOR SELECT
   USING (true);
 
 -- Authenticated write policies (full CRUD for authenticated users)
@@ -290,6 +318,11 @@ CREATE POLICY "Authenticated can manage admin users"
 
 CREATE POLICY "Authenticated can manage donations"
   ON donations FOR ALL
+  USING (auth.role() = 'authenticated')
+  WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Authenticated can manage children"
+  ON children FOR ALL
   USING (auth.role() = 'authenticated')
   WITH CHECK (auth.role() = 'authenticated');
 

@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Shield, Award, Heart, Gift, Building2, Globe, ChevronDown, LogIn, User, MapPin, Loader2 } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Shield, Award, Heart, Gift, Building2, Globe, ChevronDown } from "lucide-react";
 import PageTransition from "@/animations/PageTransition";
 import Section from "@/components/ui/Section";
 import SectionHeading from "@/components/ui/SectionHeading";
 import Button from "@/components/ui/Button";
-import { useDonorAuth } from "@/context/DonorAuthContext";
 import { useCreateDonation } from "@/hooks/useDonations";
 
 const USD_AMOUNTS = [10, 25, 50, 100, 250, 500];
@@ -36,8 +35,6 @@ function formatCurrency(amount, currency) {
 }
 
 export default function Donate() {
-  const navigate = useNavigate();
-  const { user, profile, loading: authLoading } = useDonorAuth();
   const createDonation = useCreateDonation();
 
   const [frequency, setFrequency] = useState("one-time");
@@ -47,13 +44,14 @@ export default function Donate() {
   const [currency, setCurrency] = useState(currencies[0]);
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [donorName, setDonorName] = useState("");
+  const [donorEmail, setDonorEmail] = useState("");
+  const [donorLocation, setDonorLocation] = useState("");
+  const [donorPhone, setDonorPhone] = useState("");
 
   const baseAmount = isOther ? Number(customAmount) || 0 : selectedUSD;
   const convertedAmount = Math.round(baseAmount * currency.rate);
   const impactText = impactMap[baseAmount] || "Every gift makes a difference";
-
-  const donorName = profile ? `${profile.first_name} ${profile.last_name}` : "";
-  const donorEmail = user?.email || "";
 
   useEffect(() => {
     const handleClick = () => setShowCurrencyPicker(false);
@@ -70,7 +68,7 @@ export default function Donate() {
   };
 
   const handlePay = () => {
-    if (!baseAmount || baseAmount <= 0) return;
+    if (!baseAmount || baseAmount <= 0 || !donorEmail) return;
 
     setProcessing(true);
 
@@ -90,6 +88,8 @@ export default function Donate() {
           { display_name: "Selected Currency", variable_name: "currency", value: currency.code },
           { display_name: "Converted Amount", variable_name: "converted_amount", value: convertedAmount },
           { display_name: "USD Equivalent", variable_name: "usd_equivalent", value: baseAmount },
+          { display_name: "Location", variable_name: "location", value: donorLocation },
+          { display_name: "Phone", variable_name: "phone", value: donorPhone },
         ],
       },
       onSuccess: async (transaction) => {
@@ -103,8 +103,8 @@ export default function Donate() {
             frequency,
             status: "completed",
             payment_reference: transaction.reference,
-            location: profile?.location || null,
-            phone: profile?.phone || null,
+            location: donorLocation || null,
+            phone: donorPhone || null,
           });
         } catch (dbErr) {
           console.error("Failed to save donation record:", dbErr);
@@ -120,77 +120,10 @@ export default function Donate() {
     handler.openIframe();
   };
 
-  if (authLoading) {
-    return (
-      <PageTransition>
-        <Section className="pt-32 pb-20">
-          <div className="flex justify-center py-20">
-            <Loader2 className="w-8 h-8 border-4 border-[#2563EB] border-t-transparent rounded-full animate-spin" />
-          </div>
-        </Section>
-      </PageTransition>
-    );
-  }
-
-  if (!user) {
-    return (
-      <PageTransition>
-        <Section className="pt-32 pb-20">
-          <div className="max-w-lg mx-auto px-4 sm:px-6 text-center">
-            <div className="bg-white rounded-2xl border border-soft-accent p-8 md:p-12 shadow-card">
-              <div className="w-16 h-16 rounded-2xl bg-hope-orange/10 flex items-center justify-center mx-auto mb-6">
-                <LogIn className="h-8 w-8 text-hope-orange" />
-              </div>
-              <h1 className="font-display text-2xl md:text-3xl font-bold text-deep-navy mb-4">
-                Sign in to Donate
-              </h1>
-              <p className="font-body text-body-lg text-on-surface-variant mb-8">
-                Please create an account or sign in before making a donation. This helps us track your generous contributions.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button variant="orange" size="lg" as={Link} to="/donor-auth?mode=signup">
-                  <User className="h-5 w-5 mr-2" />
-                  Create Account
-                </Button>
-                <Button variant="primary" size="lg" as={Link} to="/donor-auth?mode=login">
-                  <LogIn className="h-5 w-5 mr-2" />
-                  Log In
-                </Button>
-              </div>
-            </div>
-          </div>
-        </Section>
-      </PageTransition>
-    );
-  }
-
   return (
     <PageTransition>
       <Section className="pt-32 pb-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Donor Info Banner */}
-          <div className="bg-vibrant-blue/5 border border-vibrant-blue/20 rounded-xl p-4 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-vibrant-blue/10 flex items-center justify-center">
-                <User className="h-5 w-5 text-vibrant-blue" />
-              </div>
-              <div className="text-left">
-                <p className="font-body text-sm font-medium text-deep-navy">
-                  Donating as <span className="font-semibold">{donorName}</span>
-                </p>
-                <p className="font-body text-xs text-on-surface-variant">{donorEmail}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-on-surface-variant">
-              {profile?.location && (
-                <span className="flex items-center gap-1">
-                  <MapPin className="h-3.5 w-3.5" />
-                  {profile.location}
-                </span>
-              )}
-            </div>
-          </div>
-
           <SectionHeading
             title="Choose your impact level"
             subtitle="Your generosity transforms lives across Africa"
@@ -199,6 +132,62 @@ export default function Donate() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 mt-16">
             {/* Donation Form */}
             <div className="lg:col-span-8">
+              {/* Donor Info */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                <div>
+                  <label htmlFor="donorName" className="block text-sm font-medium text-on-background mb-2">
+                    Your Name
+                  </label>
+                  <input
+                    id="donorName"
+                    type="text"
+                    placeholder="John Doe"
+                    value={donorName}
+                    onChange={(e) => setDonorName(e.target.value)}
+                    className={inputClasses}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="donorEmail" className="block text-sm font-medium text-on-background mb-2">
+                    Email Address
+                  </label>
+                  <input
+                    id="donorEmail"
+                    type="email"
+                    placeholder="john@example.com"
+                    value={donorEmail}
+                    onChange={(e) => setDonorEmail(e.target.value)}
+                    className={inputClasses}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="donorLocation" className="block text-sm font-medium text-on-background mb-2">
+                    Location
+                  </label>
+                  <input
+                    id="donorLocation"
+                    type="text"
+                    placeholder="City, Country"
+                    value={donorLocation}
+                    onChange={(e) => setDonorLocation(e.target.value)}
+                    className={inputClasses}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="donorPhone" className="block text-sm font-medium text-on-background mb-2">
+                    Phone Number
+                  </label>
+                  <input
+                    id="donorPhone"
+                    type="tel"
+                    placeholder="+1 234 567 8900"
+                    value={donorPhone}
+                    onChange={(e) => setDonorPhone(e.target.value)}
+                    className={inputClasses}
+                  />
+                </div>
+              </div>
+
               {/* Frequency Toggle */}
               <div className="flex bg-cream rounded-lg p-1 max-w-xs mb-8">
                 <button
@@ -369,7 +358,7 @@ export default function Donate() {
 
               {/* Submit Button */}
               <Button
-                className="w-full mt-6 bg-orange-500 hover:bg-orange-600 text-white py-4 text-lg"
+                className="w-full mt-6 bg-lightblue hover:bg-vibrant-blue text-white py-4 text-lg"
                 onClick={handlePay}
                 disabled={processing || baseAmount <= 0}
               >

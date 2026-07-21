@@ -9,10 +9,10 @@ export const SITE_CONFIG = {
   description:
     "Transforming lives through education, healthcare, food security, and social development since 2009.",
   founded: 2009,
-  regions: ["Democratic Republic of Congo", "Uganda", "Kenya"],
+  regions: ["Democratic Republic of Congo", "Uganda"],
   email: "info@kadeshhopemission.org",
   phone: "+243 000 000 000",
-  whatsapp: "https://wa.me/message",
+  whatsapp: "https://wa.me/254733959383",
   url: "https://kadeshhopemission.org",
   social: {
     facebook: "#",
@@ -48,9 +48,7 @@ export const NAV_LINKS = [
       {
         category: "Social Development",
         items: [
-          { label: "Community Projects", href: "/projects/community" },
           { label: "Borewell Project", href: "/projects/borewell" },
-          { label: "Women Projects", href: "/projects/women" },
         ],
       },
       {
@@ -59,6 +57,7 @@ export const NAV_LINKS = [
       },
     ],
   },
+  { label: "Sponsor a Child", href: "/sponsor-a-child" },
   {
     label: "Media",
     href: "/media",
@@ -67,9 +66,6 @@ export const NAV_LINKS = [
       { label: "Videos", href: "/videos" },
     ],
   },
-  { label: "Partners", href: "/partners" },
-  { label: "Impact", href: "/impact" },
-  { label: "Team", href: "/teams" },
   { label: "Contact", href: "/contact" },
 ];
 
@@ -135,25 +131,11 @@ export const PROJECTS = [
     image: "/images/Lumina School/Lumina School_01.jpeg",
   },
   {
-    slug: "community",
-    title: "Community Projects",
-    category: "Social Development",
-    shortDescription: "Advancing communities through sustainable development initiatives.",
-    image: "/images/others/a-group-of-african-children-laughing-and-playing-with-water-in-rural-area-black-kids.webp",
-  },
-  {
     slug: "borewell",
     title: "Borewell Project",
     category: "Social Development",
     shortDescription: "Providing clean water access to communities in need.",
     image: "/images/borewell project/borewell project_1.jpg",
-  },
-  {
-    slug: "women",
-    title: "Women Projects",
-    category: "Social Development",
-    shortDescription: "Empowering women through micro-financing and skills training.",
-    image: "/images/womensproject_1.jpeg",
   },
   {
     slug: "bethlehem-bread",

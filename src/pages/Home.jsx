@@ -12,7 +12,6 @@ import {
   Quote,
   ChevronRight,
   ArrowUpRight,
-  ChevronDown,
 } from "lucide-react";
 
 import PageTransition from "@/animations/PageTransition";
@@ -167,11 +166,11 @@ function HeroSection() {
               className="flex flex-col sm:flex-row items-center gap-6"
             >
               <Button
-                variant="orange"
+                variant="lightblue"
                 size="lg"
                 as={Link}
                 to="/donate"
-                className="shadow-[0_0_30px_-5px_rgba(243,112,33,0.6)]"
+                className="shadow-[0_0_30px_-5px_rgba(91,164,230,0.6)]"
               >
                 Donate Now
                 <Heart className="ml-2 h-5 w-5" />
@@ -211,20 +210,7 @@ function HeroSection() {
         </Container>
       </motion.div>
 
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8, delay: 2.4 }}
-        className="absolute bottom-24 md:bottom-28 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2 text-white/50"
-      >
-        <span className="font-body text-caption uppercase tracking-widest">Scroll</span>
-        <motion.div
-          animate={prefersReducedMotion ? {} : { y: [0, 8, 0] }}
-          transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <ChevronDown className="h-5 w-5" />
-        </motion.div>
-      </motion.div>
+
 
       <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-[0]">
         <svg
@@ -355,7 +341,7 @@ function WhoWeAreSection() {
                 ))}
               </div>
 
-              <Button variant="orange" size="lg" as={Link} to="/about">
+              <Button variant="primary" size="lg" as={Link} to="/about">
                 Learn More
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
@@ -483,7 +469,6 @@ function ProjectsSection() {
     </Section>
   );
 }
-
 function GallerySection() {
   return (
     <Section background="gray" className="section-padding">
@@ -493,13 +478,9 @@ function GallerySection() {
           subtitle="A glimpse into the work we do every day"
         />
 
-        <div className="mt-16 columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">
+        <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {galleryImages.map((image, index) => (
-            <ScrollReveal
-              key={index}
-              delay={index * 0.1}
-              className="break-inside-avoid"
-            >
+            <ScrollReveal key={index} delay={index * 0.1}>
               <GlareHover
                 glareColor="#2563EB"
                 className="rounded-xl overflow-hidden group"
@@ -508,13 +489,7 @@ function GallerySection() {
                   <OptimizedImage
                     src={image.src}
                     alt={image.alt}
-                    className={`w-full object-cover transition-transform duration-500 group-hover:scale-110 ${
-                      index % 3 === 0
-                        ? "aspect-[4/5]"
-                        : index % 3 === 1
-                          ? "aspect-[3/2]"
-                          : "aspect-square"
-                    }`}
+                    className="w-full aspect-[4/3] object-cover transition-transform duration-500 group-hover:scale-110"
                   />
                 </div>
               </GlareHover>
@@ -532,7 +507,6 @@ function GallerySection() {
     </Section>
   );
 }
-
 function TestimonialsSection() {
   return (
     <Section background="white" className="section-padding">
@@ -604,7 +578,7 @@ function DonationCTASection() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button variant="orange" size="lg" as={Link} to="/donate">
+              <Button variant="lightblue" size="lg" as={Link} to="/donate">
                 Donate Now
                 <Heart className="ml-2 h-5 w-5" />
               </Button>

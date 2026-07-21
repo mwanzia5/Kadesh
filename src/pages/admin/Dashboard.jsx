@@ -5,6 +5,7 @@ import DonationsManager from "./DonationsManager";
 import CMSPage from "./CMSPage";
 import MediaLibrary from "./MediaLibrary";
 import ProjectsManager from "./ProjectsManager";
+import ChildrenManager from "./ChildrenManager";
 import MessagesPage from "./MessagesPage";
 import SettingsPage from "./SettingsPage";
 import VideosManager from "./VideosManager";
@@ -19,6 +20,7 @@ export default function Dashboard() {
         <Route path="cms" element={<CMSPage />} />
         <Route path="media" element={<MediaLibrary />} />
         <Route path="projects" element={<ProjectsManager />} />
+        <Route path="children" element={<ChildrenManager />} />
         <Route path="videos" element={<VideosManager />} />
         <Route path="news" element={<NewsManager />} />
         <Route path="messages" element={<MessagesPage />} />

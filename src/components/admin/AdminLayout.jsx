@@ -18,6 +18,7 @@ import {
   Menu,
   X,
   ChevronDown,
+  UserPlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/supabase/client";
@@ -34,6 +35,7 @@ const NAV_ITEMS = [
   { label: "CMS", icon: FileText, path: "/admin/cms" },
   { label: "Media Library", icon: Image, path: "/admin/media" },
   { label: "Projects", icon: FolderOpen, path: "/admin/projects" },
+  { label: "Children", icon: UserPlus, path: "/admin/children" },
   { label: "Videos", icon: Film, path: "/admin/videos" },
   { label: "Messages", icon: Mail, path: "/admin/messages" },
   { label: "Testimonials", icon: MessageSquare, path: "/admin/testimonials" },

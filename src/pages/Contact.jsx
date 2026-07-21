@@ -18,16 +18,6 @@ const offices = {
     email: "kadeshhope.africa@gmail.com",
     mapQuery: "Nakaseta+Mpande+Kalule+Uganda",
   },
-  kenya: {
-    label: "Kenya",
-    flag: "\uD83C\uDDF0\uD83C\uDDEA",
-    name: "Regional Office \u2014 Kenya",
-    address: ["Kadesh Hope Mission of Africa", "Uasin Gishu, 146, Near Lexo Junction,", "14/1272, Eldoret, Kenya."],
-    phone: "+254 706 959 383",
-    phoneHref: "tel:+254706959383",
-    email: "kadesh.kenya@gmail.com",
-    mapQuery: "Uasin+Gishu+Near+Lexo+Junction+Eldoret+Kenya",
-  },
 };
 
 const subjects = [
@@ -41,7 +31,7 @@ const subjects = [
 
 export default function Contact() {
   const [status, setStatus] = useState("idle");
-  const [activeOffice, setActiveOffice] = useState("uganda");
+  const [activeOffice] = useState("uganda");
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -150,7 +140,7 @@ export default function Contact() {
                   <Button
                     type="submit"
                     disabled={status === "submitting"}
-                    variant="orange"
+                    variant="primary"
                     size="lg"
                     className="w-full"
                   >
@@ -213,7 +203,7 @@ export default function Contact() {
                     <MapPin className="h-5 w-5 text-hope-orange shrink-0 mt-0.5" />
                     <div>
                       <p className="font-body text-label-bold opacity-70 mb-1">REGIONS</p>
-                      <p className="font-body text-body-md">Democratic Republic of Congo &middot; Uganda &middot; Kenya</p>
+                      <p className="font-body text-body-md">Democratic Republic of Congo &middot; Uganda</p>
                     </div>
                   </li>
                 </ul>
@@ -243,39 +233,19 @@ export default function Contact() {
             </ScrollReveal>
           </div>
 
-          {/* Office Toggle + Map */}
+          {/* Office Map */}
           <ScrollReveal delay={0.3} className="mt-16">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <div className="mb-6">
               <h2 className="font-display text-headline-md text-deep-navy">
-                Our Offices
+                Our Office
               </h2>
-              <div className="flex gap-2">
-                {Object.entries(offices).map(([key, o]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setActiveOffice(key)}
-                    aria-pressed={activeOffice === key}
-                    className={`px-5 py-2.5 rounded-xl font-body text-label-bold transition-all ${
-                      activeOffice === key
-                        ? "bg-deep-navy text-white shadow-lg"
-                        : "bg-white text-deep-navy border border-soft-accent hover:bg-surface"
-                    }`}
-                  >
-                    <span className="mr-2">{o.flag}</span>
-                    {o.label}
-                  </button>
-                ))}
-              </div>
             </div>
 
             {/* Office details */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div className="bg-white rounded-2xl border border-soft-accent p-6">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                    activeOffice === "uganda" ? "bg-deep-navy text-white" : "bg-vibrant-blue/10 text-vibrant-blue"
-                  }`}>
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center bg-deep-navy text-white">
                     <MapPin className="h-5 w-5" />
                   </div>
                   <h3 className="font-display text-lg font-semibold text-deep-navy">
