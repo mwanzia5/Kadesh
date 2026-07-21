@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, ChevronDown } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Menu, ChevronDown, User, LogIn } from "lucide-react";
+import { cn, getGravatarUrl } from "@/lib/utils";
 import Button from "@/components/ui/Button";
 import { NAV_LINKS } from "@/constants";
+import { useDonorAuth } from "@/context/DonorAuthContext";
 import MobileMenu from "./MobileMenu";
 const dropdownVariants = {
   hidden: { opacity: 0, y: 8, scale: 0.98 },
@@ -14,6 +15,7 @@ const dropdownVariants = {
 
 export default function Navbar() {
   const { pathname } = useLocation();
+  const { user, profile, loading: authLoading } = useDonorAuth();
   const [scrolled, setScrolled] = useState(false);
   const [megaOpen, setMegaOpen] = useState(false);
   const [mediaOpen, setMediaOpen] = useState(false);
@@ -187,10 +189,51 @@ export default function Navbar() {
             })}
           </div>
 
-          <div className="hidden lg:block">
+          <div className="hidden lg:flex items-center gap-3">
             <Button as={Link} to="/donate" variant="lightblue" size="sm">
               Donate
             </Button>
+            {!authLoading && (
+              user ? (
+                <Link
+                  to="/account"
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-2 rounded-lg font-body text-sm font-medium transition-colors",
+                    pathname === "/account"
+                      ? "text-vibrant-blue bg-vibrant-blue/5"
+                      : "text-on-surface hover:text-vibrant-blue hover:bg-surface"
+                  )}
+                >
+                  <div className="w-7 h-7 rounded-full bg-vibrant-blue flex items-center justify-center overflow-hidden">
+                    {getGravatarUrl(user?.email) ? (
+                      <img
+                        src={getGravatarUrl(user.email, 56)}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-white text-xs font-semibold">
+                        {profile?.first_name?.charAt(0) || "D"}
+                      </span>
+                    )}
+                  </div>
+                  <span className="hidden xl:inline">{profile?.first_name || "Account"}</span>
+                </Link>
+              ) : (
+                <Link
+                  to="/donor-auth"
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-2 rounded-lg font-body text-sm font-medium transition-colors",
+                    pathname === "/donor-auth"
+                      ? "text-vibrant-blue bg-vibrant-blue/5"
+                      : "text-on-surface hover:text-vibrant-blue hover:bg-surface"
+                  )}
+                >
+                  <LogIn className="h-4 w-4" />
+                  <span>Log In</span>
+                </Link>
+              )
+            )}
           </div>
 
           {/* Mobile hamburger */}

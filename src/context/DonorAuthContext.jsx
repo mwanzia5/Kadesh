@@ -75,6 +75,16 @@ export function DonorAuthProvider({ children }) {
     return data;
   };
 
+  const updateProfile = async (updates) => {
+    if (!user) throw new Error("Not authenticated");
+    const { error } = await supabase
+      .from("donor_profiles")
+      .update(updates)
+      .eq("id", user.id);
+    if (error) throw error;
+    setProfile((prev) => ({ ...prev, ...updates }));
+  };
+
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
@@ -83,7 +93,7 @@ export function DonorAuthProvider({ children }) {
   };
 
   return (
-    <DonorAuthContext.Provider value={{ user, profile, loading, signUp, signIn, signOut }}>
+    <DonorAuthContext.Provider value={{ user, profile, loading, signUp, signIn, signOut, updateProfile }}>
       {children}
     </DonorAuthContext.Provider>
   );

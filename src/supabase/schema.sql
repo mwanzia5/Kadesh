@@ -115,11 +115,16 @@ CREATE TABLE donations (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   donor_name TEXT,
   donor_email TEXT,
+  donor_id UUID REFERENCES auth.users(id),
   amount DECIMAL(10,2) NOT NULL,
+  converted_amount DECIMAL(10,2),
   currency TEXT DEFAULT 'USD',
   frequency TEXT DEFAULT 'one-time',
   status TEXT DEFAULT 'pending',
   stripe_payment_id TEXT,
+  payment_reference TEXT,
+  location TEXT,
+  phone TEXT,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -133,6 +138,28 @@ CREATE TABLE children (
   bio TEXT,
   needs TEXT,
   sponsorship_status TEXT DEFAULT 'available' CHECK (sponsorship_status IN ('available', 'sponsored', 'pending')),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE donor_profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id),
+  first_name TEXT,
+  last_name TEXT,
+  email TEXT,
+  phone TEXT,
+  location TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE sponsorships (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  donor_id UUID NOT NULL REFERENCES auth.users(id),
+  child_id UUID NOT NULL REFERENCES children(id),
+  status TEXT DEFAULT 'active' CHECK (status IN ('active', 'paused', 'cancelled')),
+  monthly_amount DECIMAL(10,2),
+  start_date TIMESTAMPTZ DEFAULT now(),
+  notes TEXT,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
@@ -167,11 +194,18 @@ CREATE INDEX idx_contact_messages_is_read ON contact_messages(is_read);
 CREATE INDEX idx_page_content_page_slug ON page_content(page_slug);
 
 CREATE INDEX idx_donations_status ON donations(status);
+CREATE INDEX idx_donations_donor_id ON donations(donor_id);
 
 CREATE INDEX idx_children_sponsorship_status ON children(sponsorship_status);
 CREATE INDEX idx_children_gender ON children(gender);
 CREATE INDEX idx_children_location ON children(location);
 CREATE INDEX idx_children_age ON children(age);
+
+CREATE INDEX idx_donor_profiles_email ON donor_profiles(email);
+
+CREATE INDEX idx_sponsorships_donor_id ON sponsorships(donor_id);
+CREATE INDEX idx_sponsorships_child_id ON sponsorships(child_id);
+CREATE INDEX idx_sponsorships_status ON sponsorships(status);
 
 -- -------------------------------------------
 -- UPDATED_AT TRIGGER
@@ -205,6 +239,10 @@ CREATE TRIGGER set_children_updated_at
   BEFORE UPDATE ON children
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER set_sponsorships_updated_at
+  BEFORE UPDATE ON sponsorships
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 -- -------------------------------------------
 -- ROW LEVEL SECURITY
 -- -------------------------------------------
@@ -221,6 +259,8 @@ ALTER TABLE page_content ENABLE ROW LEVEL SECURITY;
 ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE donations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE children ENABLE ROW LEVEL SECURITY;
+ALTER TABLE donor_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sponsorships ENABLE ROW LEVEL SECURITY;
 
 -- Public read policies (anon + authenticated can read)
 
@@ -323,6 +363,42 @@ CREATE POLICY "Authenticated can manage donations"
 
 CREATE POLICY "Authenticated can manage children"
   ON children FOR ALL
+  USING (auth.role() = 'authenticated')
+  WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Users can view own donor profile"
+  ON donor_profiles FOR SELECT
+  USING (auth.uid() = id);
+
+CREATE POLICY "Users can insert own donor profile"
+  ON donor_profiles FOR INSERT
+  WITH CHECK (auth.uid() = id);
+
+CREATE POLICY "Users can update own donor profile"
+  ON donor_profiles FOR UPDATE
+  USING (auth.uid() = id)
+  WITH CHECK (auth.uid() = id);
+
+CREATE POLICY "Authenticated can manage donor profiles"
+  ON donor_profiles FOR ALL
+  USING (auth.role() = 'authenticated')
+  WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Users can view own sponsorships"
+  ON sponsorships FOR SELECT
+  USING (auth.uid() = donor_id);
+
+CREATE POLICY "Users can insert own sponsorships"
+  ON sponsorships FOR INSERT
+  WITH CHECK (auth.uid() = donor_id);
+
+CREATE POLICY "Users can update own sponsorships"
+  ON sponsorships FOR UPDATE
+  USING (auth.uid() = donor_id)
+  WITH CHECK (auth.uid() = donor_id);
+
+CREATE POLICY "Authenticated can manage sponsorships"
+  ON sponsorships FOR ALL
   USING (auth.role() = 'authenticated')
   WITH CHECK (auth.role() = 'authenticated');
 

@@ -21,6 +21,7 @@ const NewsArticle = lazy(() => import("@/pages/NewsArticle"));
 const BethlehemBread = lazy(() => import("@/pages/projects/BethlehemBread"));
 const SponsorAChild = lazy(() => import("@/pages/SponsorAChild"));
 const ChildProfile = lazy(() => import("@/pages/ChildProfile"));
+const DonorDashboard = lazy(() => import("@/pages/DonorDashboard"));
 const AdminDashboard = lazy(() => import("@/pages/admin/Dashboard"));
 const AdminLoginPage = lazy(() => import("@/pages/admin/AdminLoginPage"));
 
@@ -46,6 +47,7 @@ export default function App() {
       <Route path="/projects/bethlehem-bread" element={<BethlehemBread />} />
       <Route path="/sponsor-a-child" element={<SponsorAChild />} />
       <Route path="/sponsor-a-child/:id" element={<ChildProfile />} />
+      <Route path="/account" element={<DonorDashboard />} />
       <Route path="/admin/login" element={<AdminLoginPage />} />
       <Route path="/admin/*" element={<AdminDashboard />} />
     </Routes>

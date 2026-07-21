@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Shield, Award, Heart, Gift, Building2, Globe, ChevronDown } from "lucide-react";
 import PageTransition from "@/animations/PageTransition";
 import Section from "@/components/ui/Section";
 import SectionHeading from "@/components/ui/SectionHeading";
 import Button from "@/components/ui/Button";
 import { useCreateDonation } from "@/hooks/useDonations";
+import { useCreateSponsorship } from "@/hooks/useSponsorships";
+import { useUpdateChild } from "@/hooks/useChildren";
+import { useDonorAuth } from "@/context/DonorAuthContext";
 
 const USD_AMOUNTS = [10, 25, 50, 100, 250, 500];
 
@@ -36,6 +39,14 @@ function formatCurrency(amount, currency) {
 
 export default function Donate() {
   const createDonation = useCreateDonation();
+  const createSponsorship = useCreateSponsorship();
+  const updateChild = useUpdateChild();
+  const { user, profile } = useDonorAuth();
+  const [searchParams] = useSearchParams();
+
+  const sponsorshipChildId = searchParams.get("child_id");
+  const sponsorshipChildName = searchParams.get("child_name");
+  const isSponsorship = searchParams.get("purpose") === "sponsorship";
 
   const [frequency, setFrequency] = useState("one-time");
   const [selectedUSD, setSelectedUSD] = useState(50);
@@ -48,6 +59,19 @@ export default function Donate() {
   const [donorEmail, setDonorEmail] = useState("");
   const [donorLocation, setDonorLocation] = useState("");
   const [donorPhone, setDonorPhone] = useState("");
+
+  useEffect(() => {
+    if (profile) {
+      setDonorName(
+        [profile.first_name, profile.last_name].filter(Boolean).join(" ")
+      );
+      setDonorEmail(profile.email || user?.email || "");
+      setDonorLocation(profile.location || "");
+      setDonorPhone(profile.phone || "");
+    } else if (user?.email) {
+      setDonorEmail(user.email);
+    }
+  }, [profile, user]);
 
   const baseAmount = isOther ? Number(customAmount) || 0 : selectedUSD;
   const convertedAmount = Math.round(baseAmount * currency.rate);
@@ -97,6 +121,7 @@ export default function Donate() {
           await createDonation.mutateAsync({
             donor_name: donorName,
             donor_email: donorEmail,
+            donor_id: user?.id || null,
             amount: baseAmount,
             currency: currency.code,
             converted_amount: convertedAmount,
@@ -106,8 +131,22 @@ export default function Donate() {
             location: donorLocation || null,
             phone: donorPhone || null,
           });
+
+          if (isSponsorship && sponsorshipChildId && user?.id) {
+            await createSponsorship.mutateAsync({
+              donor_id: user.id,
+              child_id: sponsorshipChildId,
+              status: "active",
+              monthly_amount: frequency === "monthly" ? baseAmount : null,
+            });
+
+            await updateChild.mutateAsync({
+              id: sponsorshipChildId,
+              data: { sponsorship_status: "sponsored" },
+            });
+          }
         } catch (dbErr) {
-          console.error("Failed to save donation record:", dbErr);
+          console.error("Failed to save record:", dbErr);
         }
         setProcessing(false);
         alert(`Thank you for your donation! Reference: ${transaction.reference}`);
@@ -124,9 +163,19 @@ export default function Donate() {
     <PageTransition>
       <Section className="pt-32 pb-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {isSponsorship && sponsorshipChildName && (
+            <div className="bg-hope-orange/10 border border-hope-orange/30 rounded-xl p-4 mb-8 flex items-center gap-3">
+              <Heart className="h-5 w-5 text-hope-orange shrink-0" />
+              <p className="font-body text-sm text-deep-navy">
+                You are sponsoring <strong>{decodeURIComponent(sponsorshipChildName)}</strong>. Your
+                donation will help provide education, healthcare, and hope.
+              </p>
+            </div>
+          )}
+
           <SectionHeading
-            title="Choose your impact level"
-            subtitle="Your generosity transforms lives across Africa"
+            title={isSponsorship ? "Complete Your Sponsorship" : "Choose your impact level"}
+            subtitle={isSponsorship ? "Your generosity transforms a child's life" : "Your generosity transforms lives across Africa"}
           />
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 mt-16">
@@ -362,7 +411,11 @@ export default function Donate() {
                 onClick={handlePay}
                 disabled={processing || baseAmount <= 0}
               >
-                {processing ? "Processing..." : `Donate ${formatCurrency(convertedAmount, currency)}`}
+                {processing
+                  ? "Processing..."
+                  : isSponsorship
+                    ? `Sponsor ${formatCurrency(convertedAmount, currency)}`
+                    : `Donate ${formatCurrency(convertedAmount, currency)}`}
               </Button>
             </div>
 
