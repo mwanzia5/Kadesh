@@ -166,6 +166,27 @@ function ChildForm({ type, data, onChange, onUpload, onUploadChange, uploading, 
           onChange={(e) => onChange({ ...data, location: e.target.value })}
           className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 font-body text-sm focus:outline-none focus:ring-2 focus:ring-vibrant-blue/20 focus:border-vibrant-blue"
         />
+        <input
+          type="text"
+          placeholder="Class (grade/level)"
+          value={data.class_grade}
+          onChange={(e) => onChange({ ...data, class_grade: e.target.value })}
+          className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 font-body text-sm focus:outline-none focus:ring-2 focus:ring-vibrant-blue/20 focus:border-vibrant-blue"
+        />
+        <input
+          type="text"
+          placeholder="Parent/Guardian name"
+          value={data.parent_name}
+          onChange={(e) => onChange({ ...data, parent_name: e.target.value })}
+          className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 font-body text-sm focus:outline-none focus:ring-2 focus:ring-vibrant-blue/20 focus:border-vibrant-blue"
+        />
+        <input
+          type="text"
+          placeholder="Religion"
+          value={data.religion}
+          onChange={(e) => onChange({ ...data, religion: e.target.value })}
+          className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 font-body text-sm focus:outline-none focus:ring-2 focus:ring-vibrant-blue/20 focus:border-vibrant-blue"
+        />
         <select
           value={data.sponsorship_status}
           onChange={(e) => onChange({ ...data, sponsorship_status: e.target.value })}
@@ -288,6 +309,9 @@ export default function ChildrenManager() {
     age: "",
     gender: "male",
     location: "",
+    class_grade: "",
+    parent_name: "",
+    religion: "",
     bio: "",
     needs: "",
     sponsorship_status: "available",
@@ -349,6 +373,9 @@ export default function ChildrenManager() {
       age: child.age,
       gender: child.gender,
       location: child.location,
+      class_grade: child.class_grade || "",
+      parent_name: child.parent_name || "",
+      religion: child.religion || "",
       bio: child.bio || "",
       needs: child.needs || "",
       sponsorship_status: child.sponsorship_status,
@@ -393,6 +420,9 @@ export default function ChildrenManager() {
             age: "",
             gender: "male",
             location: "",
+            class_grade: "",
+            parent_name: "",
+            religion: "",
             bio: "",
             needs: "",
             sponsorship_status: "available",

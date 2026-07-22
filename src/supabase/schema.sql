@@ -12,7 +12,7 @@ CREATE TABLE projects (
   title TEXT NOT NULL,
   category TEXT NOT NULL,
   short_description TEXT,
-  content TEXT,
+  content JSONB DEFAULT '{}'::jsonb,
   hero_image TEXT,
   images TEXT[] DEFAULT '{}',
   is_featured BOOLEAN DEFAULT false,
@@ -137,6 +137,9 @@ CREATE TABLE children (
   photo_url TEXT,
   bio TEXT,
   needs TEXT,
+  class_grade TEXT,
+  parent_name TEXT,
+  religion TEXT,
   sponsorship_status TEXT DEFAULT 'available' CHECK (sponsorship_status IN ('available', 'sponsored', 'pending')),
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
@@ -439,3 +442,8 @@ CREATE POLICY "Authenticated can update images"
 CREATE POLICY "Authenticated can delete images"
   ON storage.objects FOR DELETE
   USING (bucket_id IN ('images', 'thumbnails', 'videos') AND auth.role() = 'authenticated');
+
+-- Migration: Convert content column from TEXT to JSONB for projects table.
+-- Run this if your production projects table still has content as TEXT.
+-- alter table projects
+--   alter column content type jsonb using coalesce(content::jsonb, '{}'::jsonb);

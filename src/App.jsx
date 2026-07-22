@@ -19,6 +19,7 @@ const Borewell = lazy(() => import("@/pages/projects/Borewell"));
 const News = lazy(() => import("@/pages/News"));
 const NewsArticle = lazy(() => import("@/pages/NewsArticle"));
 const BethlehemBread = lazy(() => import("@/pages/projects/BethlehemBread"));
+const ProjectDetail = lazy(() => import("@/pages/projects/ProjectDetail"));
 const SponsorAChild = lazy(() => import("@/pages/SponsorAChild"));
 const ChildProfile = lazy(() => import("@/pages/ChildProfile"));
 const DonorDashboard = lazy(() => import("@/pages/DonorDashboard"));
@@ -45,6 +46,7 @@ export default function App() {
       <Route path="/news" element={<News />} />
       <Route path="/news/:id" element={<NewsArticle />} />
       <Route path="/projects/bethlehem-bread" element={<BethlehemBread />} />
+      <Route path="/projects/:slug" element={<ProjectDetail />} />
       <Route path="/sponsor-a-child" element={<SponsorAChild />} />
       <Route path="/sponsor-a-child/:id" element={<ChildProfile />} />
       <Route path="/account" element={<DonorDashboard />} />
