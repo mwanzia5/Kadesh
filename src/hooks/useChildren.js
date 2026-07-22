@@ -48,7 +48,7 @@ export function useUpdateChild() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: updateChild,
+    mutationFn: ({ id, data }) => updateChild(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["children"] });
     },
