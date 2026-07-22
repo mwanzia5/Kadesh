@@ -42,43 +42,34 @@ export async function getAvailableChildren() {
 }
 
 export async function createChild(childData) {
-  try {
-    const { data, error } = await supabase
-      .from("children")
-      .insert(childData)
-      .select()
-      .single();
+  const { data, error } = await supabase
+    .from("children")
+    .insert(childData)
+    .select()
+    .single();
 
-    return { data, error };
-  } catch (err) {
-    return { data: null, error: err };
-  }
+  if (error) throw error;
+  return data;
 }
 
 export async function updateChild(id, childData) {
-  try {
-    const { data, error } = await supabase
-      .from("children")
-      .update(childData)
-      .eq("id", id)
-      .select()
-      .single();
+  const { data, error } = await supabase
+    .from("children")
+    .update(childData)
+    .eq("id", id)
+    .select()
+    .single();
 
-    return { data, error };
-  } catch (err) {
-    return { data: null, error: err };
-  }
+  if (error) throw error;
+  return data;
 }
 
 export async function deleteChild(id) {
-  try {
-    const { data, error } = await supabase
-      .from("children")
-      .delete()
-      .eq("id", id);
+  const { data, error } = await supabase
+    .from("children")
+    .delete()
+    .eq("id", id);
 
-    return { data, error };
-  } catch (err) {
-    return { data: null, error: err };
-  }
+  if (error) throw error;
+  return data;
 }

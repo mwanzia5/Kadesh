@@ -421,27 +421,28 @@ INSERT INTO storage.buckets (id, name, public)
 VALUES
   ('images', 'images', true),
   ('thumbnails', 'thumbnails', true),
-  ('videos', 'videos', true);
+  ('videos', 'videos', true),
+  ('sponsorship', 'sponsorship', true);
 
 -- Public read access for storage objects
 
 CREATE POLICY "Public can view images"
   ON storage.objects FOR SELECT
-  USING (bucket_id IN ('images', 'thumbnails', 'videos'));
+  USING (bucket_id IN ('images', 'thumbnails', 'videos', 'sponsorship'));
 
 -- Authenticated upload/update/delete
 
 CREATE POLICY "Authenticated can upload images"
   ON storage.objects FOR INSERT
-  WITH CHECK (bucket_id IN ('images', 'thumbnails', 'videos') AND auth.role() = 'authenticated');
+  WITH CHECK (bucket_id IN ('images', 'thumbnails', 'videos', 'sponsorship') AND auth.role() = 'authenticated');
 
 CREATE POLICY "Authenticated can update images"
   ON storage.objects FOR UPDATE
-  USING (bucket_id IN ('images', 'thumbnails', 'videos') AND auth.role() = 'authenticated');
+  USING (bucket_id IN ('images', 'thumbnails', 'videos', 'sponsorship') AND auth.role() = 'authenticated');
 
 CREATE POLICY "Authenticated can delete images"
   ON storage.objects FOR DELETE
-  USING (bucket_id IN ('images', 'thumbnails', 'videos') AND auth.role() = 'authenticated');
+  USING (bucket_id IN ('images', 'thumbnails', 'videos', 'sponsorship') AND auth.role() = 'authenticated');
 
 -- Migration: Convert content column from TEXT to JSONB for projects table.
 -- Run this if your production projects table still has content as TEXT.
