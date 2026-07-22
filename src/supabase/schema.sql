@@ -138,6 +138,7 @@ CREATE TABLE children (
   bio TEXT,
   needs TEXT,
   class_grade TEXT,
+  school_name TEXT,
   parent_name TEXT,
   religion TEXT,
   sponsorship_status TEXT DEFAULT 'available' CHECK (sponsorship_status IN ('available', 'sponsored', 'pending')),

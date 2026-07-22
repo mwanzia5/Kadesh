@@ -175,6 +175,13 @@ function ChildForm({ type, data, onChange, onUpload, onUploadChange, uploading, 
         />
         <input
           type="text"
+          placeholder="School name"
+          value={data.school_name}
+          onChange={(e) => onChange({ ...data, school_name: e.target.value })}
+          className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 font-body text-sm focus:outline-none focus:ring-2 focus:ring-vibrant-blue/20 focus:border-vibrant-blue"
+        />
+        <input
+          type="text"
           placeholder="Parent/Guardian name"
           value={data.parent_name}
           onChange={(e) => onChange({ ...data, parent_name: e.target.value })}
@@ -310,6 +317,7 @@ export default function ChildrenManager() {
     gender: "male",
     location: "",
     class_grade: "",
+    school_name: "",
     parent_name: "",
     religion: "",
     bio: "",
@@ -374,6 +382,7 @@ export default function ChildrenManager() {
       gender: child.gender,
       location: child.location,
       class_grade: child.class_grade || "",
+      school_name: child.school_name || "",
       parent_name: child.parent_name || "",
       religion: child.religion || "",
       bio: child.bio || "",
