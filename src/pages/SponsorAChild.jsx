@@ -75,9 +75,6 @@ export default function SponsorAChild() {
     });
   }, [children, statusFilter, genderFilter, ageMin, ageMax, searchQuery]);
 
-  const highlight =
-    statusFilter === "All" ? null : statusFilter;
-
   return (
     <PageTransition>
       {/* Hero */}
@@ -233,10 +230,7 @@ export default function SponsorAChild() {
               {filteredChildren.map((child) => (
                 <motion.div key={child.id} variants={slideUp}>
                   <GlareHover className="h-full">
-                    <Link
-                      to={`/sponsor-a-child/${child.id}`}
-                      className="group flex flex-col h-full rounded-xl overflow-hidden bg-white border border-soft-accent/50 shadow-card hover:shadow-card-hover transition-shadow duration-300"
-                    >
+                    <div className="group flex flex-col h-full rounded-xl overflow-hidden bg-white border border-soft-accent/50 shadow-card hover:shadow-card-hover transition-shadow duration-300">
                       <div className="relative overflow-hidden aspect-[3/4]">
                         {child.photo_url ? (
                           <OptimizedImage
@@ -270,17 +264,25 @@ export default function SponsorAChild() {
                             {child.location}
                           </span>
                         </div>
-                        {child.bio && (
-                          <p className="font-body text-body-sm text-on-surface-variant line-clamp-2 mb-3">
-                            {child.bio}
-                          </p>
-                        )}
-                        <span className="mt-auto inline-flex items-center gap-1.5 font-body text-label-bold text-vibrant-blue">
-                          View Profile
-                          <Heart className="h-4 w-4" />
-                        </span>
+                        <div className="min-h-[2.5rem] mb-3">
+                          {child.bio ? (
+                            <p className="font-body text-body-sm text-on-surface-variant line-clamp-2">
+                              {child.bio}
+                            </p>
+                          ) : (
+                            <p className="font-body text-body-sm text-on-surface-variant/40 italic">
+                              No description yet
+                            </p>
+                          )}
+                        </div>
+                        <Link to={`/sponsor-a-child/${child.id}`} className="mt-auto">
+                          <Button variant="lightblue" size="sm" className="w-full">
+                            Sponsor {child.first_name}
+                            <Heart className="ml-2 h-4 w-4" />
+                          </Button>
+                        </Link>
                       </div>
-                    </Link>
+                    </div>
                   </GlareHover>
                 </motion.div>
               ))}
@@ -288,33 +290,6 @@ export default function SponsorAChild() {
           )}
         </Container>
       </Section>
-
-      {/* CTA */}
-      <section className="relative py-20 lg:py-28 overflow-hidden bg-deep-navy">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-40 -left-40 w-80 h-80 rounded-full bg-vibrant-blue/10 blur-3xl" />
-          <div className="absolute -bottom-40 -right-40 w-96 h-96 rounded-full bg-hope-orange/10 blur-3xl" />
-        </div>
-
-        <Container className="relative z-10">
-          <ScrollReveal>
-            <div className="text-center max-w-3xl mx-auto">
-              <h2 className="font-display text-3xl md:text-5xl lg:text-display-lg-mobile text-white mb-6">
-                Every Child Deserves a Chance
-              </h2>
-              <p className="font-body text-body-lg text-white/70 mb-10 leading-relaxed">
-                Your sponsorship provides education, healthcare, nutrition, and
-                a future filled with hope. Choose a child today and transform a
-                life forever.
-              </p>
-              <Button variant="lightblue" size="lg" as={Link} to="/donate">
-                Donate Now
-                <Heart className="ml-2 h-5 w-5" />
-              </Button>
-            </div>
-          </ScrollReveal>
-        </Container>
-      </section>
     </PageTransition>
   );
 }
