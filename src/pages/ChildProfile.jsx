@@ -103,7 +103,7 @@ export default function ChildProfile() {
             <ScrollReveal direction="left" className="lg:col-span-5">
               <div className="lg:sticky lg:top-8">
                 <div className="bg-white rounded-2xl overflow-hidden shadow-card border border-soft-accent/50">
-                  <div className="aspect-[3/4] overflow-hidden">
+                  <div className="aspect-square overflow-hidden">
                     {child.photo_url ? (
                       <OptimizedImage
                         src={child.photo_url}
@@ -141,7 +141,7 @@ export default function ChildProfile() {
 
                     {child.sponsorship_status === "available" ? (
                       <Button
-                        variant="orange"
+                        variant="lightblue"
                         size="lg"
                         as={Link}
                         to={sponsorLink}
