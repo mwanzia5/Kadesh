@@ -347,10 +347,10 @@ export default function ChildrenManager() {
       const ext = file.name.split(".").pop();
       const path = `children/${Date.now()}.${ext}`;
 
-      const { error: uploadErr } = await uploadImage(file, "images", path);
+      const { error: uploadErr } = await uploadImage(file, "sponsorship", path);
       if (uploadErr) throw uploadErr;
 
-      const publicUrl = getPublicUrl("images", path);
+      const publicUrl = getPublicUrl("sponsorship", path);
 
       if (isNew) {
         setNewChild((p) => ({ ...p, photo_url: publicUrl }));
