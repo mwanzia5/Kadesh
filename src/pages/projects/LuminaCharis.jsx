@@ -50,7 +50,7 @@ const relatedProjects = [
 ];
 
 const galleryImages = [
-  { src: "/images/Lumina School/Lumina School_01.jpeg", alt: "Lumina Charis School" },
+  { src: "/Eldoret/IMG-20250624-WA0027.jpg", alt: "Eldoret school visit" },
   { src: "/images/Lumina School/Lumina School_02.jpeg", alt: "Modern classrooms" },
   { src: "/images/Lumina School/Lumina School_03.jpeg", alt: "Student activities" },
   { src: "/images/Lumina School/Lumina School_04.jpeg", alt: "Computer lab" },
@@ -225,25 +225,19 @@ function GallerySection() {
           subtitle="A glimpse into Lumina Charis School"
         />
 
-        <div className="mt-16 columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">
+        <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 auto-rows-[180px] sm:auto-rows-[160px] lg:auto-rows-[180px] gap-4">
           {galleryImages.map((image, index) => (
             <ScrollReveal
               key={index}
               delay={index * 0.06}
-              className="break-inside-avoid"
+              className={`h-full ${index === 0 ? "sm:col-span-2 sm:row-span-2" : ""}`}
             >
-              <GlareHover glareColor="#2563EB" className="rounded-xl overflow-hidden group">
-                <div className="relative overflow-hidden rounded-xl">
+              <GlareHover glareColor="#2563EB" className="h-full rounded-xl overflow-hidden group">
+                <div className="relative h-full w-full overflow-hidden rounded-xl">
                   <OptimizedImage
                     src={image.src}
                     alt={image.alt}
-                    className={`w-full object-cover transition-transform duration-500 group-hover:scale-110 ${
-                      index % 3 === 0
-                        ? "aspect-[4/5]"
-                        : index % 3 === 1
-                          ? "aspect-[3/2]"
-                          : "aspect-square"
-                    }`}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />
                 </div>
               </GlareHover>

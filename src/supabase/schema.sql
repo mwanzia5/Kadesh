@@ -248,6 +248,34 @@ CREATE TRIGGER set_sponsorships_updated_at
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- -------------------------------------------
+-- AUTO-CREATE DONOR PROFILE ON SIGNUP (TRIGGER)
+-- -------------------------------------------
+
+CREATE OR REPLACE FUNCTION handle_new_user()
+RETURNS TRIGGER
+SECURITY DEFINER
+SET search_path = ''
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  INSERT INTO public.donor_profiles (id, first_name, last_name, email, phone, location)
+  VALUES (
+    NEW.id,
+    NEW.raw_user_meta_data ->> 'first_name',
+    NEW.raw_user_meta_data ->> 'last_name',
+    NEW.email,
+    NEW.raw_user_meta_data ->> 'phone',
+    NEW.raw_user_meta_data ->> 'location'
+  );
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION handle_new_user();
+
+-- -------------------------------------------
 -- ROW LEVEL SECURITY
 -- -------------------------------------------
 

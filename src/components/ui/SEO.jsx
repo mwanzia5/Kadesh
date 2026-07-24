@@ -14,7 +14,7 @@ export default function SEO({
     : `${SITE_CONFIG.name} | ${SITE_CONFIG.tagline}`;
 
   const metaDescription = description || SITE_CONFIG.description;
-  const metaImage = image || "/images/kadesh-logo.png";
+  const metaImage = image || "/images/newlogo.png";
   const metaUrl = url || SITE_CONFIG.url;
 
   return (

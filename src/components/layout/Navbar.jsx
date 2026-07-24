@@ -62,7 +62,7 @@ export default function Navbar() {
       >
         <div className="mx-auto flex items-center justify-between h-20 px-5 md:px-16 max-w-[1280px]">
          <Link to="/" className="flex-shrink-0">
-  <img src="/images/kadesh-logo.png" alt="Kadesh Hope Mission" className="h-16" />
+  <img src="/images/newlogo.png" alt="Kadesh Hope Mission" className="h-24" />
 </Link>
 
           {/* Desktop links */}

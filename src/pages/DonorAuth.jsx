@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Heart, Mail, Lock, User, Phone, MapPin, Loader2, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { Heart, Mail, Lock, User, Phone, MapPin, Loader2, AlertCircle, Eye, EyeOff, KeyRound, Copy, Check } from "lucide-react";
 import { motion } from "framer-motion";
 
 import PageTransition from "@/animations/PageTransition";
@@ -15,6 +15,7 @@ export default function DonorAuth() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [copied, setCopied] = useState(false);
   const navigate = useNavigate();
   const { signIn, signUp } = useDonorAuth();
 
@@ -57,6 +58,49 @@ export default function DonorAuth() {
       setLoading(false);
     }
   };
+
+  const generatePassword = () => {
+    const length = 16;
+    const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const lower = "abcdefghijklmnopqrstuvwxyz";
+    const digits = "0123456789";
+    const symbols = "!@#$%^&*()_+-=[]{}|;:,.<>?";
+
+    const pool = upper + lower + digits + symbols;
+    const get = (s) => s[Math.floor(Math.random() * s.length)];
+
+    let pwd = get(upper) + get(lower) + get(digits) + get(symbols);
+    while (pwd.length < length) pwd += get(pool);
+
+    pwd = pwd.split("").sort(() => Math.random() - 0.5).join("");
+
+    setForm((prev) => ({ ...prev, password: pwd }));
+    setShowPassword(true);
+    setCopied(false);
+  };
+
+  const copyPassword = async () => {
+    if (!form.password) return;
+    await navigator.clipboard.writeText(form.password);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const strength = (() => {
+    const p = form.password;
+    if (!p) return 0;
+    let s = 0;
+    if (p.length >= 12) s++;
+    if (p.length >= 16) s++;
+    if (/[A-Z]/.test(p)) s++;
+    if (/[a-z]/.test(p)) s++;
+    if (/[0-9]/.test(p)) s++;
+    if (/[^A-Za-z0-9]/.test(p)) s++;
+    return Math.min(4, Math.floor(s / 1.5));
+  })();
+
+  const strengthLabel = ["Weak", "Fair", "Good", "Strong", "Very Strong"];
+  const strengthColor = ["bg-red-500", "bg-orange-500", "bg-yellow-500", "bg-green-400", "bg-green-600"];
 
   return (
     <PageTransition>
@@ -153,16 +197,58 @@ export default function DonorAuth() {
                     minLength={6}
                     value={form.password}
                     onChange={handleChange}
-                    className="w-full pl-10 pr-12 py-3 rounded-lg border border-soft-accent focus:ring-2 focus:ring-vibrant-blue focus:outline-none font-body text-on-background"
+                    className="w-full pl-10 pr-28 py-3 rounded-lg border border-soft-accent focus:ring-2 focus:ring-vibrant-blue focus:outline-none font-body text-on-background"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-deep-navy transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
+                  <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+                    {mode === "signup" && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={generatePassword}
+                          className="p-1.5 rounded-md text-on-surface-variant hover:text-vibrant-blue hover:bg-vibrant-blue/10 transition-colors"
+                          title="Generate secure password"
+                        >
+                          <KeyRound className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={copyPassword}
+                          className="p-1.5 rounded-md text-on-surface-variant hover:text-vibrant-blue hover:bg-vibrant-blue/10 transition-colors"
+                          title="Copy password"
+                        >
+                          {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                        </button>
+                      </>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="p-1.5 rounded-md text-on-surface-variant hover:text-deep-navy hover:bg-gray-100 transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
+
+                {mode === "signup" && form.password && (
+                  <div className="-mt-3">
+                    <div className="flex gap-1 mb-1">
+                      {[0, 1, 2, 3].map((i) => (
+                        <div
+                          key={i}
+                          className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
+                            i < strength ? strengthColor[strength - 1] : "bg-gray-200"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <p className="font-body text-xs text-on-surface-variant">
+                      {strengthLabel[strength - 1] || ""}
+                      {strength >= 2 && form.password.length < 12 && " — consider using a longer password"}
+                      {strength >= 3 && " — great password!"}
+                    </p>
+                  </div>
+                )}
 
                 {mode === "signup" && (
                   <>

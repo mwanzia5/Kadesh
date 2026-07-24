@@ -272,7 +272,7 @@ function StorySection() {
               <div className="relative">
                 <div className="rounded-2xl overflow-hidden shadow-card">
                   <OptimizedImage
-                    src="/images/kadesh images_03.jpg"
+                    src="/Egypt/IMG-20250628-WA0072.jpg"
                     alt="Kadesh Hope Mission story"
                     className="w-full aspect-[4/3] object-cover"
                   />

@@ -50,10 +50,10 @@ const relatedProjects = [
 ];
 
 const galleryImages = [
-  { src: "/images/others/south-africa-cape-town-langa-boys-balancing-on-seesaw.webp", alt: "Community development project" },
-  { src: "/images/kadesh images_02.jpg", alt: "Infrastructure improvement" },
-  { src: "/images/kadesh images_03.png", alt: "Community gathering" },
-  { src: "/images/kadesh images_04.jpg", alt: "Local leadership" },
+  { src: "/Uganda/Picture4.png", alt: "Community in Uganda" },
+  { src: "/Eldoret/Village Ministry.jpg", alt: "Village ministry outreach" },
+  { src: "/Uganda/Picture6.jpg", alt: "Community in Uganda" },
+  { src: "/Egypt/IMG-20250628-WA0071.jpg", alt: "Egypt community work" },
 ];
 
 const keyFacts = [
@@ -216,18 +216,19 @@ function GallerySection() {
           subtitle="Moments from our Community Projects"
         />
 
-        <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 auto-rows-[200px] sm:auto-rows-[180px] lg:auto-rows-[200px] gap-4">
           {galleryImages.map((image, index) => (
             <ScrollReveal
               key={index}
               delay={index * 0.1}
+              className={`h-full ${index === 0 ? "sm:col-span-2 sm:row-span-2" : ""}`}
             >
               <GlareHover glareColor="#2563EB" className="h-full rounded-xl overflow-hidden group">
-                <div className="relative overflow-hidden rounded-xl h-full">
+                <div className="relative h-full w-full overflow-hidden rounded-xl">
                   <OptimizedImage
                     src={image.src}
                     alt={image.alt}
-                    className="w-full aspect-[4/3] object-cover transition-transform duration-500 group-hover:scale-110"
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />
                 </div>
               </GlareHover>

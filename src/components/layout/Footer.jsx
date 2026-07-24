@@ -32,9 +32,9 @@ export default function Footer() {
           {/* Brand */}
           <div>
             <img
-              src="/images/kadesh-logo.png"
+              src="/images/newlogo.png"
               alt="Kadesh Hope Mission"
-              className="h-11 mb-5 brightness-0 invert"
+              className="h-16 mb-5 brightness-0 invert"
             />
             <p className="text-body-md text-white/70 mb-6 max-w-xs">
               {SITE_CONFIG.description}

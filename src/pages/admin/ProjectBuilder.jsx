@@ -17,6 +17,7 @@ import {
   TrendingUp,
   Heart as HeartIcon,
   FileText,
+  AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PROJECT_ICONS, ICON_OPTIONS } from "@/lib/projectIcons";
@@ -76,7 +77,7 @@ const STEPS = [
 const inputClass =
   "w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 font-body text-sm focus:outline-none focus:ring-2 focus:ring-vibrant-blue/20 focus:border-vibrant-blue";
 
-export default function ProjectBuilder({ project, onSave, onCancel, isSaving }) {
+export default function ProjectBuilder({ project, onSave, onCancel, isSaving, saveError }) {
   const [step, setStep] = useState(0);
   const [showPreview, setShowPreview] = useState(false);
   const [tagInput, setTagInput] = useState("");
@@ -192,6 +193,13 @@ export default function ProjectBuilder({ project, onSave, onCancel, isSaving }) 
           </button>
         </div>
       </div>
+
+      {saveError && (
+        <div className="flex items-center gap-2 px-6 py-3 bg-red-50 border-b border-red-200 text-red-700 font-body text-sm">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          {saveError}
+        </div>
+      )}
 
       {/* Stepper */}
       <div className="flex items-center gap-1 px-4 sm:px-6 py-3 overflow-x-auto border-b border-gray-100 bg-gray-50">

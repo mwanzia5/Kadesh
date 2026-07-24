@@ -97,7 +97,7 @@ export default function MobileMenu({ isOpen, onClose }) {
             className="fixed top-0 right-0 bottom-0 z-[70] w-full max-w-sm bg-white shadow-2xl flex flex-col"
           >
             <div className="flex items-center justify-between h-20 px-5 border-b border-soft-accent">
-              <img src="/images/kadesh-logo.png" alt="Kadesh Hope Mission" className="h-9" />
+              <img src="/images/newlogo.png" alt="Kadesh Hope Mission" className="h-14" />
               <button
                 ref={closeRef}
                 onClick={onClose}

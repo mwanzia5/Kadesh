@@ -50,7 +50,7 @@ const relatedProjects = [
 ];
 
 const galleryImages = [
-  { src: "/images/healthcare/healthcare_1.jpg", alt: "Home Care - Health screening" },
+  { src: "/Egypt/IMG-20250205-WA0007.jpg", alt: "Egypt health outreach" },
   { src: "/images/healthcare/healthcare_2.jpg", alt: "Medical services" },
   { src: "/images/healthcare/healthcare_3.jpg", alt: "Community health education" },
   { src: "/images/healthcare/healthcare_4.jpg", alt: "Health worker visit" },
@@ -219,19 +219,19 @@ function GallerySection() {
           subtitle="Moments from our Home Care program"
         />
 
-        <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 auto-rows-[180px] sm:auto-rows-[160px] lg:auto-rows-[180px] gap-4">
           {galleryImages.map((image, index) => (
             <ScrollReveal
               key={index}
               delay={index * 0.1}
-              className={index === 0 ? "sm:col-span-2" : ""}
+              className={`h-full ${index === 0 ? "sm:col-span-2 sm:row-span-2" : ""}`}
             >
               <GlareHover glareColor="#F37021" className="h-full rounded-xl overflow-hidden group">
-                <div className="relative overflow-hidden rounded-xl h-full">
+                <div className="relative h-full w-full overflow-hidden rounded-xl">
                   <OptimizedImage
                     src={image.src}
                     alt={image.alt}
-                    className="w-full aspect-[4/3] object-cover transition-transform duration-500 group-hover:scale-110"
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />
                 </div>
               </GlareHover>

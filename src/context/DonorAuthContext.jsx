@@ -43,28 +43,24 @@ export function DonorAuthProvider({ children }) {
   }, [fetchProfile]);
 
   const signUp = async ({ email, password, firstName, lastName, phone, location }) => {
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          first_name: firstName,
+          last_name: lastName,
+          phone,
+          location,
+        },
+      },
+    });
     if (error) throw error;
 
-    if (data.user) {
-      const { error: profileError } = await supabase.from("donor_profiles").insert({
-        id: data.user.id,
-        first_name: firstName,
-        last_name: lastName,
-        phone,
-        location,
-        email,
-      });
-      if (profileError) throw profileError;
-      setProfile({
-        id: data.user.id,
-        first_name: firstName,
-        last_name: lastName,
-        phone,
-        location,
-        email,
-      });
+    if (data.session) {
+      await fetchProfile(data.user.id);
     }
+
     return data;
   };
 

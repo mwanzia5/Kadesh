@@ -84,7 +84,6 @@ export default function DomeGallery({
   dragSensitivity = DEFAULTS.dragSensitivity,
   enlargeTransitionMs = DEFAULTS.enlargeTransitionMs,
   segments = DEFAULTS.segments,
-  dragDampening = 2,
   openedImageWidth = '400px',
   openedImageHeight = '400px',
   imageBorderRadius = '30px',
@@ -109,7 +108,8 @@ export default function DomeGallery({
   const draggingRef = useRef(false);
   const cancelTapRef = useRef(false);
   const movedRef = useRef(false);
-  const inertiaRAF = useRef(null);
+  const velocityRef = useRef({ x: 0, y: 0 });
+  const animationRAF = useRef(null);
   const pointerTypeRef = useRef('mouse');
   const tapTargetRef = useRef(null);
   const openingRef = useRef(false);
@@ -224,51 +224,71 @@ export default function DomeGallery({
     applyTransform(rotationRef.current.x, rotationRef.current.y);
   }, []);
 
-  const stopInertia = useCallback(() => {
-    if (inertiaRAF.current) {
-      cancelAnimationFrame(inertiaRAF.current);
-      inertiaRAF.current = null;
+  const stopAnimation = useCallback(() => {
+    if (animationRAF.current) {
+      cancelAnimationFrame(animationRAF.current);
+      animationRAF.current = null;
     }
   }, []);
 
-  const startInertia = useCallback(
-    (vx, vy) => {
-      const MAX_V = 1.4;
-      let vX = clamp(vx, -MAX_V, MAX_V) * 80;
-      let vY = clamp(vy, -MAX_V, MAX_V) * 80;
-      let frames = 0;
-      const d = clamp(dragDampening ?? 0.6, 0, 1);
-      const frictionMul = 0.94 + 0.055 * d;
-      const stopThreshold = 0.015 - 0.01 * d;
-      const maxFrames = Math.round(90 + 270 * d);
-      const step = () => {
-        vX *= frictionMul;
-        vY *= frictionMul;
-        if (Math.abs(vX) < stopThreshold && Math.abs(vY) < stopThreshold) {
-          inertiaRAF.current = null;
-          return;
-        }
-        if (++frames > maxFrames) {
-          inertiaRAF.current = null;
-          return;
-        }
-        const nextX = clamp(rotationRef.current.x - vY / 200, -maxVerticalRotationDeg, maxVerticalRotationDeg);
-        const nextY = wrapAngleSigned(rotationRef.current.y + vX / 200);
+  const runAnimation = useCallback(() => {
+    if (animationRAF.current) return;
+    let lastTime = null;
+    const step = (timestamp) => {
+      if (lastTime === null) {
+        lastTime = timestamp;
+        animationRAF.current = requestAnimationFrame(step);
+        return;
+      }
+      const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
+      lastTime = timestamp;
+
+      if (rootRef.current?.getAttribute('data-enlarging') === 'true') {
+        animationRAF.current = requestAnimationFrame(step);
+        return;
+      }
+      if (draggingRef.current) {
+        animationRAF.current = requestAnimationFrame(step);
+        return;
+      }
+
+      const vel = velocityRef.current;
+      const targetSpeedY = autoRotate ? autoRotateSpeed * 60 : 0;
+      const blendRate = 12;
+      vel.y += (targetSpeedY - vel.y) * (1 - Math.exp(-blendRate * dt));
+
+      vel.x = clamp(vel.x, -120, 120);
+      vel.y = clamp(vel.y, -120, 120);
+      vel.x *= 0.98;
+      if (Math.abs(vel.x) < 0.02) vel.x = 0;
+      if (Math.abs(vel.y - targetSpeedY) < 0.05) vel.y = targetSpeedY;
+
+      if (!autoRotate && Math.abs(vel.x) < 0.001 && Math.abs(vel.y) < 0.001) {
+        animationRAF.current = null;
+        return;
+      }
+
+      const nextX = clamp(
+        rotationRef.current.x - vel.x * dt / 200,
+        -maxVerticalRotationDeg,
+        maxVerticalRotationDeg
+      );
+      const nextY = wrapAngleSigned(rotationRef.current.y + vel.y * dt / 200);
+
+      if (rotationRef.current.x !== nextX || rotationRef.current.y !== nextY) {
         rotationRef.current = { x: nextX, y: nextY };
         applyTransform(nextX, nextY);
-        inertiaRAF.current = requestAnimationFrame(step);
-      };
-      stopInertia();
-      inertiaRAF.current = requestAnimationFrame(step);
-    },
-    [dragDampening, maxVerticalRotationDeg, stopInertia]
-  );
+      }
+
+      animationRAF.current = requestAnimationFrame(step);
+    };
+    animationRAF.current = requestAnimationFrame(step);
+  }, [autoRotate, autoRotateSpeed, maxVerticalRotationDeg]);
 
   useGesture(
     {
       onDragStart: ({ event }) => {
         if (focusedElRef.current) return;
-        stopInertia();
         pointerTypeRef.current = event.pointerType || 'mouse';
         if (pointerTypeRef.current === 'touch') event.preventDefault();
         if (pointerTypeRef.current === 'touch') lockScroll();
@@ -277,6 +297,7 @@ export default function DomeGallery({
         movedRef.current = false;
         startRotRef.current = { ...rotationRef.current };
         startPosRef.current = { x: event.clientX, y: event.clientY };
+        velocityRef.current = { x: 0, y: 0 };
         const potential = event.target.closest?.('.item__image');
         tapTargetRef.current = potential || null;
       },
@@ -322,7 +343,10 @@ export default function DomeGallery({
             vy = (my / dragSensitivity) * 0.02;
           }
           if (!isTap && (Math.abs(vx) > 0.005 || Math.abs(vy) > 0.005)) {
-            startInertia(vx, vy);
+            const scaledVX = clamp(vx, -1.4, 1.4) * 80;
+            const scaledVY = clamp(vy, -1.4, 1.4) * 80;
+            velocityRef.current = { x: scaledVX, y: scaledVY };
+            runAnimation();
           }
           startPosRef.current = null;
           cancelTapRef.current = !isTap;
@@ -582,37 +606,13 @@ export default function DomeGallery({
   }, []);
 
   useEffect(() => {
-    if (!autoRotate) return;
-    let rafId = null;
-    let lastTime = null;
-    const animate = (timestamp) => {
-      if (rootRef.current?.getAttribute('data-enlarging') === 'true') {
-        lastTime = null;
-        rafId = requestAnimationFrame(animate);
-        return;
-      }
-      if (draggingRef.current) {
-        lastTime = null;
-        rafId = requestAnimationFrame(animate);
-        return;
-      }
-      if (lastTime === null) {
-        lastTime = timestamp;
-        rafId = requestAnimationFrame(animate);
-        return;
-      }
-      const delta = (timestamp - lastTime) / 1000;
-      lastTime = timestamp;
-      const nextY = wrapAngleSigned(rotationRef.current.y + autoRotateSpeed * delta * 60);
-      rotationRef.current = { ...rotationRef.current, y: nextY };
-      applyTransform(rotationRef.current.x, nextY);
-      rafId = requestAnimationFrame(animate);
-    };
-    rafId = requestAnimationFrame(animate);
-    return () => {
-      if (rafId) cancelAnimationFrame(rafId);
-    };
-  }, [autoRotate, autoRotateSpeed]);
+    if (!autoRotate) {
+      velocityRef.current = { x: velocityRef.current.x, y: 0 };
+      return;
+    }
+    runAnimation();
+    return stopAnimation;
+  }, [autoRotate, runAnimation, stopAnimation]);
 
   const cssStyles = `
     .sphere-root {

@@ -50,7 +50,7 @@ const relatedProjects = [
 ];
 
 const galleryImages = [
-  { src: "/images/borewell project/borewell project_1.jpg", alt: "Borewell installation" },
+  { src: "/Eldoret/IMG-20250624-WA0026.jpg", alt: "Eldoret outreach" },
   { src: "/images/borewell project/borewell project_2.jpg", alt: "Clean water access" },
   { src: "/images/borewell project/borewell project_3.jpg", alt: "Community water point" },
   { src: "/images/borewell project/borewell project_4.jpg", alt: "Water purification system" },
@@ -220,21 +220,19 @@ function GallerySection() {
           subtitle="Moments from our Borewell Project"
         />
 
-        <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 auto-rows-[180px] sm:auto-rows-[160px] lg:auto-rows-[180px] gap-4">
           {galleryImages.map((image, index) => (
             <ScrollReveal
               key={index}
               delay={index * 0.1}
-              className={index === 0 ? "sm:col-span-2" : ""}
+              className={`h-full ${index === 0 ? "sm:col-span-2 sm:row-span-2" : ""}`}
             >
               <GlareHover glareColor="#2563EB" className="h-full rounded-xl overflow-hidden group">
-                <div className="relative overflow-hidden rounded-xl h-full">
+                <div className="relative h-full w-full overflow-hidden rounded-xl">
                   <OptimizedImage
                     src={image.src}
                     alt={image.alt}
-                    className={`w-full object-cover transition-transform duration-500 group-hover:scale-110 ${
-                      index === 0 ? "aspect-[16/9]" : "aspect-[4/3]"
-                    }`}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />
                 </div>
               </GlareHover>

@@ -172,21 +172,19 @@ export function ProjectGallery({ gallery = [] }) {
       <Container>
         <SectionHeading title="Project Gallery" subtitle="Moments captured from this project" />
 
-        <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 auto-rows-[180px] sm:auto-rows-[160px] lg:auto-rows-[180px] gap-4">
           {images.map((image, index) => (
             <ScrollReveal
               key={index}
               delay={index * 0.08}
-              className={index === 0 ? "sm:col-span-2 sm:row-span-2" : ""}
+              className={`h-full ${index === 0 ? "sm:col-span-2 sm:row-span-2" : ""}`}
             >
               <GlareHover glareColor="#2563EB" className="h-full rounded-xl overflow-hidden group">
-                <div className="relative overflow-hidden rounded-xl h-full">
+                <div className="relative h-full w-full overflow-hidden rounded-xl">
                   <OptimizedImage
                     src={image.src}
                     alt={image.alt || "Project image"}
-                    className={`w-full object-cover transition-transform duration-500 group-hover:scale-110 ${
-                      index === 0 ? "aspect-square" : "aspect-[4/3]"
-                    }`}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />
                 </div>
               </GlareHover>

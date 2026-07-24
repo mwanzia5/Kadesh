@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Edit3, Trash2, Star, Loader2, Sparkles } from "lucide-react";
+import { Search, Edit3, Trash2, Star, Loader2, Sparkles, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   useProjects,
@@ -30,6 +30,7 @@ export default function ProjectsManager() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [builderTarget, setBuilderTarget] = useState(null);
   const [showBuilder, setShowBuilder] = useState(false);
+  const [saveError, setSaveError] = useState(null);
 
   const filteredProjects = projects.filter((p) => {
     const matchesCategory = categoryFilter === "All" || p.category === categoryFilter;
@@ -47,24 +48,33 @@ export default function ProjectsManager() {
 
   const openNewProject = () => {
     setBuilderTarget(null);
+    setSaveError(null);
     setShowBuilder(true);
   };
 
   const openEditProject = (project) => {
     setBuilderTarget(project);
+    setSaveError(null);
     setShowBuilder(true);
   };
 
   const handleSave = (formData) => {
+    setSaveError(null);
     if (builderTarget) {
       updateProject.mutate(
         { id: builderTarget.id, data: formData },
-        { onSuccess: () => setShowBuilder(false) }
+        {
+          onSuccess: () => setShowBuilder(false),
+          onError: (err) => setSaveError(err.message || "Failed to update project"),
+        }
       );
     } else {
       createProject.mutate(
         { ...formData, sort_order: projects.length },
-        { onSuccess: () => setShowBuilder(false) }
+        {
+          onSuccess: () => setShowBuilder(false),
+          onError: (err) => setSaveError(err.message || "Failed to create project"),
+        }
       );
     }
   };
@@ -203,8 +213,9 @@ export default function ProjectsManager() {
           <ProjectBuilder
             project={builderTarget}
             onSave={handleSave}
-            onCancel={() => setShowBuilder(false)}
+            onCancel={() => { setShowBuilder(false); setSaveError(null); }}
             isSaving={createProject.isPending || updateProject.isPending}
+            saveError={saveError}
           />
         )}
       </AnimatePresence>

@@ -289,7 +289,7 @@ function WhoWeAreSection() {
             <div className="relative">
               <div className="rounded-2xl overflow-hidden shadow-card">
                 <OptimizedImage
-                  src="/images/kadesh images_03.jpg"
+                  src="/Eldoret/IMG-20250624-WA0040.jpg"
                   alt="Kadesh Hope Mission classroom"
                   className="w-full aspect-[4/3] object-cover"
                 />
@@ -586,7 +586,7 @@ function DonationCTASection() {
                 variant="secondary"
                 size="lg"
                 as={Link}
-                to="/partners"
+                to="/contact"
                 className="border-white text-white hover:bg-white/10"
               >
                 Become a Partner
