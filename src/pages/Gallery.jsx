@@ -223,7 +223,7 @@ export default function Gallery() {
             dragDampening={2}
             grayscale={false}
             autoRotate
-            autoRotateSpeed={isMobile ? 0.3 : 0.4}
+            autoRotateSpeed={isMobile ? 0.5 : 0.7}
             highlightCategory={highlightCat}
             imageCategories={imageCategories}
           />
