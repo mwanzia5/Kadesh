@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Heart, Mail, Lock, User, Phone, MapPin, Loader2, AlertCircle, Eye, EyeOff, KeyRound, Copy, Check } from "lucide-react";
+import { Heart, Mail, Lock, User, Phone, MapPin, Loader2, AlertCircle, Eye, EyeOff, KeyRound, Copy, Check, CheckCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
 import PageTransition from "@/animations/PageTransition";
@@ -11,6 +11,7 @@ import { useDonorAuth } from "@/context/DonorAuthContext";
 export default function DonorAuth() {
   const [searchParams] = useSearchParams();
   const initialMode = searchParams.get("mode") === "signup" ? "signup" : "login";
+  const redirectTo = searchParams.get("redirect") || "/donate";
   const [mode, setMode] = useState(initialMode);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -40,7 +41,7 @@ export default function DonorAuth() {
 
     try {
       if (mode === "signup") {
-        await signUp({
+        const result = await signUp({
           email: form.email,
           password: form.password,
           firstName: form.firstName,
@@ -48,10 +49,16 @@ export default function DonorAuth() {
           phone: form.phone,
           location: form.location,
         });
+        if (result?.session) {
+          navigate(redirectTo);
+        } else {
+          setError("");
+          setMode("check-email");
+        }
       } else {
         await signIn({ email: form.email, password: form.password });
+        navigate(redirectTo);
       }
-      navigate("/donate");
     } catch (err) {
       setError(err.message || "Something went wrong. Please try again.");
     } finally {
@@ -144,6 +151,27 @@ export default function DonorAuth() {
                 </div>
               )}
 
+              {mode === "check-email" ? (
+                <div className="text-center space-y-4 py-4">
+                  <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
+                    <CheckCircle className="h-8 w-8 text-green-600" />
+                  </div>
+                  <h3 className="font-display text-xl font-bold text-deep-navy">Check your email</h3>
+                  <p className="font-body text-on-surface-variant leading-relaxed">
+                    We sent a confirmation link to{" "}
+                    <strong className="text-deep-navy">{form.email}</strong>.
+                    Click the link in the email to activate your account, then come back to log in.
+                  </p>
+                  <Button
+                    variant="primary"
+                    onClick={() => { setMode("login"); setError(""); }}
+                    className="mt-2"
+                  >
+                    Go to Log In
+                  </Button>
+                </div>
+              ) : (
+                <>
               <form onSubmit={handleSubmit} className="space-y-5">
                 {mode === "signup" && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -323,6 +351,8 @@ export default function DonorAuth() {
                   )}
                 </p>
               </div>
+              </>
+              )}
             </motion.div>
 
             <motion.div

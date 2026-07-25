@@ -366,6 +366,20 @@ export default function DonorDashboard() {
                             )}
                           </div>
 
+                          {sponsorship.monthly_amount && sponsorship.start_date && (() => {
+                            const start = new Date(sponsorship.start_date);
+                            const now = new Date();
+                            let next = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+                            while (next <= now) {
+                              next.setMonth(next.getMonth() + 1);
+                            }
+                            return (
+                              <p className="mt-2 font-body text-xs text-vibrant-blue">
+                                Next sponsorship: {formatDate(next)}
+                              </p>
+                            );
+                          })()}
+
                           <div className="flex items-center gap-3 mt-4">
                             <Link
                               to={`/sponsor-a-child/${sponsorship.child_id}`}

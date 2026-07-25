@@ -10,8 +10,8 @@ export const SITE_CONFIG = {
     "Transforming lives through education, healthcare, food security, and social development since 2009.",
   founded: 2009,
   regions: ["Democratic Republic of Congo", "Uganda"],
-  email: "info@kadeshhopemission.org",
-  phone: "+243 000 000 000",
+  email: "kadeshhope.africa@gmail.com",
+  phone: "+254 733 959 383",
   whatsapp: "https://wa.me/254733959383",
   url: "https://kadeshhopemission.org",
   social: {

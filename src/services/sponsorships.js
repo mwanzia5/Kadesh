@@ -85,3 +85,16 @@ export async function getDonorDonations(donorId) {
     return { data: null, error: err };
   }
 }
+
+export async function getAllSponsorships() {
+  try {
+    const { data, error } = await supabase
+      .from("sponsorships")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    return { data, error };
+  } catch (err) {
+    return { data: null, error: err };
+  }
+}

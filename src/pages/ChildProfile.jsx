@@ -1,10 +1,11 @@
-import { useParams, Link, useSearchParams } from "react-router-dom";
+import { useParams, Link, useSearchParams, useNavigate } from "react-router-dom";
 import {
   Heart,
   MapPin,
   Calendar,
   ArrowLeft,
   Loader2,
+  LogIn,
 } from "lucide-react";
 
 import PageTransition from "@/animations/PageTransition";
@@ -14,6 +15,7 @@ import Button from "@/components/ui/Button";
 import OptimizedImage from "@/components/ui/OptimizedImage";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import { useChild } from "@/hooks/useChildren";
+import { useDonorAuth } from "@/context/DonorAuthContext";
 import { cn } from "@/lib/utils";
 
 function StatusBadge({ status }) {
@@ -37,6 +39,8 @@ function StatusBadge({ status }) {
 export default function ChildProfile() {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { user, loading: authLoading } = useDonorAuth();
   const { data, isLoading, error } = useChild(id);
 
   const child = data?.data;
@@ -140,16 +144,28 @@ export default function ChildProfile() {
                     </div>
 
                     {child.sponsorship_status === "available" ? (
-                      <Button
-                        variant="lightblue"
-                        size="lg"
-                        as={Link}
-                        to={sponsorLink}
-                        className="w-full"
-                      >
-                        Sponsor This Child
-                        <Heart className="ml-2 h-5 w-5" />
-                      </Button>
+                      user ? (
+                        <Button
+                          variant="lightblue"
+                          size="lg"
+                          as={Link}
+                          to={sponsorLink}
+                          className="w-full"
+                        >
+                          Sponsor This Child
+                          <Heart className="ml-2 h-5 w-5" />
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="lightblue"
+                          size="lg"
+                          onClick={() => navigate(`/donor-auth?mode=signup&redirect=/sponsor-a-child/${child.id}`)}
+                          className="w-full"
+                        >
+                          Sign Up or Log In to Sponsor
+                          <LogIn className="ml-2 h-5 w-5" />
+                        </Button>
+                      )
                     ) : (
                       <div className="w-full py-3 text-center rounded-xl bg-gray-100 font-body text-sm font-medium text-on-surface-variant">
                         {child.sponsorship_status === "sponsored"

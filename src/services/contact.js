@@ -21,7 +21,13 @@ export async function sendMessage(messageData) {
       .select()
       .single();
 
-    return { data, error };
+    if (error) return { data: null, error };
+
+    supabase.functions
+      .invoke("notify-contact", { body: messageData })
+      .catch(() => {});
+
+    return { data, error: null };
   } catch (err) {
     return { data: null, error: err };
   }

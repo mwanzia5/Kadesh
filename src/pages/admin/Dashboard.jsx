@@ -10,6 +10,7 @@ import MessagesPage from "./MessagesPage";
 import SettingsPage from "./SettingsPage";
 import VideosManager from "./VideosManager";
 import NewsManager from "./NewsManager";
+import UsersPage from "./UsersPage";
 
 export default function Dashboard() {
   return (
@@ -26,7 +27,7 @@ export default function Dashboard() {
         <Route path="messages" element={<MessagesPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="testimonials" element={<PlaceholderPage title="Testimonials" />} />
-        <Route path="users" element={<PlaceholderPage title="Users" />} />
+        <Route path="users" element={<UsersPage />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>
     </AdminLayout>

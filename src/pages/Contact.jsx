@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Mail, Phone, MapPin, Send, Loader2, CheckCircle2, AlertCircle, ChevronDown } from "lucide-react";
 import { FacebookIcon, TwitterIcon, YoutubeIcon, LinkedinIcon } from "@/components/ui/SocialIcons";
+import { useSendMessage } from "@/hooks/useContact";
 import PageTransition from "@/animations/PageTransition";
 import Container from "@/components/ui/Container";
 import Section from "@/components/ui/Section";
@@ -13,8 +14,8 @@ const offices = {
     flag: "\uD83C\uDDFA\uD83C\uDDEC",
     name: "Head Office \u2014 Uganda",
     address: ["Kadesh Hope Mission of Africa", "Bulemezi Block 30, Plot No. 106,", "Nakaseta (Mpande), Kalule, Uganda."],
-    phone: "+256 753 407 379",
-    phoneHref: "tel:+256753407379",
+    phone: "+254 733 959 383",
+    phoneHref: "tel:+254733959383",
     email: "kadeshhope.africa@gmail.com",
     mapQuery: "Nakaseta+Mpande+Kalule+Uganda",
   },
@@ -40,18 +41,30 @@ export default function Contact() {
     message: "",
   });
 
+  const sendMessageMutation = useSendMessage();
+
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus("submitting");
-    setTimeout(() => {
+    const { error } = await sendMessageMutation.mutateAsync({
+      first_name: form.firstName,
+      last_name: form.lastName,
+      email: form.email,
+      subject: form.subject,
+      message: form.message,
+    });
+    if (error) {
+      setStatus("error");
+      setTimeout(() => setStatus("idle"), 6000);
+    } else {
       setStatus("success");
       setForm({ firstName: "", lastName: "", email: "", subject: "", message: "" });
       setTimeout(() => setStatus("idle"), 4000);
-    }, 900);
+    }
   };
 
   const office = offices[activeOffice];
@@ -189,14 +202,14 @@ export default function Contact() {
                     <Mail className="h-5 w-5 text-hope-orange shrink-0 mt-0.5" />
                     <div>
                       <p className="font-body text-label-bold opacity-70 mb-1">EMAIL</p>
-                      <p className="font-body text-body-md">info@kadeshhopemission.org</p>
+                      <p className="font-body text-body-md">kadeshhope.africa@gmail.com</p>
                     </div>
                   </li>
                   <li className="flex gap-4">
                     <Phone className="h-5 w-5 text-hope-orange shrink-0 mt-0.5" />
                     <div>
                       <p className="font-body text-label-bold opacity-70 mb-1">PHONE</p>
-                      <p className="font-body text-body-md">+243 000 000 000</p>
+                      <p className="font-body text-body-md">+254 733 959 383</p>
                     </div>
                   </li>
                   <li className="flex gap-4">

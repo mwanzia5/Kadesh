@@ -6,6 +6,7 @@ import {
   updateSponsorship,
   cancelSponsorship,
   getDonorDonations,
+  getAllSponsorships,
 } from "@/services/sponsorships";
 
 export function useSponsorships(donorId) {
@@ -65,5 +66,13 @@ export function useDonorDonations(donorId) {
     queryFn: () => getDonorDonations(donorId),
     enabled: !!donorId,
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useAllSponsorships() {
+  return useQuery({
+    queryKey: ["all-sponsorships"],
+    queryFn: getAllSponsorships,
+    staleTime: 2 * 60 * 1000,
   });
 }
