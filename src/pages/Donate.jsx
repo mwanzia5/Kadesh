@@ -21,6 +21,12 @@ const currencies = [
   { code: "INR", symbol: "₹", name: "Indian Rupee", rate: 83, country: "India" },
 ];
 
+// Paystack merchant account is configured for KES only. The currency picker
+// above is display-only — whatever the donor selects there just changes what
+// they *see* (amount buttons, impact text). The actual charge sent to
+// Paystack always converts through this rate, regardless of currency.code.
+const KES_RATE = currencies.find((c) => c.code === "KES").rate;
+
 const impactMap = {
   10: "Provides a meal for a child for one day",
   25: "Supplies basic school materials for a student",
@@ -96,21 +102,25 @@ export default function Donate() {
 
     setProcessing(true);
 
-    const USD_TO_NGN = 1500;
-    const amountInKobo = Math.round(baseAmount * USD_TO_NGN * 100);
+    // Always bill in KES regardless of whichever display currency the donor
+    // picked in the selector above — that picker is dummy/display-only.
+    const amountInKES = Math.round(baseAmount * KES_RATE);
+    const amountInKESSubunit = amountInKES * 100; // Paystack expects subunits
 
     const handler = PaystackPop.setup({
       key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
       email: donorEmail,
-      amount: amountInKobo,
-      currency: "NGN",
+      amount: amountInKESSubunit,
+      currency: "KES",
       ref: `KHM-${Date.now()}`,
       metadata: {
         donor_name: donorName,
         frequency,
-        selected_currency: currency.code,
-        converted_amount: convertedAmount,
+        display_currency: currency.code,
+        display_amount: convertedAmount,
         usd_equivalent: baseAmount,
+        charged_currency: "KES",
+        charged_amount: amountInKES,
         location: donorLocation,
         phone: donorPhone,
       },
@@ -120,9 +130,9 @@ export default function Donate() {
             donor_name: donorName,
             donor_email: donorEmail,
             donor_id: user?.id || null,
-            amount: baseAmount,
-            currency: currency.code,
-            converted_amount: convertedAmount,
+            amount: baseAmount, // USD headline figure
+            currency: "KES", // what was actually charged
+            converted_amount: amountInKES, // actual KES amount charged
             frequency,
             status: "completed",
             payment_reference: transaction.reference,
