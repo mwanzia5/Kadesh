@@ -21,14 +21,20 @@ export async function sendMessage(messageData) {
       .select()
       .single();
 
-    if (error) return { data: null, error };
+    if (error) {
+      console.error("[sendMessage] Supabase insert error:", error);
+      return { data: null, error };
+    }
 
     supabase.functions
       .invoke("notify-contact", { body: messageData })
-      .catch(() => {});
+      .catch((notifyErr) => {
+        console.error("[sendMessage] notify-contact invoke error:", notifyErr);
+      });
 
     return { data, error: null };
   } catch (err) {
+    console.error("[sendMessage] Unexpected error:", err);
     return { data: null, error: err };
   }
 }

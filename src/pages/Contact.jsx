@@ -50,20 +50,27 @@ export default function Contact() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus("submitting");
-    const { error } = await sendMessageMutation.mutateAsync({
-      first_name: form.firstName,
-      last_name: form.lastName,
-      email: form.email,
-      subject: form.subject,
-      message: form.message,
-    });
-    if (error) {
+    try {
+      const { error } = await sendMessageMutation.mutateAsync({
+        first_name: form.firstName,
+        last_name: form.lastName,
+        email: form.email,
+        subject: form.subject,
+        message: form.message,
+      });
+      if (error) {
+        console.error("[Contact] sendMessage returned error:", error);
+        setStatus("error");
+        setTimeout(() => setStatus("idle"), 6000);
+      } else {
+        setStatus("success");
+        setForm({ firstName: "", lastName: "", email: "", subject: "", message: "" });
+        setTimeout(() => setStatus("idle"), 4000);
+      }
+    } catch (mutationError) {
+      console.error("[Contact] mutateAsync threw:", mutationError);
       setStatus("error");
       setTimeout(() => setStatus("idle"), 6000);
-    } else {
-      setStatus("success");
-      setForm({ firstName: "", lastName: "", email: "", subject: "", message: "" });
-      setTimeout(() => setStatus("idle"), 4000);
     }
   };
 
