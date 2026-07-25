@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Heart, Mail, Lock, User, Phone, MapPin, Loader2, AlertCircle, Eye, EyeOff, KeyRound, Copy, Check, CheckCircle } from "lucide-react";
+import { Heart, Mail, Lock, User, Phone, MapPin, Loader2, AlertCircle, Eye, EyeOff, KeyRound, Copy, Check, CheckCircle, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 
 import PageTransition from "@/animations/PageTransition";
@@ -10,15 +10,32 @@ import { useDonorAuth } from "@/context/DonorAuthContext";
 
 export default function DonorAuth() {
   const [searchParams] = useSearchParams();
-  const initialMode = searchParams.get("mode") === "signup" ? "signup" : "login";
+  const initialMode = searchParams.get("mode");
   const redirectTo = searchParams.get("redirect") || "/donate";
-  const [mode, setMode] = useState(initialMode);
+  const [mode, setMode] = useState(initialMode || "login");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const navigate = useNavigate();
-  const { signIn, signUp } = useDonorAuth();
+  const { signIn, signUp, resetPassword, updatePassword } = useDonorAuth();
+
+  useEffect(() => {
+    if (window.location.hash.includes("type=recovery")) {
+      setMode("recovery");
+      return;
+    }
+    if (initialMode === "recovery") {
+      setMode("recovery");
+    }
+    if (initialMode === "signup") {
+      setMode("signup");
+    }
+  }, [initialMode]);
 
   const [form, setForm] = useState({
     firstName: "",
@@ -61,6 +78,49 @@ export default function DonorAuth() {
       }
     } catch (err) {
       setError(err.message || "Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    if (!forgotEmail) return;
+    setError("");
+    setSuccess("");
+    setLoading(true);
+    try {
+      await resetPassword(forgotEmail);
+      setMode("check-email");
+    } catch (err) {
+      setError(err.message || "Failed to send reset email. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    setError("");
+    if (newPassword.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+    setLoading(true);
+    try {
+      await updatePassword(newPassword);
+      setSuccess("Password updated successfully! Redirecting to login...");
+      setTimeout(() => {
+        setMode("login");
+        setNewPassword("");
+        setConfirmPassword("");
+      }, 2000);
+    } catch (err) {
+      setError(err.message || "Failed to update password.");
     } finally {
       setLoading(false);
     }
@@ -129,12 +189,26 @@ export default function DonorAuth() {
                 <Heart className="h-8 w-8 text-hope-orange" />
               </div>
               <h1 className="font-display text-3xl md:text-4xl font-bold text-white mb-3">
-                {mode === "signup" ? "Create Your Account" : "Welcome Back"}
+                {mode === "signup"
+                  ? "Create Your Account"
+                  : mode === "forgot-password"
+                    ? "Reset Your Password"
+                    : mode === "recovery"
+                      ? "Set New Password"
+                      : mode === "check-email"
+                        ? "Check Your Email"
+                        : "Welcome Back"}
               </h1>
               <p className="font-body text-body-lg text-white/70">
                 {mode === "signup"
                   ? "Sign up to start making a difference through your donations"
-                  : "Log in to continue your generous giving"}
+                  : mode === "forgot-password"
+                    ? "Enter your email and we'll send you a reset link"
+                    : mode === "recovery"
+                      ? "Choose a new password for your account"
+                      : mode === "check-email"
+                        ? "If an account exists, we've sent a password reset link"
+                        : "Log in to continue your generous giving"}
               </p>
             </motion.div>
 
@@ -151,6 +225,13 @@ export default function DonorAuth() {
                 </div>
               )}
 
+              {success && (
+                <div className="flex items-center gap-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3 mb-6">
+                  <CheckCircle className="h-4 w-4 shrink-0" />
+                  {success}
+                </div>
+              )}
+
               {mode === "check-email" ? (
                 <div className="text-center space-y-4 py-4">
                   <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
@@ -158,18 +239,131 @@ export default function DonorAuth() {
                   </div>
                   <h3 className="font-display text-xl font-bold text-deep-navy">Check your email</h3>
                   <p className="font-body text-on-surface-variant leading-relaxed">
-                    We sent a confirmation link to{" "}
-                    <strong className="text-deep-navy">{form.email}</strong>.
-                    Click the link in the email to activate your account, then come back to log in.
+                    {form.email ? (
+                      <>
+                        We sent a confirmation link to{" "}
+                        <strong className="text-deep-navy">{form.email}</strong>.
+                        Click the link in the email to activate your account, then come back to log in.
+                      </>
+                    ) : (
+                      <>
+                        We sent a password reset link to{" "}
+                        <strong className="text-deep-navy">{forgotEmail}</strong>.
+                        Check your inbox and follow the link to set a new password.
+                      </>
+                    )}
                   </p>
                   <Button
                     variant="primary"
-                    onClick={() => { setMode("login"); setError(""); }}
+                    onClick={() => { setMode("login"); setError(""); setForgotEmail(""); }}
                     className="mt-2"
                   >
                     Go to Log In
                   </Button>
                 </div>
+              ) : mode === "recovery" ? (
+                <>
+                  <form onSubmit={handleResetPassword} className="space-y-5">
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-on-surface-variant" />
+                      <input
+                        required
+                        type={showPassword ? "text" : "password"}
+                        placeholder="New password (min 6 characters)"
+                        minLength={6}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        className="w-full pl-10 pr-12 py-3 rounded-lg border border-soft-accent focus:ring-2 focus:ring-vibrant-blue focus:outline-none font-body text-on-background"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-deep-navy"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-on-surface-variant" />
+                      <input
+                        required
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Confirm new password"
+                        minLength={6}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 rounded-lg border border-soft-accent focus:ring-2 focus:ring-vibrant-blue focus:outline-none font-body text-on-background"
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      size="lg"
+                      className="w-full"
+                      disabled={loading}
+                    >
+                      {loading ? (
+                        <>
+                          <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                          Updating...
+                        </>
+                      ) : (
+                        "Set New Password"
+                      )}
+                    </Button>
+                  </form>
+                  <div className="mt-6 text-center">
+                    <button
+                      onClick={() => { setMode("login"); setError(""); setNewPassword(""); setConfirmPassword(""); }}
+                      className="font-body text-sm text-on-surface-variant hover:text-vibrant-blue transition-colors flex items-center justify-center gap-1 mx-auto"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      Back to Log In
+                    </button>
+                  </div>
+                </>
+              ) : mode === "forgot-password" ? (
+                <>
+                  <form onSubmit={handleForgotPassword} className="space-y-5">
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-on-surface-variant" />
+                      <input
+                        required
+                        type="email"
+                        name="forgotEmail"
+                        placeholder="Enter your email address"
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 rounded-lg border border-soft-accent focus:ring-2 focus:ring-vibrant-blue focus:outline-none font-body text-on-background"
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      size="lg"
+                      className="w-full"
+                      disabled={loading}
+                    >
+                      {loading ? (
+                        <>
+                          <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                          Sending...
+                        </>
+                      ) : (
+                        "Send Reset Link"
+                      )}
+                    </Button>
+                  </form>
+                  <div className="mt-6 text-center">
+                    <button
+                      onClick={() => { setMode("login"); setError(""); setForgotEmail(""); }}
+                      className="font-body text-sm text-on-surface-variant hover:text-vibrant-blue transition-colors flex items-center justify-center gap-1 mx-auto"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      Back to Log In
+                    </button>
+                  </div>
+                </>
               ) : (
                 <>
               <form onSubmit={handleSubmit} className="space-y-5">
@@ -327,6 +521,16 @@ export default function DonorAuth() {
               </form>
 
               <div className="mt-6 text-center">
+                {mode === "login" && (
+                  <p className="font-body text-sm mb-3">
+                    <button
+                      onClick={() => { setMode("forgot-password"); setError(""); setForgotEmail(form.email); }}
+                      className="text-vibrant-blue font-medium hover:underline"
+                    >
+                      Forgot your password?
+                    </button>
+                  </p>
+                )}
                 <p className="font-body text-sm text-on-surface-variant">
                   {mode === "signup" ? (
                     <>

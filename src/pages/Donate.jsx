@@ -106,15 +106,13 @@ export default function Donate() {
       currency: "NGN",
       ref: `KHM-${Date.now()}`,
       metadata: {
-        custom_fields: [
-          { display_name: "Donor Name", variable_name: "donor_name", value: donorName },
-          { display_name: "Frequency", variable_name: "frequency", value: frequency },
-          { display_name: "Selected Currency", variable_name: "currency", value: currency.code },
-          { display_name: "Converted Amount", variable_name: "converted_amount", value: convertedAmount },
-          { display_name: "USD Equivalent", variable_name: "usd_equivalent", value: baseAmount },
-          { display_name: "Location", variable_name: "location", value: donorLocation },
-          { display_name: "Phone", variable_name: "phone", value: donorPhone },
-        ],
+        donor_name: donorName,
+        frequency,
+        selected_currency: currency.code,
+        converted_amount: convertedAmount,
+        usd_equivalent: baseAmount,
+        location: donorLocation,
+        phone: donorPhone,
       },
       onSuccess: async (transaction) => {
         try {

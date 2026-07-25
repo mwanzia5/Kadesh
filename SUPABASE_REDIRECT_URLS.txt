@@ -1,0 +1,8 @@
+Add these URLs to Supabase Dashboard → Authentication → URL Configuration → Redirect URLs:
+
+http://localhost:5173/donor-auth?mode=recovery
+http://localhost:5173/admin/login?mode=recovery
+https://kadeshhopemission.org/donor-auth?mode=recovery
+https://kadeshhopemission.org/admin/login?mode=recovery
+
+Also set Site URL to: https://kadeshhopemission.org

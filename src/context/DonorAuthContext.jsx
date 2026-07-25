@@ -81,6 +81,18 @@ export function DonorAuthProvider({ children }) {
     setProfile((prev) => ({ ...prev, ...updates }));
   };
 
+  const resetPassword = async (email) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/donor-auth?mode=recovery`,
+    });
+    if (error) throw error;
+  };
+
+  const updatePassword = async (newPassword) => {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) throw error;
+  };
+
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
@@ -89,7 +101,9 @@ export function DonorAuthProvider({ children }) {
   };
 
   return (
-    <DonorAuthContext.Provider value={{ user, profile, loading, signUp, signIn, signOut, updateProfile }}>
+    <DonorAuthContext.Provider
+      value={{ user, profile, loading, signUp, signIn, signOut, updateProfile, resetPassword, updatePassword }}
+    >
       {children}
     </DonorAuthContext.Provider>
   );
