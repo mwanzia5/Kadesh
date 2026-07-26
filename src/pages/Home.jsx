@@ -1,6 +1,6 @@
-import { useRef, Fragment } from "react";
+import { useRef } from "react";
 import { Link } from "react-router-dom";
-import { motion, useInView, useScroll, useTransform, useReducedMotion } from "framer-motion";
+import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
 import {
   School,
   Heart,
@@ -10,7 +10,6 @@ import {
   ArrowRight,
   CheckCircle,
   Quote,
-  ChevronRight,
   ArrowUpRight,
 } from "lucide-react";
 
@@ -27,7 +26,6 @@ import {
 import {
   PROGRAM_PILLARS,
   PROJECTS,
-  IMPACT_STATS,
   MINISTRY_AREAS,
   TESTIMONIALS,
 } from "@/constants";
@@ -38,7 +36,6 @@ import Button from "@/components/ui/Button";
 import OptimizedImage from "@/components/ui/OptimizedImage";
 import GlareHover from "@/components/ui/GlareHover";
 import SplitText from "@/components/ui/SplitText";
-import AnimatedCounter from "@/components/ui/AnimatedCounter";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import SectionHeading from "@/components/ui/SectionHeading";
 import LogoLoop from "@/components/LogoLoop";
@@ -84,7 +81,6 @@ export default function Home() {
       <PillarsSection />
       <PartnersSection />
       <WhoWeAreSection />
-      <ImpactSection />
       <ProjectsSection />
       <GallerySection />
       <TestimonialsSection />
@@ -148,7 +144,7 @@ function HeroSection() {
 
             <h1>
               <SplitText
-                text="Hope, restored."
+                text={getCMSContent("home", "heroTitle", "Hope, restored.")}
                 className="font-display text-5xl md:text-7xl lg:text-8xl font-bold leading-[1.05] block"
                 delay={0.6}
                 duration={0.8}
@@ -178,40 +174,19 @@ function HeroSection() {
                 to="/donate"
                 className="shadow-[0_0_30px_-5px_rgba(91,164,230,0.6)]"
               >
-                Donate Now
+                {getCMSContent("home", "heroCta", "Donate Now")}
                 <Heart className="ml-2 h-5 w-5" />
               </Button>
               <Link
                 to="/about"
                 className="group inline-flex items-center gap-2 font-body text-label-bold text-white/90 hover:text-white transition-colors"
               >
-                Learn our story
+                {getCMSContent("home", "heroCta2", "Learn our story")}
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Link>
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.8, delay: 2 }}
-              className="mt-16 flex items-center"
-            >
-              {IMPACT_STATS.slice(0, 3).map((stat, i) => (
-                <Fragment key={stat.label}>
-                  {i > 0 && (
-                    <span className="hidden md:block w-px h-8 bg-white/20 mx-8 md:mx-10" />
-                  )}
-                  <div className="text-center px-4 md:px-0">
-                    <p className="font-display text-2xl md:text-3xl font-bold text-white">
-                      <AnimatedCounter end={stat.value} suffix={stat.suffix} duration={1800} />
-                    </p>
-                    <p className="font-body text-caption uppercase tracking-wider text-white/50 mt-1">
-                      {stat.label}
-                    </p>
-                  </div>
-                </Fragment>
-              ))}
-            </motion.div>
+
           </div>
         </Container>
       </motion.div>
@@ -241,8 +216,8 @@ function PillarsSection() {
     <Section background="white" className="section-padding">
       <Container>
         <SectionHeading
-          title="Our Foundation"
-          subtitle="Five pillars driving lasting change across Africa"
+          title={getCMSContent("home", "pillarsHeading", "Our Foundation")}
+          subtitle={getCMSContent("home", "pillarsSub", "Five pillars driving lasting change across Africa")}
         />
 
         <motion.div
@@ -319,24 +294,20 @@ function WhoWeAreSection() {
           <ScrollReveal direction="right" className="lg:col-span-5">
             <div className="mt-8 lg:mt-0">
               <SplitText
-                text="Who We Are"
+                text={getCMSContent("home", "whoWeAreTitle", "Who We Are")}
                 className="font-display text-display-lg-mobile lg:text-display-lg text-white block mb-6"
                 delay={0.2}
               />
 
               <p className="font-body text-body-lg text-white/70 mb-8 leading-relaxed">
-                Founded in 2009, Kadesh Hope Mission began with a bold vision —
-                a group of young people migrated from India to the Democratic
-                Republic of Congo with a mission to uplift impoverished
-                communities. Today, we continue transforming lives across
-                multiple African nations through holistic development programs.
+                {getCMSContent("home", "whoWeAreDesc", "Founded in 2009, Kadesh Hope Mission began with a bold vision \u2014 a group of young people migrated from India to the Democratic Republic of Congo with a mission to uplift impoverished communities. Today, we continue transforming lives across multiple African nations through holistic development programs.")}
               </p>
 
               <div className="space-y-4 mb-10">
                 {[
-                  "Quality education access for every child",
-                  "Healthcare for underserved communities",
-                  "Social development and economic empowerment",
+                  getCMSContent("home", "whoWeCheck1", "Quality education access for every child"),
+                  getCMSContent("home", "whoWeCheck2", "Healthcare for underserved communities"),
+                  getCMSContent("home", "whoWeCheck3", "Social development and economic empowerment"),
                 ].map((item, i) => (
                   <div key={i} className="flex items-start gap-3">
                     <CheckCircle className="h-6 w-6 text-hope-orange shrink-0 mt-0.5" />
@@ -348,63 +319,12 @@ function WhoWeAreSection() {
               </div>
 
               <Button variant="primary" size="lg" as={Link} to="/about">
-                Learn More
+                {getCMSContent("home", "whoWeAreCta", "Learn More")}
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </div>
           </ScrollReveal>
         </div>
-      </Container>
-    </Section>
-  );
-}
-
-function ImpactSection() {
-  const sectionRef = useRef(null);
-  const isInView = useInView(sectionRef, { once: true, margin: "-100px" });
-
-  return (
-    <Section id="impact" background="gray" className="section-padding">
-      <Container>
-        <SectionHeading
-          title="Our Impact in Numbers"
-          subtitle="The difference we've made together across communities in Africa"
-        />
-
-        <motion.div
-          ref={sectionRef}
-          variants={staggerContainer}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-          className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8"
-        >
-          {IMPACT_STATS.map((stat) => (
-            <motion.div key={stat.label} variants={slideUp}>
-              <div className="text-center p-8 rounded-2xl bg-white border border-soft-accent/50 shadow-card">
-                <div className="font-display text-4xl md:text-5xl font-bold text-vibrant-blue mb-3">
-                  {isInView && (
-                    <AnimatedCounter
-                      end={stat.value}
-                      suffix={stat.suffix}
-                      duration={2000}
-                    />
-                  )}
-                </div>
-                <p className="font-body text-body-lg text-on-surface-variant">
-                  {stat.label}
-                </p>
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
-
-        <ScrollReveal delay={0.3} className="mt-12 text-center">
-          <Button variant="primary" size="lg" as={Link} to="/about#impact">
-            See Our Full Impact
-            <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
-        </ScrollReveal>
       </Container>
     </Section>
   );
@@ -417,9 +337,9 @@ function ProjectsSection() {
     <Section background="white" className="section-padding">
       <Container>
         <SectionHeading
-          title="Our Projects"
+          title={getCMSContent("home", "projectsTitle", "Our Projects")}
           highlight="Projects"
-          subtitle="Transforming communities across Africa"
+          subtitle={getCMSContent("home", "projectsSub", "Transforming communities across Africa")}
         />
 
         <motion.div
@@ -467,7 +387,7 @@ function ProjectsSection() {
 
         <ScrollReveal delay={0.3} className="mt-12 text-center">
           <Button variant="primary" size="lg" as={Link} to="/projects">
-            View All Projects
+            {getCMSContent("home", "projectsCta", "View All Projects")}
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </ScrollReveal>
@@ -480,8 +400,8 @@ function GallerySection() {
     <Section background="gray" className="section-padding">
       <Container>
         <SectionHeading
-          title="Moments of Impact"
-          subtitle="A glimpse into the work we do every day"
+          title={getCMSContent("home", "galleryTitle", "Moments of Impact")}
+          subtitle={getCMSContent("home", "gallerySub", "A glimpse into the work we do every day")}
         />
 
         <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -505,7 +425,7 @@ function GallerySection() {
 
         <ScrollReveal delay={0.3} className="mt-12 text-center">
           <Button variant="primary" size="lg" as={Link} to="/gallery">
-            View Full Gallery
+            {getCMSContent("home", "galleryCta", "View Full Gallery")}
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </ScrollReveal>
@@ -518,8 +438,8 @@ function TestimonialsSection() {
     <Section background="white" className="section-padding">
       <Container>
         <SectionHeading
-          title="Voices of Hope"
-          subtitle="Hear from the people whose lives have been transformed"
+          title={getCMSContent("home", "testimonialsTitle", "Voices of Hope")}
+          subtitle={getCMSContent("home", "testimonialsSub", "Hear from the people whose lives have been transformed")}
         />
 
         <motion.div
@@ -575,17 +495,15 @@ function DonationCTASection() {
         <ScrollReveal>
           <div className="text-center max-w-3xl mx-auto">
             <h2 className="font-display text-3xl md:text-5xl lg:text-display-lg-mobile text-white mb-6">
-              Make a Difference Today
+              {getCMSContent("home", "donateCtaTitle", "Make a Difference Today")}
             </h2>
             <p className="font-body text-body-lg text-white/70 mb-10 leading-relaxed">
-              Every donation helps us provide education, healthcare, food
-              security, and hope to communities across Africa. Your generosity
-              transforms lives and builds futures.
+              {getCMSContent("home", "donateCtaDesc", "Every donation helps us provide education, healthcare, food security, and hope to communities across Africa. Your generosity transforms lives and builds futures.")}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button variant="lightblue" size="lg" as={Link} to="/donate">
-                Donate Now
+                {getCMSContent("home", "donateCtaBtn", "Donate Now")}
                 <Heart className="ml-2 h-5 w-5" />
               </Button>
               <Button
@@ -595,7 +513,7 @@ function DonationCTASection() {
                 to="/contact"
                 className="border-white text-white hover:bg-white/10"
               >
-                Become a Partner
+                {getCMSContent("home", "donatePartnerBtn", "Become a Partner")}
                 <Users className="ml-2 h-5 w-5" />
               </Button>
             </div>
@@ -611,8 +529,8 @@ function PartnersSection() {
     <Section background="white" className="section-padding">
       <Container>
         <SectionHeading
-          title="Trusted Partners"
-          subtitle="Organizations that share our vision for a better Africa"
+          title={getCMSContent("home", "partnersTitle", "Trusted Partners")}
+          subtitle={getCMSContent("home", "partnersSub", "Organizations that share our vision for a better Africa")}
         />
 
         <div className="mt-12">

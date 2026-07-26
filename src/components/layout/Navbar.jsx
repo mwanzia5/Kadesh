@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, ChevronDown, User, LogIn } from "lucide-react";
+import { Menu, ChevronDown, User, UserPlus } from "lucide-react";
 import { cn, getGravatarUrl } from "@/lib/utils";
 import Button from "@/components/ui/Button";
 import { NAV_LINKS } from "@/constants";
@@ -221,7 +221,7 @@ export default function Navbar() {
                 </Link>
               ) : (
                 <Link
-                  to="/donor-auth"
+                  to="/donor-auth?mode=signup"
                   className={cn(
                     "flex items-center gap-1.5 px-3 py-2 rounded-lg font-body text-sm font-medium transition-colors",
                     pathname === "/donor-auth"
@@ -229,8 +229,8 @@ export default function Navbar() {
                       : "text-on-surface hover:text-vibrant-blue hover:bg-surface"
                   )}
                 >
-                  <LogIn className="h-4 w-4" />
-                  <span>Log In</span>
+                  <UserPlus className="h-4 w-4" />
+                  <span>Sign Up</span>
                 </Link>
               )
             )}

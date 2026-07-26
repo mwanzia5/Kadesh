@@ -120,25 +120,33 @@ export default function Videos() {
                         key={cat}
                         onClick={() => setActiveCategory(cat)}
                         className={cn(
-                          "px-4 py-2 rounded-full text-sm font-medium transition-all duration-200",
+                          "px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 border-2",
                           activeCategory === cat
-                            ? "bg-primary text-primary-foreground shadow-md"
-                            : "bg-muted text-muted-foreground hover:bg-muted/80"
+                            ? "bg-gradient-to-r from-vibrant-blue to-vibrant-blue/80 text-white border-vibrant-blue shadow-lg shadow-vibrant-blue/20 scale-105"
+                            : "bg-white text-muted-foreground border-gray-200 hover:border-vibrant-blue/30 hover:text-deep-navy hover:shadow-md hover:scale-[1.02]"
                         )}
                       >
                         {cat}
                       </button>
                     ))}
                   </div>
-                  <div className="relative w-full sm:w-64">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <div className="relative w-full sm:w-64 group">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60 group-focus-within:text-vibrant-blue transition-colors" />
                     <input
                       type="text"
                       placeholder="Search videos..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 rounded-full bg-muted text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow"
+                      className="w-full pl-10 pr-10 py-2.5 rounded-xl border-2 border-gray-200 bg-white text-foreground text-sm placeholder:text-muted-foreground/50 shadow-sm focus:outline-none focus:ring-2 focus:ring-vibrant-blue/30 focus:border-vibrant-blue transition-all"
                     />
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery("")}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 hover:text-gray-600"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                      </button>
+                    )}
                   </div>
                 </div>
               </ScrollReveal>

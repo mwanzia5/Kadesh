@@ -13,7 +13,7 @@ function loadAll() {
 export function getCMSContent(pageId, sectionId, defaultValue = "") {
   try {
     const all = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-    if (all[pageId] && all[pageId][sectionId] !== undefined) {
+    if (all[pageId] && all[pageId][sectionId] !== undefined && all[pageId][sectionId] !== null && all[pageId][sectionId] !== "") {
       return all[pageId][sectionId];
     }
   } catch {}
@@ -36,7 +36,8 @@ export function useCMS(pageId) {
 
   const get = useCallback(
     (sectionId, defaultValue = "") => {
-      if (content[sectionId] !== undefined) return content[sectionId];
+      const val = content[sectionId];
+      if (val !== undefined && val !== null && val !== "") return val;
       return defaultValue;
     },
     [content]

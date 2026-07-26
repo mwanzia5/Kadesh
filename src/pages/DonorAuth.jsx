@@ -12,7 +12,7 @@ export default function DonorAuth() {
   const [searchParams] = useSearchParams();
   const initialMode = searchParams.get("mode");
   const redirectTo = searchParams.get("redirect") || "/donate";
-  const [mode, setMode] = useState(initialMode || "login");
+  const [mode, setMode] = useState(initialMode || "signup");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);

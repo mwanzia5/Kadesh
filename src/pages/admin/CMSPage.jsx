@@ -17,31 +17,33 @@ function saveAll(all) {
 const PAGES = [
   { id: "home", label: "Home Page", color: "vibrant-blue",
     sections: [
-      { id: "heroBadge", name: "Hero Badge", content: "Transforming lives across Africa" },
+      { id: "heroBadge", name: "Hero Badge", content: "Since 2009 \u00b7 DR Congo, Uganda & Kenya" },
       { id: "heroTitle", name: "Hero Title", content: "Hope, restored." },
       { id: "heroSubtitle", name: "Hero Subtitle", content: "Education, healthcare, and food security for communities across Africa." },
-      { id: "heroCta", name: "Hero CTA Button", content: "Our Programs" },
-      { id: "heroCta2", name: "Hero Secondary CTA", content: "Donate Now" },
-      { id: "pillarsHeading", name: "Pillars Heading", content: "Our Impact Areas" },
-      { id: "pillarsSub", name: "Pillars Subtitle", content: "We focus on five key areas of community transformation" },
-      { id: "whoWeAreTitle", name: "Who We Are Title", content: "We are led by faith and guided by wisdom and empathy" },
-      { id: "whoWeAreDesc", name: "Who We Are Description", content: "Kadesh Hope Mission is a faith-based organization committed to transforming lives through holistic community development across Africa." },
-      { id: "whoWeAreCta", name: "Who We Are CTA", content: "Learn Our Story" },
-      { id: "impactTitle", name: "Impact Title", content: "Our Impact in Numbers" },
-      { id: "impactStat1", name: "Impact Stat 1", content: "10,000+", type: "single" },
-      { id: "impactLabel1", name: "Impact Label 1", content: "Lives Impacted", type: "single" },
-      { id: "impactStat2", name: "Impact Stat 2", content: "4", type: "single" },
-      { id: "impactLabel2", name: "Impact Label 2", content: "Active Programs", type: "single" },
-      { id: "impactStat3", name: "Impact Stat 3", content: "17+", type: "single" },
-      { id: "impactLabel3", name: "Impact Label 3", content: "Years of Service", type: "single" },
-      { id: "projectsTitle", name: "Projects Title", content: "Our Programs" },
-      { id: "projectsSub", name: "Projects Subtitle", content: "Discover how we are making a difference across Africa" },
+      { id: "heroCta", name: "Hero CTA Button", content: "Donate Now", type: "single" },
+      { id: "heroCta2", name: "Hero Secondary CTA", content: "Learn our story", type: "single" },
+      { id: "pillarsHeading", name: "Pillars Heading", content: "Our Foundation" },
+      { id: "pillarsSub", name: "Pillars Subtitle", content: "Five pillars driving lasting change across Africa" },
+      { id: "whoWeAreTitle", name: "Who We Are Title", content: "Who We Are" },
+      { id: "whoWeAreDesc", name: "Who We Are Description", content: "Founded in 2009, Kadesh Hope Mission began with a bold vision \u2014 a group of young people migrated from India to the Democratic Republic of Congo with a mission to uplift impoverished communities. Today, we continue transforming lives across multiple African nations through holistic development programs." },
+      { id: "whoWeCheck1", name: "Who We Are Check 1", content: "Quality education access for every child", type: "single" },
+      { id: "whoWeCheck2", name: "Who We Are Check 2", content: "Healthcare for underserved communities", type: "single" },
+      { id: "whoWeCheck3", name: "Who We Are Check 3", content: "Social development and economic empowerment", type: "single" },
+      { id: "whoWeAreCta", name: "Who We Are CTA", content: "Learn More", type: "single" },
+      { id: "projectsTitle", name: "Projects Title", content: "Our Projects" },
+      { id: "projectsSub", name: "Projects Subtitle", content: "Transforming communities across Africa" },
+      { id: "projectsCta", name: "Projects CTA Button", content: "View All Projects", type: "single" },
       { id: "galleryTitle", name: "Gallery Title", content: "Moments of Impact" },
-      { id: "gallerySub", name: "Gallery Subtitle", content: "A glimpse into our work across communities" },
-      { id: "testimonialsTitle", name: "Testimonials Title", content: "Voices of Change" },
-      { id: "donateCtaTitle", name: "Donate CTA Title", content: "Be the Change Today" },
-      { id: "donateCtaDesc", name: "Donate CTA Description", content: "Your support helps us reach more communities with education, healthcare, and hope." },
-      { id: "donateCtaBtn", name: "Donate CTA Button", content: "Make a Donation", type: "single" },
+      { id: "gallerySub", name: "Gallery Subtitle", content: "A glimpse into the work we do every day" },
+      { id: "galleryCta", name: "Gallery CTA Button", content: "View Full Gallery", type: "single" },
+      { id: "testimonialsTitle", name: "Testimonials Title", content: "Voices of Hope" },
+      { id: "testimonialsSub", name: "Testimonials Subtitle", content: "Hear from the people whose lives have been transformed" },
+      { id: "donateCtaTitle", name: "Donate CTA Title", content: "Make a Difference Today" },
+      { id: "donateCtaDesc", name: "Donate CTA Description", content: "Every donation helps us provide education, healthcare, food security, and hope to communities across Africa. Your generosity transforms lives and builds futures." },
+      { id: "donateCtaBtn", name: "Donate CTA Button", content: "Donate Now", type: "single" },
+      { id: "donatePartnerBtn", name: "Donate Partner Button", content: "Become a Partner", type: "single" },
+      { id: "partnersTitle", name: "Partners Title", content: "Trusted Partners" },
+      { id: "partnersSub", name: "Partners Subtitle", content: "Organizations that share our vision for a better Africa" },
     ]
   },
   { id: "about", label: "About Page", color: "hope-orange",
@@ -66,6 +68,13 @@ Our approach combines practical aid with lasting solutions — building schools,
       { id: "timelineSub", name: "Timeline Subtitle", content: "Key milestones in our 17-year journey of impact" },
       { id: "ctaTitle", name: "CTA Title", content: "Join Our Mission" },
       { id: "ctaDesc", name: "CTA Description", content: "Be part of the story. Your support transforms lives across Africa." },
+      { id: "impactTitle", name: "Impact Title", content: "Our Impact in Numbers" },
+      { id: "impactStat1", name: "Impact Stat 1", content: "10,000+", type: "single" },
+      { id: "impactLabel1", name: "Impact Label 1", content: "Youth Inspired & Mentored", type: "single" },
+      { id: "impactStat2", name: "Impact Stat 2", content: "300+", type: "single" },
+      { id: "impactLabel2", name: "Impact Label 2", content: "Children Kept in School", type: "single" },
+      { id: "impactStat3", name: "Impact Stat 3", content: "500+", type: "single" },
+      { id: "impactLabel3", name: "Impact Label 3", content: "Families Fed Weekly", type: "single" },
     ]
   },
   { id: "contact", label: "Contact Page", color: "green",
@@ -179,17 +188,6 @@ Our approach combines practical aid with lasting solutions — building schools,
       { id: "storyTitle", name: "Story Title", content: "Feeding the Hungry" },
     ]
   },
-  { id: "impact", label: "Impact Statistics", color: "vibrant-blue",
-    sections: [
-      { id: "heroSubtitle", name: "Hero Subtitle", content: "These initiatives have transformed individual lives and strengthened entire communities." },
-      { id: "introTitle", name: "Intro Title", content: "Our Numbers Speak for Themselves" },
-      { id: "introDescription", name: "Intro Description", content: "Every statistic represents a life transformed, a family strengthened, and a community empowered." },
-      { id: "summaryTitle", name: "Summary Title", content: "Combined Impact" },
-      { id: "summaryDescription", name: "Summary Description", content: "Together, our programs create a comprehensive approach to community transformation" },
-      { id: "ctaTitle", name: "CTA Title", content: "Help Us Reach More Communities" },
-      { id: "ctaDescription", name: "CTA Description", content: "Your contribution directly impacts thousands of lives across Africa." },
-    ]
-  },
   { id: "footer", label: "Footer", color: "gray",
     sections: [
       { id: "tagline", name: "Tagline", content: "Transforming lives through education, healthcare, food security, and social development since 2009." },
@@ -271,26 +269,37 @@ export default function CMSPage() {
               key={page.id}
               onClick={() => { setSelectedPage(page.id); setEditingSection(null); }}
               className={cn(
-                "px-3 py-1.5 rounded-lg font-body text-xs font-medium transition-colors",
+                "px-3 py-1.5 rounded-xl font-body text-xs font-semibold transition-all duration-200 border",
                 selectedPage === page.id
-                  ? "bg-vibrant-blue text-white shadow-sm"
-                  : "bg-gray-100 text-on-surface-variant hover:bg-gray-200"
+                  ? "bg-vibrant-blue text-white border-vibrant-blue shadow-md shadow-vibrant-blue/20 scale-[1.02]"
+                  : "bg-white text-on-surface-variant border-gray-200 hover:border-vibrant-blue/30 hover:text-deep-navy hover:shadow-sm"
               )}
             >
               {page.label}
               {storedContent[page.id] && Object.keys(storedContent[page.id]).length > 0 && (
-                <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               )}
             </button>
           ))}
         </div>
-        <input
-          type="text"
-          placeholder="Search fields..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full sm:w-48 px-3 py-2 border border-gray-200 rounded-lg font-body text-sm focus:outline-none focus:ring-2 focus:ring-vibrant-blue/20"
-        />
+        <div className="relative w-full sm:w-56">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input
+            type="text"
+            placeholder="Search fields..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-10 pr-9 py-2.5 border border-gray-200 rounded-xl bg-white font-body text-sm focus:outline-none focus:ring-2 focus:ring-vibrant-blue/30 focus:border-vibrant-blue transition-all shadow-sm"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 hover:text-gray-600"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+          )}
+        </div>
       </div>
 
       {saved && (

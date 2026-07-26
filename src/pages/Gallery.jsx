@@ -97,28 +97,36 @@ export default function Gallery() {
       <Section background="white" className="pt-16 pb-10">
         <Container>
           <div className="max-w-xl mx-auto mb-10">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-on-surface-variant" />
+            <div className="relative group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-on-surface-variant/60 group-focus-within:text-vibrant-blue transition-colors" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search photos..."
-                className="w-full pl-12 pr-4 py-3 rounded-xl border border-soft-accent/60 bg-surface font-body text-body-md text-deep-navy placeholder:text-on-surface-variant/60 focus:outline-none focus:ring-2 focus:ring-vibrant-blue/40 focus:border-vibrant-blue transition-all"
+                className="w-full pl-12 pr-10 py-3.5 rounded-2xl border-2 border-soft-accent/60 bg-white font-body text-body-md text-deep-navy placeholder:text-on-surface-variant/50 shadow-sm focus:outline-none focus:ring-2 focus:ring-vibrant-blue/30 focus:border-vibrant-blue transition-all"
               />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+              )}
             </div>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-3">
+          <div className="flex flex-wrap justify-center gap-2.5">
             {CATEGORIES.map((category) => (
               <button
                 key={category}
                 onClick={() => setActiveFilter(category)}
                 className={cn(
-                  "px-5 py-2 rounded-full font-body text-label-bold transition-all duration-300",
+                  "px-5 py-2.5 rounded-full font-body text-label-bold transition-all duration-300 border-2",
                   activeFilter === category
-                    ? "bg-vibrant-blue text-white shadow-md"
-                    : "bg-surface-variant/40 text-on-surface-variant hover:bg-surface-variant hover:text-deep-navy"
+                    ? "bg-gradient-to-r from-vibrant-blue to-vibrant-blue/80 text-white border-vibrant-blue shadow-lg shadow-vibrant-blue/20 scale-105"
+                    : "bg-white text-on-surface-variant border-soft-accent/40 hover:border-vibrant-blue/30 hover:text-deep-navy hover:shadow-md hover:scale-[1.02]"
                 )}
               >
                 {category}
