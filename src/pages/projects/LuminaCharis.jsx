@@ -132,10 +132,10 @@ function HeroSection() {
               </span>
             </motion.div>
 
-            <div className="max-w-4xl mb-8">
+            <div className="max-w-5xl mb-8" style={{ wordBreak: "keep-all", overflowWrap: "normal" }}>
               <SplitText
                 text="Lumina Charis School of Africa"
-                className="font-display text-4xl md:text-6xl lg:text-7xl font-bold leading-tight block"
+                className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight block"
                 delay={0.5}
                 duration={0.8}
                 stagger={0.02}
@@ -339,7 +339,7 @@ function ProfileDownloadSection() {
               future expansion plans — in our institutional profile document.
             </p>
             <a
-              href="/documents/LUMINA SCHOOL OF AFRICA PROFILE.pdf"
+              href="/documents/lumina-charis-institutional-profile.pdf"
               download
               target="_blank"
               rel="noopener noreferrer"

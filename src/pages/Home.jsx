@@ -245,7 +245,7 @@ function PillarsSection() {
                     >
                       {Icon && <Icon className="h-7 w-7" />}
                     </div>
-                    <h3 className={`font-display text-deep-navy mb-3 ${pillar.title.length > 15 ? "text-lg" : "text-headline-md"}`}>
+                    <h3 className="font-display text-headline-md text-deep-navy mb-3 leading-tight text-balance px-1">
                       {pillar.title}
                     </h3>
                     <p className="font-body text-body-md text-on-surface-variant leading-relaxed">
