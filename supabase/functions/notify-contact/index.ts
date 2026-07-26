@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const NOTIFICATION_EMAIL = "kadeshhope.africa@gmail.com";
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
@@ -13,17 +12,21 @@ interface ContactPayload {
   message: string;
 }
 
+function escapeHtml(value: unknown): string {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
-
     const body = await req.text();
 
     if (!body) {
@@ -54,6 +57,19 @@ serve(async (req: Request) => {
 
     const { first_name, last_name, email, subject, message } = payload;
 
+    if (!email || !message) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Missing required fields" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const safeFirstName = escapeHtml(first_name);
+    const safeLastName = escapeHtml(last_name);
+    const safeEmail = escapeHtml(email);
+    const safeSubject = escapeHtml(subject || "N/A");
+    const safeMessage = escapeHtml(message).replace(/\n/g, "<br>");
+
     // Send email via Resend
     const resendResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -65,16 +81,16 @@ serve(async (req: Request) => {
         from: "Kadesh Hope Website <onboarding@resend.dev>",
         to: [NOTIFICATION_EMAIL],
         reply_to: email,
-        subject: `New Contact: ${subject || "General Inquiry"} — ${first_name} ${last_name}`,
+        subject: `New Contact: ${subject || "General Inquiry"} \u2014 ${first_name} ${last_name}`,
         html: `
           <h2>New Contact Form Message</h2>
-          <p><strong>From:</strong> ${first_name} ${last_name} (${email})</p>
-          <p><strong>Subject:</strong> ${subject || "N/A"}</p>
+          <p><strong>From:</strong> ${safeFirstName} ${safeLastName} (${safeEmail})</p>
+          <p><strong>Subject:</strong> ${safeSubject}</p>
           <p><strong>Message:</strong></p>
           <blockquote style="border-left:3px solid #ccc; padding-left:12px; margin-left:0;">
-            ${message.replace(/\n/g, "<br>")}
+            ${safeMessage}
           </blockquote>
-          ${recordId ? `<p style="color:#999; font-size:12px;">Record ID: ${recordId}</p>` : ""}
+          ${recordId ? `<p style="color:#999; font-size:12px;">Record ID: ${escapeHtml(recordId)}</p>` : ""}
         `,
       }),
     });
@@ -90,6 +106,7 @@ serve(async (req: Request) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
+    console.error("[notify-contact] Error:", error);
     return new Response(
       JSON.stringify({ success: false, error: (error as Error).message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
