@@ -95,7 +95,7 @@ export const MINISTRY_AREAS = [
     icon: "UtensilsCrossed",
   },
   {
-    title: "Entrepreneurial Programs",
+    title: "Enterprise Programs",
     description:
       "Offering skills training, mentorship, and motivational workshops to empower Africa's next generation of innovators.",
     icon: "Rocket",
