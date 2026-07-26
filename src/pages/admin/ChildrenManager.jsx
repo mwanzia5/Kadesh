@@ -19,7 +19,8 @@ import {
   useUpdateChild,
   useDeleteChild,
 } from "@/hooks/useChildren";
-import { uploadImage, getPublicUrl } from "@/services/upload";
+import { uploadAndConvert, getPublicUrl } from "@/services/upload";
+import ImageCropper from "@/components/admin/ImageCropper";
 
 const STATUSES = ["All", "available", "sponsored", "pending"];
 const GENDERS = ["male", "female"];
@@ -310,6 +311,9 @@ export default function ChildrenManager() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [toast, setToast] = useState(null);
+  const [pendingPhotoFile, setPendingPhotoFile] = useState(null);
+  const [photoTarget, setPhotoTarget] = useState(null);
+  const [showCropper, setShowCropper] = useState(false);
 
   const [newChild, setNewChild] = useState({
     first_name: "",
@@ -349,18 +353,35 @@ export default function ChildrenManager() {
       return;
     }
 
+    e.target.value = "";
+    setPendingPhotoFile(file);
+    setPhotoTarget(isNew ? "new" : "edit");
+    setShowCropper(true);
+  };
+
+  const handleCropComplete = async (croppedFile) => {
+    setShowCropper(false);
+    setPendingPhotoFile(null);
+
+    if (!croppedFile) {
+      setPhotoTarget(null);
+      return;
+    }
+
     setUploading(true);
 
     try {
-      const ext = file.name.split(".").pop();
-      const path = `children/${Date.now()}.${ext}`;
+      const ext = croppedFile.name.split(".").pop();
+      let path = `children/${Date.now()}.${ext}`;
 
-      const { error: uploadErr } = await uploadImage(file, "children", path);
+      const { error: uploadErr, path: finalPath } = await uploadAndConvert(croppedFile, "children", path);
+      path = finalPath || path;
+
       if (uploadErr) throw uploadErr;
 
       const publicUrl = getPublicUrl("children", path);
 
-      if (isNew) {
+      if (photoTarget === "new") {
         setNewChild((p) => ({ ...p, photo_url: publicUrl }));
       } else {
         setEditData((d) => ({ ...d, photo_url: publicUrl }));
@@ -371,7 +392,14 @@ export default function ChildrenManager() {
       showToast("Upload failed: " + err.message, "error");
     } finally {
       setUploading(false);
+      setPhotoTarget(null);
     }
+  };
+
+  const handleCropCancel = () => {
+    setShowCropper(false);
+    setPendingPhotoFile(null);
+    setPhotoTarget(null);
   };
 
   const handleEdit = (child) => {
@@ -713,6 +741,14 @@ export default function ChildrenManager() {
           )}
         </div>
       </div>
+
+      {showCropper && pendingPhotoFile && (
+        <ImageCropper
+          file={pendingPhotoFile}
+          onComplete={handleCropComplete}
+          onCancel={handleCropCancel}
+        />
+      )}
     </motion.div>
   );
 }

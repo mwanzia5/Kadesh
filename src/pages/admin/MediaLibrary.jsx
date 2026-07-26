@@ -11,10 +11,13 @@ import {
   Calendar,
   HardDrive,
   Link2,
+  Crop,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGalleryImages, useCreateGalleryImage, useDeleteGalleryImage } from "@/hooks/useGallery";
-import { uploadImage, getPublicUrl } from "@/services/upload";
+import { uploadAndConvert, getPublicUrl } from "@/services/upload";
+import { shouldConvertImage, convertImageToWebP } from "@/lib/imageConverter";
+import ImageCropper from "@/components/admin/ImageCropper";
 
 const FILTERS = ["All", "Gallery", "Projects", "Partners"];
 
@@ -36,6 +39,8 @@ export default function MediaLibrary() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [dragOver, setDragOver] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+  const [pendingFile, setPendingFile] = useState(null);
+  const [showCropper, setShowCropper] = useState(false);
   const fileInputRef = useRef(null);
 
   const images = galleryData?.data?.map(img => ({
@@ -56,25 +61,26 @@ export default function MediaLibrary() {
     setUploadProgress(0);
 
     try {
-      const ext = file.name.split(".").pop();
-      const path = `gallery/${Date.now()}.${ext}`;
-      
-      // Simulate progress
       const progressInterval = setInterval(() => {
         setUploadProgress((prev) => (prev >= 90 ? 90 : prev + 10));
       }, 150);
 
-      const { error: uploadErr } = await uploadImage(file, "images", path);
+      const ext = file.name.split(".").pop();
+      let path = `gallery/${Date.now()}.${ext}`;
+
+      const { error: uploadErr, path: finalPath } = await uploadAndConvert(file, "images", path);
+      path = finalPath || path;
+
       clearInterval(progressInterval);
 
       if (uploadErr) throw uploadErr;
 
       const publicUrl = getPublicUrl("images", path);
-      
+
       setUploadProgress(100);
 
       await createGalleryImage.mutateAsync({
-        title: file.name,
+        title: file.name.replace(/\.[^.]+$/, "") + (file.type === "image/webp" ? ".webp" : `.${ext}`),
         image_url: publicUrl,
         category: "Gallery",
         sort_order: 0
@@ -91,18 +97,32 @@ export default function MediaLibrary() {
 
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
-    if (file && file.type.startsWith("image/")) {
-      handleUpload(file);
-    }
+    if (!file || !file.type.startsWith("image/")) return;
+    e.target.value = "";
+    setPendingFile(file);
+    setShowCropper(true);
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
     setDragOver(false);
     const file = e.dataTransfer.files?.[0];
-    if (file && file.type.startsWith("image/")) {
-      handleUpload(file);
+    if (!file || !file.type.startsWith("image/")) return;
+    setPendingFile(file);
+    setShowCropper(true);
+  };
+
+  const handleCropComplete = async (croppedFile) => {
+    setShowCropper(false);
+    setPendingFile(null);
+    if (croppedFile) {
+      await handleUpload(croppedFile);
     }
+  };
+
+  const handleCropCancel = () => {
+    setShowCropper(false);
+    setPendingFile(null);
   };
 
   const handleDelete = async (id) => {
@@ -399,6 +419,14 @@ export default function MediaLibrary() {
           )}
         </AnimatePresence>
       </div>
+
+      {showCropper && pendingFile && (
+        <ImageCropper
+          file={pendingFile}
+          onComplete={handleCropComplete}
+          onCancel={handleCropCancel}
+        />
+      )}
     </motion.div>
   );
 }

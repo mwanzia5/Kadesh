@@ -1,8 +1,9 @@
 import { useState, useRef } from "react";
 import { useVideos, useCreateVideo, useUpdateVideo, useDeleteVideo } from "@/hooks/useVideos";
-import { uploadImage, getPublicUrl } from "@/services/upload";
+import { uploadAndConvert, getPublicUrl } from "@/services/upload";
 import { Upload, Trash2, Edit, ExternalLink, Plus, X, Film, Link as LinkIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import ImageCropper from "@/components/admin/ImageCropper";
 
 const CATEGORIES = ["Education", "Health", "Food Security", "Women & Youth", "Community"];
 
@@ -34,6 +35,8 @@ export default function VideosManager() {
   const [duration, setDuration] = useState("");
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [pendingThumbnail, setPendingThumbnail] = useState(null);
+  const [showCropper, setShowCropper] = useState(false);
   const fileRef = useRef(null);
   const thumbRef = useRef(null);
 
@@ -68,6 +71,27 @@ export default function VideosManager() {
     setShowForm(true);
   };
 
+  const handleThumbnailSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !file.type.startsWith("image/")) return;
+    e.target.value = "";
+    setPendingThumbnail(file);
+    setShowCropper(true);
+  };
+
+  const handleCropComplete = (croppedFile) => {
+    setShowCropper(false);
+    setPendingThumbnail(null);
+    if (croppedFile) {
+      setThumbnailFile(croppedFile);
+    }
+  };
+
+  const handleCropCancel = () => {
+    setShowCropper(false);
+    setPendingThumbnail(null);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -93,13 +117,13 @@ export default function VideosManager() {
         if (videoFile) {
           const ext = videoFile.name.split(".").pop();
           const path = `videos/${Date.now()}.${ext}`;
-          const { error: uploadErr } = await uploadImage(videoFile, "videos", path);
+          const { error: uploadErr, path: finalPath } = await uploadAndConvert(videoFile, "videos", path);
           if (uploadErr) {
             setError("Failed to upload video: " + uploadErr.message);
             setUploading(false);
             return;
           }
-          videoUrl = getPublicUrl("videos", path);
+          videoUrl = getPublicUrl("videos", finalPath || path);
         } else {
           videoUrl = editingVideo.url;
         }
@@ -109,9 +133,9 @@ export default function VideosManager() {
       if (thumbnailFile) {
         const ext = thumbnailFile.name.split(".").pop();
         const path = `thumbnails/${Date.now()}.${ext}`;
-        const { error: thumbErr } = await uploadImage(thumbnailFile, "thumbnails", path);
+        const { error: thumbErr, path: finalPath } = await uploadAndConvert(thumbnailFile, "thumbnails", path);
         if (!thumbErr) {
-          thumbnailUrl = getPublicUrl("thumbnails", path);
+          thumbnailUrl = getPublicUrl("thumbnails", finalPath || path);
         }
       }
 
@@ -274,7 +298,7 @@ export default function VideosManager() {
                   type="file"
                   ref={thumbRef}
                   accept="image/*"
-                  onChange={(e) => setThumbnailFile(e.target.files[0])}
+                  onChange={handleThumbnailSelect}
                   className="hidden"
                 />
                 <button
@@ -403,6 +427,14 @@ export default function VideosManager() {
             </div>
           ))}
         </div>
+      )}
+
+      {showCropper && pendingThumbnail && (
+        <ImageCropper
+          file={pendingThumbnail}
+          onComplete={handleCropComplete}
+          onCancel={handleCropCancel}
+        />
       )}
     </div>
   );
