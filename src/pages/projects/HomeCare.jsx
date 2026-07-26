@@ -10,6 +10,9 @@ import {
   Activity,
   CheckCircle,
   Shield,
+  Download,
+  FileText,
+  MapPin,
 } from "lucide-react";
 
 import PageTransition from "@/animations/PageTransition";
@@ -62,13 +65,40 @@ const keyFacts = [
   { icon: Activity, value: "15", label: "Health Workers" },
 ];
 
+// Facts sourced from the Ohana Care Clinic 2026 newsletter
+const ohanaCoreValues = [
+  { letter: "E", name: "Excellence", desc: "High clinical standards and professional integrity in every service." },
+  { letter: "C", name: "Compassion", desc: "Treating every patient with warmth, care, and respect." },
+  { letter: "H", name: "Holistic Care", desc: "Addressing physical, emotional, and spiritual well-being." },
+  { letter: "I", name: "Innovation", desc: "Creative solutions to overcome healthcare challenges." },
+  { letter: "D", name: "Dignity", desc: "Respecting cultural, religious, and personal differences." },
+];
+
+const ohanaServices = [
+  "General Medical Consultation",
+  "Maternal and Child Healthcare",
+  "Diabetic and Chronic Disease Management",
+  "Diagnostic Laboratory Services",
+  "Pharmacy and Medication Support",
+];
+
+const ohanaTimeline = [
+  { date: "Nov 2025", label: "Foundation & Structural Works" },
+  { date: "Dec 2025", label: "Layout & Internal Development" },
+  { date: "Jan 2026", label: "Finishing & Installations" },
+  { date: "Feb 2026", label: "Systems & Utilities Setup" },
+  { date: "Mar 2026", label: "Final Touches & Completion" },
+];
+
 export default function HomeCare() {
   return (
     <PageTransition>
       <HeroSection />
       <StorySection />
+      <OhanaClinicSection />
       <GallerySection />
       <ImpactSection />
+      <NewsletterDownloadSection />
       <DonationCTA />
       <RelatedProjects />
     </PageTransition>
@@ -210,6 +240,103 @@ function StorySection() {
   );
 }
 
+// NEW — Ohana Care Clinic of Africa, sourced from the 2026 newsletter.
+// A related primary healthcare initiative under KHMA's health pillar,
+// run in partnership with the Sweet Aroma Foundation (SAF).
+function OhanaClinicSection() {
+  return (
+    <Section background="gray" className="section-padding">
+      <Container>
+        <div className="max-w-5xl mx-auto">
+          <ScrollReveal>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 rounded-xl bg-vibrant-blue/10 flex items-center justify-center">
+                <Building2 className="h-6 w-6 text-vibrant-blue" />
+              </div>
+              <span className="font-body text-label-bold text-vibrant-blue uppercase tracking-wider">
+                Featured Health Initiative
+              </span>
+            </div>
+
+            <h2 className="font-display text-3xl md:text-4xl lg:text-5xl text-deep-navy mb-2">
+              Ohana Care Clinic of Africa
+            </h2>
+            <p className="font-body text-body-md text-hope-orange font-semibold italic mb-6">
+              "No One Left Behind"
+            </p>
+          </ScrollReveal>
+
+          <ScrollReveal delay={0.1}>
+            <div className="flex items-center gap-2 mb-6 font-body text-body-md text-on-surface-variant">
+              <MapPin className="h-5 w-5 text-hope-orange shrink-0" />
+              Maili Nne, Eldoret–Uganda Road, Eldoret, Kenya
+            </div>
+
+            <div className="space-y-5 font-body text-body-lg text-on-surface leading-relaxed mb-10">
+              <p>
+                Ohana Care Clinic is a primary healthcare initiative established by the Sweet Aroma
+                Foundation (SAF) in partnership with Kadesh Hope Mission of Africa (KHMA). It was
+                founded to bring accessible, affordable, and compassionate healthcare to the
+                fast-growing, underserved communities around Maili Nne — addressing everything from
+                malaria and HIV/AIDS to diabetes, hypertension, and maternal health.
+              </p>
+              <p>
+                The name "Ohana" means family, and that defines the clinic's approach: every patient
+                is treated with dignity, warmth, and personal attention that goes beyond diagnosis and
+                treatment to the emotional and spiritual needs of individuals and families.
+              </p>
+            </div>
+          </ScrollReveal>
+
+          {/* Core values */}
+          <ScrollReveal delay={0.15}>
+            <h3 className="font-display text-xl text-deep-navy mb-5">Core Values — E.C.H.O.I.D.</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-12">
+              {ohanaCoreValues.map((value) => (
+                <div key={value.letter} className="bg-white rounded-xl border border-soft-accent/50 p-5 text-center">
+                  <div className="w-10 h-10 rounded-full bg-vibrant-blue/10 flex items-center justify-center mx-auto mb-3">
+                    <span className="font-display font-bold text-vibrant-blue">{value.letter}</span>
+                  </div>
+                  <p className="font-body text-label-bold text-deep-navy mb-1">{value.name}</p>
+                  <p className="font-body text-caption text-on-surface-variant leading-snug">{value.desc}</p>
+                </div>
+              ))}
+            </div>
+          </ScrollReveal>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+            {/* Services offered */}
+            <ScrollReveal delay={0.2}>
+              <h3 className="font-display text-xl text-deep-navy mb-5">Services Offered</h3>
+              <ul className="space-y-3">
+                {ohanaServices.map((service) => (
+                  <li key={service} className="flex items-start gap-3 font-body text-body-md text-on-surface">
+                    <CheckCircle className="h-5 w-5 text-hope-orange shrink-0 mt-0.5" />
+                    {service}
+                  </li>
+                ))}
+              </ul>
+            </ScrollReveal>
+
+            {/* Journey timeline */}
+            <ScrollReveal delay={0.25}>
+              <h3 className="font-display text-xl text-deep-navy mb-5">Development Journey</h3>
+              <div className="space-y-3">
+                {ohanaTimeline.map((step) => (
+                  <div key={step.date} className="flex items-center gap-4 bg-white rounded-lg border border-soft-accent/50 px-4 py-3">
+                    <span className="font-body text-label-bold text-vibrant-blue w-24 shrink-0">{step.date}</span>
+                    <span className="font-body text-body-md text-on-surface-variant">{step.label}</span>
+                  </div>
+                ))}
+              </div>
+            </ScrollReveal>
+          </div>
+        </div>
+      </Container>
+    </Section>
+  );
+}
+
 function GallerySection() {
   return (
     <Section background="gray" className="section-padding">
@@ -277,6 +404,43 @@ function ImpactSection() {
             </motion.div>
           ))}
         </motion.div>
+      </Container>
+    </Section>
+  );
+}
+
+// NEW — lets visitors download the full Ohana Care Clinic 2026 newsletter
+// for the complete story, photos, and partnership details.
+function NewsletterDownloadSection() {
+  return (
+    <Section background="gray" className="section-padding">
+      <Container>
+        <ScrollReveal>
+          <div className="max-w-3xl mx-auto text-center bg-white rounded-2xl border border-soft-accent/50 shadow-card p-10 md:p-14">
+            <div className="w-16 h-16 rounded-2xl bg-vibrant-blue/10 flex items-center justify-center mx-auto mb-6">
+              <FileText className="h-8 w-8 text-vibrant-blue" />
+            </div>
+            <h3 className="font-display text-2xl md:text-3xl text-deep-navy mb-4">
+              Read the Full Ohana Care Clinic Newsletter
+            </h3>
+            <p className="font-body text-body-md text-on-surface-variant mb-8 leading-relaxed">
+              Get the complete story behind Ohana Care Clinic of Africa — our partnership with the
+              Sweet Aroma Foundation, the full development journey, services offered, and photos
+              from the opening — in our 2026 newsletter.
+            </p>
+            <a
+              href="/documents/Ohana Clinic_Kadesh Newsletter 1.pdf"
+              download
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button variant="primary" size="lg">
+                Download Newsletter (PDF)
+                <Download className="ml-2 h-5 w-5" />
+              </Button>
+            </a>
+          </div>
+        </ScrollReveal>
       </Container>
     </Section>
   );

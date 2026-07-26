@@ -10,6 +10,8 @@ import {
   Monitor,
   CheckCircle,
   Sparkles,
+  Download,
+  FileText,
 } from "lucide-react";
 
 import PageTransition from "@/animations/PageTransition";
@@ -97,6 +99,7 @@ export default function LuminaCharis() {
       <StorySection />
       <GallerySection />
       <ImpactSection />
+      <ProfileDownloadSection />
       <DonationCTA />
       <RelatedProjects />
     </PageTransition>
@@ -311,6 +314,43 @@ function ImpactSection() {
             </motion.div>
           ))}
         </motion.div>
+      </Container>
+    </Section>
+  );
+}
+
+// NEW — lets visitors download the full Lumina Charis Schools Africa
+// institutional profile for the complete vision, curriculum, and programs.
+function ProfileDownloadSection() {
+  return (
+    <Section background="gray" className="section-padding">
+      <Container>
+        <ScrollReveal>
+          <div className="max-w-3xl mx-auto text-center bg-white rounded-2xl border border-soft-accent/50 shadow-card p-10 md:p-14">
+            <div className="w-16 h-16 rounded-2xl bg-vibrant-blue/10 flex items-center justify-center mx-auto mb-6">
+              <FileText className="h-8 w-8 text-vibrant-blue" />
+            </div>
+            <h3 className="font-display text-2xl md:text-3xl text-deep-navy mb-4">
+              Read the Full Institutional Profile
+            </h3>
+            <p className="font-body text-body-md text-on-surface-variant mb-8 leading-relaxed">
+              Get the complete picture of Lumina Charis School of Africa — our vision and mission,
+              curriculum framework, vocational training programs, Christian formation model, and
+              future expansion plans — in our institutional profile document.
+            </p>
+            <a
+              href="/documents/LUMINA SCHOOL OF AFRICA PROFILE.pdf"
+              download
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button variant="primary" size="lg">
+                Download Institutional Profile (PDF)
+                <Download className="ml-2 h-5 w-5" />
+              </Button>
+            </a>
+          </div>
+        </ScrollReveal>
       </Container>
     </Section>
   );
