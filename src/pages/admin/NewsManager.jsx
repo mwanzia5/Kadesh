@@ -120,6 +120,8 @@ export default function NewsManager() {
         excerpt: form.excerpt,
         content: form.content,
         image: form.image || null,
+        category: form.category,
+        author: form.author,
         is_published: form.published,
         published_at: form.published ? new Date().toISOString() : null,
       };

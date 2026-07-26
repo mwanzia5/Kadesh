@@ -16,6 +16,7 @@ import {
 
 import PageTransition from "@/animations/PageTransition";
 import SEO from "@/components/ui/SEO";
+import { getCMSContent } from "@/hooks/useCMS";
 import {
   staggerContainer,
   slideUp,
@@ -140,7 +141,7 @@ function HeroSection() {
             >
               <span className="h-px w-10 bg-hope-orange" />
               <span className="font-body text-label-bold uppercase tracking-[0.3em] text-white/70">
-                Since 2009 &middot; DR Congo, Uganda &amp; Kenya
+                {getCMSContent("home", "heroBadge", "Since 2009 \u00b7 DR Congo, Uganda & Kenya")}
               </span>
               <span className="h-px w-10 bg-hope-orange" />
             </motion.div>
@@ -161,7 +162,7 @@ function HeroSection() {
               transition={{ duration: 0.6, delay: 1.3 }}
               className="font-body text-body-lg md:text-xl max-w-xl text-white/70 mb-10 text-balance"
             >
-              Education, healthcare, and food security for communities across Africa.
+              {getCMSContent("home", "heroSubtitle", "Education, healthcare, and food security for communities across Africa.")}
             </motion.p>
 
             <motion.div

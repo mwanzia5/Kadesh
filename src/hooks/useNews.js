@@ -10,9 +10,9 @@ import {
 
 export function useNews() {
   return useQuery({
-    queryKey: ["news"],
+    queryKey: ["news", "published"],
     queryFn: getNews,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 2 * 60 * 1000,
   });
 }
 
@@ -20,16 +20,17 @@ export function useAllNews() {
   return useQuery({
     queryKey: ["news", "all"],
     queryFn: getAllNews,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
+    refetchOnMount: true,
   });
 }
 
 export function useNewsArticle(slug) {
   return useQuery({
-    queryKey: ["news", slug],
+    queryKey: ["news", "article", slug],
     queryFn: () => getNewsArticle(slug),
     enabled: !!slug,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 2 * 60 * 1000,
   });
 }
 

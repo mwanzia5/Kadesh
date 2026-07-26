@@ -31,6 +31,7 @@ import OptimizedImage from "@/components/ui/OptimizedImage";
 import GlareHover from "@/components/ui/GlareHover";
 import SplitText from "@/components/ui/SplitText";
 import SEO from "@/components/ui/SEO";
+import { getCMSContent } from "@/hooks/useCMS";
 import AnimatedCounter from "@/components/ui/AnimatedCounter";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import SectionHeading from "@/components/ui/SectionHeading";
@@ -199,11 +200,7 @@ function HeroSection() {
               transition={{ duration: 0.6, delay: 1.2 }}
               className="font-body text-body-lg md:text-xl max-w-2xl text-white/80 mb-10"
             >
-              In 2009, a group of young people migrated from India to the
-              Democratic Republic of Congo with a bold vision &mdash; to uplift
-              impoverished communities through compassion, education, and
-              holistic development. That journey marked the beginning of Kadesh
-              Hope Mission.
+              {getCMSContent("about", "heroSubtitle", "In 2009, a group of young people migrated from India to the Democratic Republic of Congo with a bold vision \u2014 to uplift impoverished communities through compassion, education, and holistic development. That journey marked the beginning of Kadesh Hope Mission.")}
             </motion.p>
           </div>
         </Container>
