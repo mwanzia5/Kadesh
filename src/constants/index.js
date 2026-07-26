@@ -166,7 +166,7 @@ export const PROGRAM_PILLARS = [
     color: "vibrant-blue",
   },
   {
-    title: "Entrepreneurial Programs",
+    title: "Enterprise Programs",
     icon: "Rocket",
     description: "Skills training and mentorship for youth.",
     color: "hope-orange",
