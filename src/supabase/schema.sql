@@ -474,7 +474,6 @@ CREATE POLICY "Authenticated can delete images"
   ON storage.objects FOR DELETE
   USING (bucket_id IN ('images', 'thumbnails', 'videos', 'sponsorship', 'children') AND auth.role() = 'authenticated');
 
--- Migration: Convert content column from TEXT to JSONB for projects table.
--- Run this if your production projects table still has content as TEXT.
--- alter table projects
---   alter column content type jsonb using coalesce(content::jsonb, '{}'::jsonb);
+-- Migration: Add category and author columns to news table
+ALTER TABLE news ADD COLUMN IF NOT EXISTS category TEXT;
+ALTER TABLE news ADD COLUMN IF NOT EXISTS author TEXT;

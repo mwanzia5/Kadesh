@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
-import { Search, Camera, Loader2 } from "lucide-react";
+import { Search, Camera, Loader2, Image as ImageIcon } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 import PageTransition from "@/animations/PageTransition";
 import Container from "@/components/ui/Container";
@@ -7,6 +8,8 @@ import Section from "@/components/ui/Section";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import SectionHeading from "@/components/ui/SectionHeading";
 import DomeGallery from "@/components/ui/DomeGallery";
+import OptimizedImage from "@/components/ui/OptimizedImage";
+import GlareHover from "@/components/ui/GlareHover";
 import useMediaQuery from "@/hooks/useMediaQuery";
 import { useGalleryImages } from "@/hooks/useGallery";
 import { cn } from "@/lib/utils";
@@ -30,96 +33,12 @@ const CATEGORY_MAP = {
   community: "Community",
 };
 
-const FALLBACK_IMAGES = [
-  { src: "/Eldoret/Among Students.jpg", title: "Among Students", category: "education" },
-  { src: "/Eldoret/Asians_Hindus.jpg", title: "Asians Hindus", category: "community" },
-  { src: "/Eldoret/Asians_Hindus_1.jpg", title: "Asians Hindus 1", category: "community" },
-  { src: "/Eldoret/IMG-20250326-WA0021.jpg", title: "IMG-20250326-WA0021", category: "community" },
-  { src: "/Eldoret/IMG-20250624-WA0026.jpg", title: "IMG-20250624-WA0026", category: "community" },
-  { src: "/Eldoret/IMG-20250624-WA0027.jpg", title: "IMG-20250624-WA0027", category: "community" },
-  { src: "/Eldoret/IMG-20250624-WA0028.jpg", title: "IMG-20250624-WA0028", category: "community" },
-  { src: "/Eldoret/IMG-20250624-WA0029.jpg", title: "IMG-20250624-WA0029", category: "community" },
-  { src: "/Eldoret/IMG-20250624-WA0030.jpg", title: "IMG-20250624-WA0030", category: "community" },
-  { src: "/Eldoret/IMG-20250624-WA0040.jpg", title: "IMG-20250624-WA0040", category: "community" },
-  { src: "/Eldoret/IMG-20250624-WA0041.jpg", title: "IMG-20250624-WA0041", category: "community" },
-  { src: "/Eldoret/IMG-20250624-WA0042.jpg", title: "IMG-20250624-WA0042", category: "community" },
-  { src: "/Eldoret/IMG-20250624-WA0043.jpg", title: "IMG-20250624-WA0043", category: "community" },
-  { src: "/Eldoret/IMG-20250624-WA0044.jpg", title: "IMG-20250624-WA0044", category: "community" },
-  { src: "/Eldoret/IMG-20250624-WA0045.jpg", title: "IMG-20250624-WA0045", category: "community" },
-  { src: "/Eldoret/IMG-20250624-WA0046.jpg", title: "IMG-20250624-WA0046", category: "community" },
-  { src: "/Eldoret/IMG-20250624-WA0047.jpg", title: "IMG-20250624-WA0047", category: "community" },
-  { src: "/Eldoret/IMG-20250624-WA0048.jpg", title: "IMG-20250624-WA0048", category: "community" },
-  { src: "/Eldoret/IMG-20250624-WA0049.jpg", title: "IMG-20250624-WA0049", category: "community" },
-  { src: "/Eldoret/Ministry among Hindus.jpg", title: "Ministry among Hindus", category: "community" },
-  { src: "/Eldoret/Mombasa.jpg", title: "Mombasa", category: "community" },
-  { src: "/Eldoret/Mombasa_1.jpg", title: "Mombasa 1", category: "community" },
-  { src: "/Eldoret/Mombasa2.jpg", title: "Mombasa2", category: "community" },
-  { src: "/Eldoret/Outreach.jpg", title: "Outreach", category: "community" },
-  { src: "/Eldoret/Picture17.jpg", title: "Picture17", category: "community" },
-  { src: "/Eldoret/Picture18.jpg", title: "Picture18", category: "community" },
-  { src: "/Eldoret/Picture19.jpg", title: "Picture19", category: "community" },
-  { src: "/Eldoret/Picture31.jpg", title: "Picture31", category: "community" },
-  { src: "/Eldoret/Village Ministry.jpg", title: "Village Ministry", category: "community" },
-  { src: "/Eldoret/WhatsApp Image 2023-10-01 at 13.28.04_b28ea41e.jpg", title: "Mission Photo (2023-10-01)", category: "community" },
-  { src: "/Eldoret/WhatsApp Image 2024-04-01 at 15.12.07_fa6c6ef2.jpg", title: "Mission Photo (2024-04-01)", category: "community" },
-  { src: "/Eldoret/WhatsApp Image 2024-04-01 at 15.12.10_1ce11263.jpg", title: "Mission Photo (2024-04-01)", category: "community" },
-  { src: "/Eldoret/WhatsApp Image 2024-04-01 at 15.12.10_ee636fc6.jpg", title: "Mission Photo (2024-04-01)", category: "community" },
-  { src: "/Eldoret/WhatsApp Image 2024-04-01 at 15.13.29_d49640ec.jpg", title: "Mission Photo (2024-04-01)", category: "community" },
-  { src: "/Eldoret/WhatsApp Image 2024-04-01 at 15.32.34_0a05c906.jpg", title: "Mission Photo (2024-04-01)", category: "community" },
-  { src: "/Eldoret/WhatsApp Image 2024-04-01 at 16.23.45_6d9f4fac.jpg", title: "Mission Photo (2024-04-01)", category: "community" },
-  { src: "/Eldoret/WhatsApp Image 2024-04-01 at 16.23.45_c5f87276.jpg", title: "Mission Photo (2024-04-01)", category: "community" },
-  { src: "/Eldoret/WhatsApp Image 2024-04-01 at 17.01.42_c7a7a9c1.jpg", title: "Mission Photo (2024-04-01)", category: "community" },
-  { src: "/Eldoret/WhatsApp Image 2024-04-01 at 17.14.30_eb577999.jpg", title: "Mission Photo (2024-04-01)", category: "community" },
-  { src: "/Eldoret/WhatsApp Image 2024-04-01 at 17.20.22_2a8f2f85.jpg", title: "Mission Photo (2024-04-01)", category: "community" },
-  { src: "/Eldoret/WhatsApp Image 2024-09-06 at 21.50.17_79227993.jpg", title: "Mission Photo (2024-09-06)", category: "community" },
-  { src: "/Eldoret/WhatsApp Image 2025-02-03 at 06.24.39_4e1d3a97.jpg", title: "Mission Photo (2025-02-03)", category: "community" },
-  { src: "/Eldoret/WhatsApp Image 2025-02-03 at 06.24.40_611dcab8.jpg", title: "Mission Photo (2025-02-03)", category: "community" },
-  { src: "/Eldoret/WhatsApp Image 2025-02-03 at 06.24.40_89c44146.jpg", title: "Mission Photo (2025-02-03)", category: "community" },
-  { src: "/Eldoret/WhatsApp Image 2025-03-26 at 10.01.33_244fbe35.jpg", title: "Mission Photo (2025-03-26)", category: "community" },
-  { src: "/Eldoret/WhatsApp Image 2025-03-26 at 15.05.06_3330dbfc.jpg", title: "Mission Photo (2025-03-26)", category: "community" },
-  { src: "/Eldoret/WhatsApp Image 2025-03-26 at 15.06.53_6fafa491.jpg", title: "Mission Photo (2025-03-26)", category: "community" },
-  { src: "/Eldoret/WhatsApp Image 2025-06-24 at 12.17.54_4a7b6242.jpg", title: "Mission Photo (2025-06-24)", category: "community" },
-  { src: "/Eldoret/WhatsApp Image 2025-06-24 at 12.30.34_aa682db4.jpg", title: "Mission Photo (2025-06-24)", category: "community" },
-  { src: "/Eldoret/WhatsApp Image 2025-06-24 at 12.30.34_e889c959.jpg", title: "Mission Photo (2025-06-24)", category: "community" },
-  { src: "/Egypt/IMG-20250205-WA0007.jpg", title: "Egypt Outreach", category: "community" },
-  { src: "/Egypt/IMG-20250205-WA0008.jpg", title: "Egypt Outreach", category: "community" },
-  { src: "/Egypt/IMG-20250205-WA0011.jpg", title: "Egypt Outreach", category: "community" },
-  { src: "/Egypt/IMG-20250205-WA0013.jpg", title: "Egypt Outreach", category: "community" },
-  { src: "/Egypt/IMG-20250628-WA0071.jpg", title: "Egypt Ministry", category: "community" },
-  { src: "/Egypt/IMG-20250628-WA0072.jpg", title: "Egypt Ministry", category: "community" },
-  { src: "/Egypt/IMG-20250628-WA0073.jpg", title: "Egypt Ministry", category: "community" },
-  { src: "/Egypt/IMG-20250628-WA0074.jpg", title: "Egypt Ministry", category: "community" },
-  { src: "/Uganda/Picture4.png", title: "Uganda Community", category: "community" },
-  { src: "/Uganda/Picture5.jpg", title: "Uganda Community", category: "community" },
-  { src: "/Uganda/Picture6.jpg", title: "Uganda Community", category: "community" },
-  { src: "/Uganda/Picture7.jpg", title: "Uganda Community", category: "community" },
-  { src: "/Uganda/Picture8.png", title: "Uganda Community", category: "community" },
-  { src: "/Uganda/Picture9.jpg", title: "Uganda Community", category: "community" },
-  { src: "/Uganda/Picture10.png", title: "Uganda Community", category: "community" },
-  { src: "/Uganda/Picture20.png", title: "Uganda Community", category: "community" },
-  { src: "/Uganda/Picture21.jpg", title: "Uganda Community", category: "community" },
-  { src: "/Uganda/Picture22.jpg", title: "Uganda Community", category: "community" },
-  { src: "/Uganda/Picture23.png", title: "Uganda Community", category: "community" },
-  { src: "/Uganda/Picture24.jpg", title: "Uganda Community", category: "community" },
-  { src: "/Uganda/Picture25.jpg", title: "Uganda Community", category: "community" },
-  { src: "/Uganda/Picture29.jpg", title: "Uganda Community", category: "community" },
-  { src: "/Uganda/Picture30.jpg", title: "Uganda Community", category: "community" },
-  { src: "/Uganda/Picture32.jpg", title: "Uganda Community", category: "community" },
-  { src: "/Uganda/Picture34.jpg", title: "Uganda Community", category: "community" },
-  { src: "/Uganda/Picture35.png", title: "Uganda Community", category: "community" },
-  { src: "/Uganda/Picture36.png", title: "Uganda Community", category: "community" },
-  { src: "/Uganda/Picture37.jpg", title: "Uganda Community", category: "community" },
-  { src: "/Uganda/Picture38.jpg", title: "Uganda Community", category: "community" },
-  { src: "/Uganda/Picture39.jpg", title: "Uganda Community", category: "community" },
-  { src: "/Uganda/Picture40.png", title: "Uganda Community", category: "community" },
-  { src: "/Uganda/Picture41.png", title: "Uganda Community", category: "community" },
-  { src: "/Uganda/Picture42.png", title: "Uganda Community", category: "community" },
-  { src: "/Uganda/Picture43.png", title: "Uganda Community", category: "community" },
-];
+const GRID_TO_DOME_THRESHOLD = 16;
 
 export default function Gallery() {
   const [activeFilter, setActiveFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const [hoveredImage, setHoveredImage] = useState(null);
   const isMobile = useMediaQuery("(max-width: 768px)");
   const { data: dbImages, isLoading } = useGalleryImages();
 
@@ -133,7 +52,7 @@ export default function Gallery() {
         id: img.id,
       }));
     }
-    return FALLBACK_IMAGES;
+    return [];
   }, [dbImages]);
 
   const filteredImages = useMemo(() => {
@@ -166,8 +85,10 @@ export default function Gallery() {
     [filteredImages]
   );
 
-  const highlightCat =
-    activeFilter === "All" ? null : activeFilter;
+  const highlightCat = activeFilter === "All" ? null : activeFilter;
+
+  const showDome = filteredImages.length >= GRID_TO_DOME_THRESHOLD;
+  const remaining = Math.max(0, GRID_TO_DOME_THRESHOLD - filteredImages.length);
 
   return (
     <PageTransition>
@@ -207,35 +128,132 @@ export default function Gallery() {
         </Container>
       </Section>
 
-      <section className="relative w-full h-[60vh] sm:h-[75vh] md:h-[85vh] min-h-[400px] sm:min-h-[500px] md:min-h-[600px] bg-deep-navy overflow-hidden">
-        {isLoading ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-white/60 px-6 text-center">
-            <Loader2 className="h-12 w-12 mb-4 animate-spin opacity-60" />
-            <p className="font-body text-body-lg">Loading gallery...</p>
-          </div>
-        ) : domeImages.length > 0 ? (
-          <DomeGallery
-            images={domeImages}
-            fit={0.8}
-            minRadius={isMobile ? 300 : 600}
-            maxVerticalRotationDeg={0}
-            segments={isMobile ? 20 : 34}
-            dragDampening={2}
-            grayscale={false}
-            autoRotate
-            autoRotateSpeed={isMobile ? 0.5 : 0.7}
-            highlightCategory={highlightCat}
-            imageCategories={imageCategories}
-          />
-        ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-white/60 px-6 text-center">
-            <Camera className="h-16 w-16 mb-4 opacity-40" />
-            <p className="font-body text-body-lg">
-              No photos found. Try a different search or filter.
-            </p>
-          </div>
+      {/* Flat Grid Gallery (when fewer than threshold) */}
+      {!showDome && !isLoading && (
+        <Section background="white" className="pb-16">
+          <Container>
+            {filteredImages.length > 0 ? (
+              <>
+                <div className="text-center mb-8">
+                  <p className="font-body text-sm text-on-surface-variant">
+                    {filteredImages.length} image{filteredImages.length !== 1 ? "s" : ""}{" "}
+                    uploaded &middot;{" "}
+                    {remaining > 0 ? (
+                      <span>
+                        Add {remaining} more to unlock the{" "}
+                        <span className="text-vibrant-blue font-semibold">3D Dome Gallery</span>
+                      </span>
+                    ) : (
+                      <span className="text-vibrant-blue font-semibold">
+                        3D Dome Gallery unlocked!
+                      </span>
+                    )}
+                  </p>
+                  {remaining > 0 && (
+                    <div className="w-48 h-1.5 bg-gray-200 rounded-full mx-auto mt-3 overflow-hidden">
+                      <motion.div
+                        className="h-full bg-gradient-to-r from-vibrant-blue to-hope-orange rounded-full"
+                        initial={{ width: 0 }}
+                        animate={{
+                          width: `${(filteredImages.length / GRID_TO_DOME_THRESHOLD) * 100}%`,
+                        }}
+                        transition={{ duration: 0.6, ease: "easeOut" }}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {filteredImages.map((img, i) => (
+                    <motion.div
+                      key={img.id || i}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4, delay: i * 0.05 }}
+                      onMouseEnter={() => setHoveredImage(img.id)}
+                      onMouseLeave={() => setHoveredImage(null)}
+                      className="relative group aspect-[4/3] rounded-xl overflow-hidden bg-gray-100"
+                    >
+                      <OptimizedImage
+                        src={img.src}
+                        alt={img.title}
+                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-2 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                        <p className="font-body text-xs text-white font-medium truncate">
+                          {img.title}
+                        </p>
+                        <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-white/20 text-[10px] text-white font-medium">
+                          {CATEGORY_MAP[img.category?.toLowerCase()] || img.category || "Other"}
+                        </span>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-20">
+                <ImageIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="font-display text-xl text-deep-navy mb-2">No images yet</h3>
+                <p className="font-body text-sm text-on-surface-variant max-w-md mx-auto">
+                  Upload images from the admin Media Library to start building
+                  your gallery. Once you reach {GRID_TO_DOME_THRESHOLD} images, the{" "}
+                  <span className="text-vibrant-blue font-semibold">3D Dome Gallery</span>{" "}
+                  will activate automatically.
+                </p>
+              </div>
+            )}
+          </Container>
+        </Section>
+      )}
+
+      {/* Dome Gallery (when threshold reached) */}
+      <AnimatePresence>
+        {showDome && (
+          <motion.section
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="relative w-full h-[60vh] sm:h-[75vh] md:h-[85vh] min-h-[400px] sm:min-h-[500px] md:min-h-[600px] bg-deep-navy overflow-hidden"
+          >
+            {isLoading ? (
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-white/60 px-6 text-center">
+                <Loader2 className="h-12 w-12 mb-4 animate-spin opacity-60" />
+                <p className="font-body text-body-lg">Loading gallery...</p>
+              </div>
+            ) : domeImages.length > 0 ? (
+              <>
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+                  <p className="font-body text-xs text-white/70 bg-black/30 backdrop-blur-sm px-4 py-1.5 rounded-full">
+                    {filteredImages.length} images &middot; 3D Dome Gallery
+                  </p>
+                </div>
+                <DomeGallery
+                  images={domeImages}
+                  fit={0.8}
+                  minRadius={isMobile ? 300 : 600}
+                  maxVerticalRotationDeg={0}
+                  segments={isMobile ? 20 : 34}
+                  dragDampening={2}
+                  grayscale={false}
+                  autoRotate
+                  autoRotateSpeed={isMobile ? 0.5 : 0.7}
+                  highlightCategory={highlightCat}
+                  imageCategories={imageCategories}
+                />
+              </>
+            ) : (
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-white/60 px-6 text-center">
+                <Camera className="h-16 w-16 mb-4 opacity-40" />
+                <p className="font-body text-body-lg">
+                  No photos found. Try a different search or filter.
+                </p>
+              </div>
+            )}
+          </motion.section>
         )}
-      </section>
+      </AnimatePresence>
     </PageTransition>
   );
 }

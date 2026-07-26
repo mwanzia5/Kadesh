@@ -44,17 +44,15 @@ const relatedProjects = [
   {
     slug: "bethlehem-bread",
     title: "Bethlehem Bread",
-    image: "/images/Breadproject/Breadproject_1.png",
+    image: "/bread-baking/Picture44.webp",
     category: "Food Security",
   },
 ];
 
 const galleryImages = [
-  { src: "/Eldoret/IMG-20250624-WA0026.jpg", alt: "Eldoret outreach" },
-  { src: "/images/borewell project/borewell project_2.jpg", alt: "Clean water access" },
-  { src: "/images/borewell project/borewell project_3.jpg", alt: "Community water point" },
-  { src: "/images/borewell project/borewell project_4.jpg", alt: "Water purification system" },
-  { src: "/images/borewell project/borewell project_5.jpg", alt: "Borewell community impact" },
+  { src: "/borehole2/Picture1.webp", alt: "Borehole drilling in progress" },
+  { src: "/borehole2/Picture2.webp", alt: "Community water access point" },
+  { src: "/borehole2/Picture3.webp", alt: "Clean water flowing" },
 ];
 
 const keyFacts = [
@@ -81,7 +79,7 @@ function HeroSection() {
     <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden">
       <div className="absolute inset-0">
         <OptimizedImage
-          src="/images/borewell project/borewell project_1.jpg"
+          src="/borehole2/Picture1.webp"
           alt="Borewell Project"
           className="w-full h-full object-cover"
         />

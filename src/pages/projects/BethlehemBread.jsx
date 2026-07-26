@@ -38,7 +38,7 @@ const relatedProjects = [
   {
     slug: "borewell",
     title: "Borewell Project",
-    image: "/images/borewell project/borewell project_1.jpg",
+    image: "/borehole2/Picture1.webp",
     category: "Social Development",
   },
   {
@@ -50,13 +50,14 @@ const relatedProjects = [
 ];
 
 const galleryImages = [
-  { src: "/Uganda/Picture5.jpg", alt: "Uganda outreach" },
-  { src: "/images/Breadproject/Breadproject_2.jpg", alt: "Nutritious meals" },
-  { src: "/images/Breadproject/Breadproject_3.jpg", alt: "Agricultural training" },
-  { src: "/images/Breadproject/Breadproject_4.jpg", alt: "Community feeding" },
-  { src: "/images/Breadproject/Breadproject_5.jpg", alt: "Bread preparation" },
-  { src: "/images/Breadproject/Breadproject_6.jpg", alt: "Volunteer activity" },
-  { src: "/images/Breadproject/Breadproject_7.jpg", alt: "Community outreach" },
+  { src: "/bread-baking/Picture45.webp", alt: "Bread distribution" },
+  { src: "/bread-baking/Picture46.webp", alt: "Community feeding program" },
+  { src: "/bread-baking/Picture47.webp", alt: "Freshly baked bread" },
+  { src: "/bread-baking/Picture48.webp", alt: "Volunteers preparing meals" },
+  { src: "/bread-baking/Picture49.webp", alt: "Food relief efforts" },
+  { src: "/bread-baking/Picture51.webp", alt: "Feeding the community" },
+  { src: "/bread-baking/WhatsApp Image 2025-07-03 at 06.11.16_3777b9c1.webp", alt: "Bread baking activity" },
+  { src: "/bread-baking/WhatsApp Image 2025-07-29 at 18.17.51_59865235.webp", alt: "Community outreach" },
 ];
 
 const keyFacts = [
@@ -83,7 +84,7 @@ function HeroSection() {
     <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden">
       <div className="absolute inset-0">
         <OptimizedImage
-          src="/images/Breadproject/Breadproject_1.png"
+          src="/bread-baking/Picture44.webp"
           alt="Bethlehem Bread Project"
           className="w-full h-full object-cover"
         />

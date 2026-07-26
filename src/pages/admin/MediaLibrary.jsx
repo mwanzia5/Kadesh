@@ -36,12 +36,14 @@ export default function MediaLibrary() {
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState("grid");
   const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [bulkCount, setBulkCount] = useState({ current: 0, total: 0 });
   const [dragOver, setDragOver] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [pendingFile, setPendingFile] = useState(null);
   const [showCropper, setShowCropper] = useState(false);
   const fileInputRef = useRef(null);
+
+  const MAX_BULK = 20;
 
   const images = galleryData?.data?.map(img => ({
     ...img,
@@ -56,67 +58,109 @@ export default function MediaLibrary() {
     return matchesFilter && matchesSearch;
   });
 
-  const handleUpload = async (file) => {
-    setUploading(true);
-    setUploadProgress(0);
-
+  const handleUpload = async (file, onProgress) => {
     try {
-      const progressInterval = setInterval(() => {
-        setUploadProgress((prev) => (prev >= 90 ? 90 : prev + 10));
-      }, 150);
-
       const ext = file.name.split(".").pop();
       let path = `gallery/${Date.now()}.${ext}`;
 
       const { error: uploadErr, path: finalPath } = await uploadAndConvert(file, "images", path);
       path = finalPath || path;
 
-      clearInterval(progressInterval);
-
       if (uploadErr) throw uploadErr;
 
       const publicUrl = getPublicUrl("images", path);
 
-      setUploadProgress(100);
-
       await createGalleryImage.mutateAsync({
-        title: file.name.replace(/\.[^.]+$/, "") + (file.type === "image/webp" ? ".webp" : `.${ext}`),
+        title: file.name.replace(/\.[^.]+$/, "") + (file.type === "image/webp" || path.endsWith(".webp") ? ".webp" : `.${ext}`),
         image_url: publicUrl,
         category: "Gallery",
         sort_order: 0
       });
 
+      if (onProgress) onProgress();
     } catch (err) {
       console.error("Upload failed:", err);
-      alert("Upload failed: " + err.message);
-    } finally {
-      setUploading(false);
-      setUploadProgress(0);
+      throw err;
+    }
+  };
+
+  const handleBulkUpload = async (files) => {
+    setUploading(true);
+    setBulkCount({ current: 0, total: files.length });
+
+    let failed = 0;
+
+    for (let i = 0; i < files.length; i++) {
+      try {
+        await handleUpload(files[i], () => {});
+        setBulkCount({ current: i + 1, total: files.length });
+      } catch {
+        failed++;
+        setBulkCount({ current: i + 1, total: files.length });
+      }
+    }
+
+    setUploading(false);
+    setBulkCount({ current: 0, total: 0 });
+
+    if (failed > 0) {
+      alert(`${files.length - failed} of ${files.length} images uploaded. ${failed} failed.`);
     }
   };
 
   const handleFileSelect = (e) => {
-    const file = e.target.files?.[0];
-    if (!file || !file.type.startsWith("image/")) return;
+    const files = Array.from(e.target.files || []).filter((f) =>
+      f.type.startsWith("image/")
+    );
+    if (files.length === 0) return;
     e.target.value = "";
-    setPendingFile(file);
-    setShowCropper(true);
+
+    if (files.length > MAX_BULK) {
+      alert(`You can upload a maximum of ${MAX_BULK} images at once.`);
+      return;
+    }
+
+    if (files.length === 1) {
+      setPendingFile(files[0]);
+      setShowCropper(true);
+    } else {
+      handleBulkUpload(files);
+    }
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
     setDragOver(false);
-    const file = e.dataTransfer.files?.[0];
-    if (!file || !file.type.startsWith("image/")) return;
-    setPendingFile(file);
-    setShowCropper(true);
+    const files = Array.from(e.dataTransfer.files || []).filter((f) =>
+      f.type.startsWith("image/")
+    );
+    if (files.length === 0) return;
+
+    if (files.length > MAX_BULK) {
+      alert(`You can upload a maximum of ${MAX_BULK} images at once.`);
+      return;
+    }
+
+    if (files.length === 1) {
+      setPendingFile(files[0]);
+      setShowCropper(true);
+    } else {
+      handleBulkUpload(files);
+    }
   };
 
   const handleCropComplete = async (croppedFile) => {
     setShowCropper(false);
     setPendingFile(null);
     if (croppedFile) {
-      await handleUpload(croppedFile);
+      setUploading(true);
+      try {
+        await handleUpload(croppedFile);
+      } catch (err) {
+        alert("Upload failed: " + err.message);
+      } finally {
+        setUploading(false);
+      }
     }
   };
 
@@ -153,6 +197,7 @@ export default function MediaLibrary() {
           ref={fileInputRef}
           type="file"
           accept="image/*"
+          multiple
           onChange={handleFileSelect}
           className="hidden"
         />
@@ -175,7 +220,7 @@ export default function MediaLibrary() {
       >
         <Upload className="h-10 w-10 text-gray-400 mx-auto mb-3" />
         <p className="font-body text-sm text-on-surface-variant">
-          Drag and drop an image here, or{" "}
+          Drag and drop images here, or{" "}
           <button
             onClick={() => fileInputRef.current?.click()}
             className="text-vibrant-blue font-semibold hover:underline"
@@ -184,20 +229,37 @@ export default function MediaLibrary() {
           </button>
         </p>
         <p className="font-body text-xs text-on-surface-variant mt-1">
-          PNG, JPG, GIF up to 10MB
+          PNG, JPG, GIF, WebP &mdash; up to {MAX_BULK} images at once
         </p>
-        {uploading && (
+        {uploading && bulkCount.total > 0 && (
           <div className="mt-4 max-w-xs mx-auto">
             <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
               <motion.div
                 className="h-full bg-vibrant-blue rounded-full"
                 initial={{ width: 0 }}
-                animate={{ width: `${uploadProgress}%` }}
+                animate={{
+                  width: `${bulkCount.total > 0 ? (bulkCount.current / bulkCount.total) * 100 : 0}%`,
+                }}
                 transition={{ duration: 0.15 }}
               />
             </div>
             <p className="font-body text-xs text-on-surface-variant mt-1">
-              Uploading... {uploadProgress}%
+              Uploading {bulkCount.current} of {bulkCount.total}...
+            </p>
+          </div>
+        )}
+        {uploading && bulkCount.total === 0 && (
+          <div className="mt-4 max-w-xs mx-auto">
+            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+              <motion.div
+                className="h-full bg-vibrant-blue rounded-full"
+                initial={{ width: 0 }}
+                animate={{ width: "100%" }}
+                transition={{ duration: 0.5 }}
+              />
+            </div>
+            <p className="font-body text-xs text-on-surface-variant mt-1">
+              Processing...
             </p>
           </div>
         )}

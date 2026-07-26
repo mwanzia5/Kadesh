@@ -48,7 +48,7 @@ export function useUpdateArticle() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: updateArticle,
+    mutationFn: ({ id, ...data }) => updateArticle(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["news"] });
     },

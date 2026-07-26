@@ -128,21 +128,21 @@ export const PROJECTS = [
     title: "Lumina Charis School of Africa",
     category: "Education",
     shortDescription: "Constructing schools and learning centers for African youth.",
-    image: "/images/Lumina School/Lumina School_01.jpeg",
+    image: "/lumina charis2/Picture2.webp",
   },
   {
     slug: "borewell",
     title: "Borewell Project",
     category: "Social Development",
     shortDescription: "Providing clean water access to communities in need.",
-    image: "/images/borewell project/borewell project_1.jpg",
+    image: "/borehole2/Picture1.webp",
   },
   {
     slug: "bethlehem-bread",
     title: "Bethlehem Bread",
     category: "Food Security",
     shortDescription: "Providing daily meals and food security for vulnerable communities.",
-    image: "/images/Breadproject/Breadproject_1.png",
+    image: "/bread-baking/Picture44.webp",
   },
 ];
 

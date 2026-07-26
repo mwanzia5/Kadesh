@@ -50,16 +50,50 @@ const relatedProjects = [
 ];
 
 const galleryImages = [
-  { src: "/Eldoret/IMG-20250624-WA0027.jpg", alt: "Eldoret school visit" },
-  { src: "/images/Lumina School/Lumina School_02.jpeg", alt: "Modern classrooms" },
-  { src: "/images/Lumina School/Lumina School_03.jpeg", alt: "Student activities" },
-  { src: "/images/Lumina School/Lumina School_04.jpeg", alt: "Computer lab" },
-  { src: "/images/Lumina School/Lumina School_05.jpeg", alt: "Library" },
-  { src: "/images/Lumina School/Lumina School_06.jpeg", alt: "Sports facilities" },
-  { src: "/images/Lumina School/Lumina School_07.jpeg", alt: "Arts program" },
-  { src: "/images/Lumina School/Lumina School_08.jpeg", alt: "Vocational training" },
-  { src: "/images/Lumina School/Lumina School_09.jpeg", alt: "Community events" },
-  { src: "/images/Lumina School/Lumina School_10.jpeg", alt: "Student achievements" },
+  { src: "/lumina charis2/Picture2.webp", alt: "School building exterior" },
+  { src: "/lumina charis2/Picture3.webp", alt: "Students in classroom" },
+  { src: "/lumina charis2/Picture4.webp", alt: "Learning activities" },
+  { src: "/lumina charis2/Picture5.webp", alt: "School facilities" },
+  { src: "/lumina charis2/Picture6.webp", alt: "Student engagement" },
+  { src: "/lumina charis2/Picture7.webp", alt: "Classroom learning" },
+  { src: "/lumina charis2/Picture8.webp", alt: "School assembly" },
+  { src: "/lumina charis2/Picture9.webp", alt: "Children at school" },
+  { src: "/lumina charis2/Picture10.webp", alt: "Educational activities" },
+  { src: "/lumina charis2/Picture16.webp", alt: "School grounds" },
+  { src: "/lumina charis2/Picture17.webp", alt: "Students studying" },
+  { src: "/lumina charis2/Picture18.webp", alt: "Teacher with students" },
+  { src: "/lumina charis2/Picture19.webp", alt: "School community" },
+  { src: "/lumina charis2/Picture20.webp", alt: "Campus view" },
+  { src: "/lumina charis2/Picture21.webp", alt: "Student activities" },
+  { src: "/lumina charis2/Picture22.webp", alt: "Learning environment" },
+  { src: "/lumina charis2/Picture23.webp", alt: "School project" },
+  { src: "/lumina charis2/Picture24.webp", alt: "Education in action" },
+  { src: "/lumina charis2/Picture25.webp", alt: "Young learners" },
+  { src: "/lumina charis2/Picture26.webp", alt: "School facilities" },
+  { src: "/lumina charis2/Picture27.webp", alt: "Student life" },
+  { src: "/lumina charis2/Picture28.webp", alt: "Classroom activities" },
+  { src: "/lumina charis2/Picture29.webp", alt: "School event" },
+  { src: "/lumina charis2/Picture30.webp", alt: "Children learning" },
+  { src: "/lumina charis2/Picture31.webp", alt: "School building" },
+  { src: "/lumina charis2/Picture32.webp", alt: "Student group" },
+  { src: "/lumina charis2/Picture33.webp", alt: "Education project" },
+  { src: "/lumina charis2/Picture34.webp", alt: "School courtyard" },
+  { src: "/lumina charis2/Picture35.webp", alt: "Students outdoors" },
+  { src: "/lumina charis2/Picture36.webp", alt: "Learning space" },
+  { src: "/lumina charis2/Picture37.webp", alt: "School children" },
+  { src: "/lumina charis2/Picture38.webp", alt: "Classroom setting" },
+  { src: "/lumina charis2/Picture39.webp", alt: "Educational program" },
+  { src: "/lumina charis2/Picture40.webp", alt: "School activities" },
+  { src: "/lumina charis2/Picture41.webp", alt: "Students working" },
+  { src: "/lumina charis2/Picture42.webp", alt: "School day" },
+  { src: "/lumina charis2/Picture43.webp", alt: "Learning together" },
+  { src: "/lumina charis2/Picture44.webp", alt: "Campus life" },
+  { src: "/lumina charis2/Picture45.webp", alt: "School community" },
+  { src: "/lumina charis2/Picture46.webp", alt: "Student development" },
+  { src: "/lumina charis2/Picture47.webp", alt: "Education for all" },
+  { src: "/lumina charis2/Picture48.webp", alt: "School programs" },
+  { src: "/lumina charis2/Picture49.webp", alt: "Children at play" },
+  { src: "/lumina charis2/Picture50.webp", alt: "School achievements" },
 ];
 
 const keyFacts = [
@@ -86,7 +120,7 @@ function HeroSection() {
     <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden">
       <div className="absolute inset-0">
         <OptimizedImage
-          src="/images/Lumina School/Lumina School_01.jpeg"
+          src="/lumina charis2/Picture2.webp"
           alt="Lumina Charis School of Africa"
           className="w-full h-full object-cover"
         />

@@ -1,23 +1,15 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, Edit, Trash2, X, Save, Upload, Newspaper, Calendar, Tag, Eye } from "lucide-react";
+import { Plus, Edit, Trash2, X, Save, Upload, Newspaper, Calendar, Tag, Eye, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const STORAGE_KEY = "khm_news";
+import {
+  useAllNews,
+  useCreateArticle,
+  useUpdateArticle,
+  useDeleteArticle,
+} from "@/hooks/useNews";
 
 const CATEGORIES = ["Education", "Health", "Food Security", "Community", "Events", "Announcement"];
-
-function loadNews() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-  } catch {
-    return [];
-  }
-}
-
-function saveNews(articles) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(articles));
-}
 
 const inputClasses =
   "w-full px-4 py-3 rounded-lg border border-gray-200 bg-white font-body text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all";
@@ -32,13 +24,28 @@ const emptyArticle = {
   published: true,
 };
 
+function slugify(text) {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
 export default function NewsManager() {
-  const [articles, setArticles] = useState(loadNews);
+  const { data: newsData, isLoading } = useAllNews();
+  const createArticle = useCreateArticle();
+  const updateArticle = useUpdateArticle();
+  const deleteArticle = useDeleteArticle();
+
+  const articles = newsData?.data ?? [];
+
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyArticle);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState("All");
+  const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(null);
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -52,47 +59,78 @@ export default function NewsManager() {
 
   const handleEdit = (article) => {
     setEditing(article);
-    setForm({ ...article });
+    setForm({
+      title: article.title || "",
+      excerpt: article.excerpt || "",
+      content: article.content || "",
+      category: article.category || "Community",
+      author: article.author || "Kadesh Hope Mission",
+      image: article.image || "",
+      published: article.is_published ?? true,
+    });
     setShowForm(true);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (!confirm("Are you sure you want to delete this article?")) return;
-    const updated = articles.filter((a) => a.id !== id);
-    setArticles(updated);
-    saveNews(updated);
+    setDeleting(id);
+    try {
+      await deleteArticle.mutateAsync(id);
+    } catch (err) {
+      alert("Failed to delete: " + err.message);
+    } finally {
+      setDeleting(null);
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    let updated;
+    setSubmitting(true);
 
-    if (editing) {
-      updated = articles.map((a) =>
-        a.id === editing.id ? { ...a, ...form, updatedAt: new Date().toISOString() } : a
-      );
-    } else {
-      const newArticle = {
-        ...form,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+    try {
+      const slug = slugify(form.title) + "-" + Date.now().toString(36);
+      const articleData = {
+        title: form.title,
+        slug,
+        excerpt: form.excerpt,
+        content: form.content,
+        image: form.image || null,
+        is_published: form.published,
+        published_at: form.published ? new Date().toISOString() : null,
       };
-      updated = [newArticle, ...articles];
-    }
 
-    setArticles(updated);
-    saveNews(updated);
-    resetForm();
+      if (editing) {
+        await updateArticle.mutateAsync({
+          id: editing.id,
+          ...articleData,
+        });
+      } else {
+        await createArticle.mutateAsync(articleData);
+      }
+
+      resetForm();
+    } catch (err) {
+      alert("Failed to save: " + err.message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const filteredArticles = articles.filter((a) => {
     const matchesSearch =
-      a.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      a.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
+      (a.title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (a.excerpt || "").toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = filterCategory === "All" || a.category === filterCategory;
     return matchesSearch && matchesCategory;
   });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-32">
+        <Loader2 className="h-8 w-8 text-vibrant-blue animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
@@ -110,7 +148,6 @@ export default function NewsManager() {
         </button>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <input
           type="text"
@@ -131,7 +168,6 @@ export default function NewsManager() {
         </select>
       </div>
 
-      {/* Form Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6">
@@ -237,9 +273,14 @@ export default function NewsManager() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-vibrant-blue text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                  disabled={submitting}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-vibrant-blue text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-60"
                 >
-                  <Save className="w-4 h-4" />
+                  {submitting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )}
                   {editing ? "Update Article" : "Publish Article"}
                 </button>
               </div>
@@ -248,7 +289,6 @@ export default function NewsManager() {
         </div>
       )}
 
-      {/* Articles List */}
       {filteredArticles.length === 0 ? (
         <div className="text-center py-20 text-gray-400">
           <Newspaper className="w-12 h-12 mx-auto mb-3" />
@@ -270,17 +310,17 @@ export default function NewsManager() {
                       <div className="flex items-center gap-2 mb-2">
                         <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-vibrant-blue/10 text-vibrant-blue font-medium">
                           <Tag className="w-3 h-3" />
-                          {article.category}
+                          {article.category || "General"}
                         </span>
                         <span className="text-xs text-gray-400 flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
-                          {new Date(article.createdAt).toLocaleDateString("en-US", {
+                          {new Date(article.created_at).toLocaleDateString("en-US", {
                             year: "numeric",
                             month: "short",
                             day: "numeric",
                           })}
                         </span>
-                        {!article.published && (
+                        {!article.is_published && (
                           <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 font-medium">
                             Draft
                           </span>
@@ -290,7 +330,7 @@ export default function NewsManager() {
                         {article.title}
                       </h4>
                       <p className="font-body text-sm text-gray-500 line-clamp-2">{article.excerpt}</p>
-                      <p className="text-xs text-gray-400 mt-2">by {article.author}</p>
+                      <p className="text-xs text-gray-400 mt-2">by {article.author || "Kadesh Hope Mission"}</p>
                     </div>
 
                     <div className="flex items-center gap-1 shrink-0">
@@ -303,10 +343,15 @@ export default function NewsManager() {
                       </button>
                       <button
                         onClick={() => handleDelete(article.id)}
-                        className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                        disabled={deleting === article.id}
+                        className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
                         title="Delete"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        {deleting === article.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
                       </button>
                     </div>
                   </div>

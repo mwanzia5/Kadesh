@@ -38,7 +38,7 @@ const relatedProjects = [
   {
     slug: "borewell",
     title: "Borewell Project",
-    image: "/images/borewell project/borewell project_1.jpg",
+    image: "/borehole2/Picture1.webp",
     category: "Social Development",
   },
   {

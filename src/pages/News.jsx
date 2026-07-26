@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Calendar, Tag, ArrowUpRight, Newspaper, Clock, User, Search } from "lucide-react";
+import { Calendar, Tag, ArrowUpRight, Newspaper, Clock, User, Search, Loader2 } from "lucide-react";
 
 import PageTransition from "@/animations/PageTransition";
 import { staggerContainer, slideUp } from "@/animations/variants";
@@ -11,42 +11,40 @@ import Section from "@/components/ui/Section";
 import Button from "@/components/ui/Button";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import GlareHover from "@/components/ui/GlareHover";
-
-const STORAGE_KEY = "khm_news";
-
-function loadNews() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-  } catch {
-    return [];
-  }
-}
+import { useNews } from "@/hooks/useNews";
 
 const CATEGORIES = ["All", "Education", "Health", "Food Security", "Community", "Events", "Announcement"];
 
 export default function News() {
-  const [articles, setArticles] = useState([]);
+  const { data: newsData, isLoading } = useNews();
+  const articles = newsData?.data ?? [];
+
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
-
-  useEffect(() => {
-    setArticles(loadNews().filter((a) => a.published));
-  }, []);
 
   const filtered = articles.filter((a) => {
     const matchesCategory = selectedCategory === "All" || a.category === selectedCategory;
     const matchesSearch =
-      a.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      a.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
+      (a.title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (a.excerpt || "").toLowerCase().includes(searchTerm.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
   const featured = filtered[0];
   const rest = filtered.slice(1);
 
+  if (isLoading) {
+    return (
+      <PageTransition>
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <Loader2 className="h-8 w-8 text-vibrant-blue animate-spin" />
+        </div>
+      </PageTransition>
+    );
+  }
+
   return (
     <PageTransition>
-      {/* Hero */}
       <section className="relative min-h-[50vh] flex items-center justify-center overflow-hidden bg-deep-navy">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-40 -left-40 w-80 h-80 rounded-full bg-vibrant-blue/20 blur-3xl" />
@@ -98,7 +96,6 @@ export default function News() {
         </div>
       </section>
 
-      {/* Filters */}
       <Section background="white" className="py-8 border-b border-soft-accent">
         <Container>
           <div className="flex flex-col md:flex-row md:items-center gap-4">
@@ -131,7 +128,6 @@ export default function News() {
         </Container>
       </Section>
 
-      {/* Articles */}
       <Section background="white" className="section-padding">
         <Container>
           {filtered.length === 0 ? (
@@ -146,7 +142,6 @@ export default function News() {
             </div>
           ) : (
             <div className="space-y-12">
-              {/* Featured Article */}
               {featured && (
                 <ScrollReveal>
                   <Link
@@ -167,11 +162,11 @@ export default function News() {
                         <div className="flex items-center gap-3 mb-4">
                           <span className="inline-flex items-center gap-1.5 rounded-full bg-vibrant-blue/10 px-3 py-1 font-body text-caption font-medium text-vibrant-blue">
                             <Tag className="h-3.5 w-3.5" />
-                            {featured.category}
+                            {featured.category || "General"}
                           </span>
                           <span className="text-caption text-on-surface-variant flex items-center gap-1">
                             <Calendar className="h-3.5 w-3.5" />
-                            {new Date(featured.createdAt).toLocaleDateString("en-US", {
+                            {new Date(featured.published_at || featured.created_at).toLocaleDateString("en-US", {
                               year: "numeric",
                               month: "long",
                               day: "numeric",
@@ -190,7 +185,7 @@ export default function News() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2 text-sm text-on-surface-variant">
                             <User className="h-4 w-4" />
-                            {featured.author}
+                            {featured.author || "Kadesh Hope Mission"}
                           </div>
                           <span className="inline-flex items-center gap-1.5 font-body text-label-bold text-vibrant-blue group-hover:gap-2.5 transition-all">
                             Read More
@@ -203,7 +198,6 @@ export default function News() {
                 </ScrollReveal>
               )}
 
-              {/* Rest of articles */}
               {rest.length > 0 && (
                 <motion.div
                   variants={staggerContainer}
@@ -233,11 +227,11 @@ export default function News() {
                             <div className="flex items-center gap-2 mb-3">
                               <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-vibrant-blue/10 text-vibrant-blue font-medium">
                                 <Tag className="h-3 w-3" />
-                                {article.category}
+                                {article.category || "General"}
                               </span>
                               <span className="text-xs text-on-surface-variant flex items-center gap-1">
                                 <Clock className="h-3 w-3" />
-                                {new Date(article.createdAt).toLocaleDateString("en-US", {
+                                {new Date(article.published_at || article.created_at).toLocaleDateString("en-US", {
                                   month: "short",
                                   day: "numeric",
                                 })}
@@ -255,7 +249,7 @@ export default function News() {
                             <div className="flex items-center justify-between pt-4 border-t border-soft-accent">
                               <span className="text-xs text-on-surface-variant flex items-center gap-1">
                                 <User className="h-3 w-3" />
-                                {article.author}
+                                {article.author || "Kadesh Hope Mission"}
                               </span>
                               <span className="inline-flex items-center gap-1 font-body text-label-bold text-vibrant-blue text-xs">
                                 Read

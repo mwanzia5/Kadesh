@@ -38,13 +38,13 @@ const relatedProjects = [
   {
     slug: "borewell",
     title: "Borewell Project",
-    image: "/images/borewell project/borewell project_1.jpg",
+    image: "/borehole2/Picture1.webp",
     category: "Social Development",
   },
   {
     slug: "bethlehem-bread",
     title: "Bethlehem Bread",
-    image: "/images/Breadproject/Breadproject_1.png",
+    image: "/bread-baking/Picture44.webp",
     category: "Food Security",
   },
 ];

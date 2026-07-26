@@ -32,7 +32,7 @@ const relatedProjects = [
   {
     slug: "lumina-charis",
     title: "Lumina Charis School of Africa",
-    image: "/images/Lumina School/Lumina School_01.jpeg",
+    image: "/lumina charis2/Picture2.webp",
     category: "Education",
   },
   {
