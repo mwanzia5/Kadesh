@@ -1,25 +1,11 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
-import { X, Newspaper, ArrowRight } from "lucide-react";
+import { X, Newspaper, ArrowRight, Loader2 } from "lucide-react";
+import { getNews } from "@/services/news";
 
-const STORAGE_KEY = "khm_news";
 const DISMISS_KEY = "khm_news_popup_dismissed";
 const SHOW_DELAY_MS = 4000;
-
-function loadLatestPublishedArticle() {
-  try {
-    const articles = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-    return (
-      articles
-        .filter((a) => a.published)
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0] ||
-      null
-    );
-  } catch {
-    return null;
-  }
-}
 
 export default function NewsPopup() {
   const [article, setArticle] = useState(null);
@@ -28,12 +14,19 @@ export default function NewsPopup() {
   useEffect(() => {
     if (sessionStorage.getItem(DISMISS_KEY)) return;
 
-    const latest = loadLatestPublishedArticle();
-    if (!latest) return;
-
-    setArticle(latest);
-    const timer = setTimeout(() => setVisible(true), SHOW_DELAY_MS);
-    return () => clearTimeout(timer);
+    getNews().then(({ data }) => {
+      if (!data || data.length === 0) return;
+      const latest = data[0];
+      setArticle({
+        id: latest.id,
+        title: latest.title,
+        excerpt: latest.excerpt,
+        image: latest.image,
+        category: latest.category || "General",
+      });
+      const timer = setTimeout(() => setVisible(true), SHOW_DELAY_MS);
+      return () => clearTimeout(timer);
+    });
   }, []);
 
   const dismiss = () => {
@@ -51,7 +44,7 @@ export default function NewsPopup() {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 20, scale: 0.95 }}
           transition={{ duration: 0.35, ease: "easeOut" }}
-          className="fixed bottom-6 left-6 z-50 w-[320px] rounded-2xl bg-white shadow-2xl border border-black/5 overflow-hidden"
+          className="fixed bottom-6 left-6 z-50 w-[320px] max-w-[calc(100vw-24px)] rounded-2xl bg-white shadow-2xl border border-black/5 overflow-hidden"
         >
           <div className="relative h-32 bg-gradient-to-br from-deep-navy to-vibrant-blue flex items-center justify-center">
             {article.image ? (
@@ -65,7 +58,7 @@ export default function NewsPopup() {
             )}
             <button
               onClick={dismiss}
-              className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/30 hover:bg-black/50 flex items-center justify-center text-white transition-colors"
+              className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/30 hover:bg-black/50 flex items-center justify-center text-white transition-colors"
               aria-label="Close"
             >
               <X className="w-4 h-4" />

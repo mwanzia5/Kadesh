@@ -41,6 +41,20 @@ export async function getNewsArticle(slug) {
   }
 }
 
+export async function getNewsArticleById(id) {
+  try {
+    const { data, error } = await supabase
+      .from("news")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    return { data, error };
+  } catch (err) {
+    return { data: null, error: err };
+  }
+}
+
 export async function createArticle(articleData) {
   try {
     const { data, error } = await supabase
