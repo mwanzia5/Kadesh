@@ -15,7 +15,7 @@ import {
 
 import PageTransition from "@/animations/PageTransition";
 import SEO from "@/components/ui/SEO";
-import { getCMSContent } from "@/hooks/useCMS";
+import { getCMSContent, useCMSReady } from "@/hooks/useCMS";
 import {
   staggerContainer,
   slideUp,
@@ -71,6 +71,7 @@ const pillarColors = {
 };
 
 export default function Home() {
+  useCMSReady();
   return (
     <PageTransition>
       <SEO

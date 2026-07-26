@@ -30,21 +30,9 @@ import SectionHeading from "@/components/ui/SectionHeading";
 
 const relatedProjects = [
   {
-    slug: "community",
-    title: "Community Projects",
-    image: "/images/others/african-children-having-fun-with-jumping-rope-in-a-village-in-northern-kenya-east-africa.webp",
-    category: "Social Development",
-  },
-  {
     slug: "borewell",
     title: "Borewell Project",
     image: "/borehole2/Picture1.webp",
-    category: "Social Development",
-  },
-  {
-    slug: "women-projects",
-    title: "Women Projects",
-    image: "/images/womensproject_1.jpeg",
     category: "Social Development",
   },
 ];

@@ -36,12 +36,6 @@ const relatedProjects = [
     category: "Social Development",
   },
   {
-    slug: "women-projects",
-    title: "Women Projects",
-    image: "/images/womensproject_1.jpeg",
-    category: "Social Development",
-  },
-  {
     slug: "bethlehem-bread",
     title: "Bethlehem Bread",
     image: "/bread-baking/Picture44.webp",

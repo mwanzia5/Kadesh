@@ -35,18 +35,6 @@ const relatedProjects = [
     image: "/lumina charis2/Picture2.webp",
     category: "Education",
   },
-  {
-    slug: "community",
-    title: "Community Projects",
-    image: "/images/others/african-children-playing-football-in-the-village-near-mount-kilimanjaro-east-africa.webp",
-    category: "Social Development",
-  },
-  {
-    slug: "women-projects",
-    title: "Women Projects",
-    image: "/images/womensproject_1.jpeg",
-    category: "Social Development",
-  },
 ];
 
 const galleryImages = [
@@ -62,7 +50,7 @@ const galleryImages = [
 
 const keyFacts = [
   { icon: Users, value: "300+", label: "Children Supported" },
-  { icon: Building, value: "5", label: "Schools Built" },
+  { icon: Building, value: "1", label: "School Built" },
   { icon: TrendingUp, value: "95%", label: "Retention Rate" },
 ];
 

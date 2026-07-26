@@ -30,12 +30,6 @@ import SectionHeading from "@/components/ui/SectionHeading";
 
 const relatedProjects = [
   {
-    slug: "community",
-    title: "Community Projects",
-    image: "/images/others/group-of-girls-playing.webp",
-    category: "Social Development",
-  },
-  {
     slug: "borewell",
     title: "Borewell Project",
     image: "/borehole2/Picture1.webp",

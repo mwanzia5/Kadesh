@@ -89,7 +89,7 @@ export const MINISTRY_AREAS = [
     icon: "Heart",
   },
   {
-    title: "Combating Hunger",
+    title: "Food Security",
     description:
       "Launching the Bethlehem Bread Project to provide daily meals and food security for vulnerable communities.",
     icon: "UtensilsCrossed",

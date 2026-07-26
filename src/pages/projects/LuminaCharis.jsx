@@ -35,18 +35,6 @@ const relatedProjects = [
     image: "/images/child to school/child project_1.jpeg",
     category: "Child to School",
   },
-  {
-    slug: "community",
-    title: "Community Projects",
-    image: "/images/others/south-africa-cape-town-langa-boys-balancing-on-seesaw.webp",
-    category: "Social Development",
-  },
-  {
-    slug: "women-projects",
-    title: "Women Projects",
-    image: "/images/womensproject_1.jpeg",
-    category: "Social Development",
-  },
 ];
 
 const galleryImages = [
@@ -225,6 +213,12 @@ function StorySection() {
               </p>
               <p>
                 The school's objectives focus on nurturing students in the following key areas:
+              </p>
+              <p>
+                Beyond the core curriculum, the school offers extra skills training in abacus, mental maths, music, sports, and agriculture activities to develop well-rounded students.
+              </p>
+              <p>
+                The school also provides boarding facilities, reliable transport, a school garden, and a playground to ensure a conducive and holistic learning environment.
               </p>
             </div>
           </ScrollReveal>

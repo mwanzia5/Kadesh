@@ -50,7 +50,7 @@ const relatedProjects = [
 ];
 
 const galleryImages = [
-  { src: "/Egypt/IMG-20250205-WA0007.jpg", alt: "Egypt health outreach" },
+  { src: "/images/healthcare/healthcare_1.jpg", alt: "Health outreach" },
   { src: "/images/healthcare/healthcare_2.jpg", alt: "Medical services" },
   { src: "/images/healthcare/healthcare_3.jpg", alt: "Community health education" },
   { src: "/images/healthcare/healthcare_4.jpg", alt: "Health worker visit" },

@@ -31,7 +31,7 @@ import OptimizedImage from "@/components/ui/OptimizedImage";
 import GlareHover from "@/components/ui/GlareHover";
 import SplitText from "@/components/ui/SplitText";
 import SEO from "@/components/ui/SEO";
-import { getCMSContent } from "@/hooks/useCMS";
+import { getCMSContent, useCMSReady } from "@/hooks/useCMS";
 import AnimatedCounter from "@/components/ui/AnimatedCounter";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import SectionHeading from "@/components/ui/SectionHeading";
@@ -66,7 +66,7 @@ const IMPACT_ITEMS = [
   },
   {
     icon: "UtensilsCrossed",
-    title: "Combating Hunger & Malnutrition",
+    title: "Food Security & Malnutrition",
     stat: 500,
     suffix: "+",
     color: "vibrant-blue",
@@ -135,6 +135,7 @@ const PARTNERSHIP_TYPES = [
 ];
 
 export default function AboutUs() {
+  useCMSReady();
   return (
     <PageTransition>
       <SEO
@@ -315,8 +316,7 @@ function MissionVisionSection() {
                 </div>
                 <h3 className="font-display text-headline-md text-deep-navy mb-4">Mission Statement</h3>
                 <p className="font-body text-body-lg text-on-surface-variant leading-relaxed">
-                  Our mission is to transform lives and uplift communities in
-                  Uganda and Kenya through holistic gospel outreach.
+                  Our mission is to transform lives and uplift communities in Africa through holistic gospel outreach.
                 </p>
               </div>
             </div>

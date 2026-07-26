@@ -105,7 +105,7 @@ export default function Navbar() {
                                       <Link
                                         to={item.href}
                                         className={cn(
-                                          "block px-3 py-2 rounded-lg text-body-md transition-colors",
+                                          "block px-3 py-2 rounded-lg text-body-md transition-colors whitespace-nowrap",
                                           isActive(item.href)
                                             ? "text-vibrant-blue font-bold bg-vibrant-blue/5"
                                             : "text-on-surface-variant hover:text-vibrant-blue hover:bg-surface"

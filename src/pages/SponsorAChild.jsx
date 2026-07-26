@@ -54,7 +54,7 @@ export default function SponsorAChild() {
 
       const matchesGender =
         genderFilter === "All" ||
-        child.gender === genderFilter.toLowerCase();
+        (child.gender || "").toLowerCase() === genderFilter.toLowerCase();
 
       const age = Number(child.age);
       const matchesAgeMin = ageMin === "" || age >= Number(ageMin);
@@ -231,7 +231,7 @@ export default function SponsorAChild() {
                 <motion.div key={child.id} variants={slideUp}>
                   <GlareHover className="h-full">
                     <div className="group flex flex-col h-full rounded-xl overflow-hidden bg-white border border-soft-accent/50 shadow-card hover:shadow-card-hover transition-shadow duration-300">
-                      <div className="relative overflow-hidden aspect-[3/4]">
+                      <div className="relative overflow-hidden aspect-square">
                         {child.photo_url ? (
                           <OptimizedImage
                             src={child.photo_url}
@@ -277,8 +277,8 @@ export default function SponsorAChild() {
                         </div>
                         <Link to={`/sponsor-a-child/${child.id}`} className="mt-auto">
                           <Button variant="lightblue" size="sm" className="w-full">
-                            Sponsor {child.first_name}
-                            <Heart className="ml-2 h-4 w-4" />
+                            Sponsor
+                              <Heart className="ml-2 h-4 w-4" />
                           </Button>
                         </Link>
                       </div>

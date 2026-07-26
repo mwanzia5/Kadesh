@@ -52,7 +52,7 @@ function PhotoPreview({ src, name, size = "md" }) {
   const sizeClasses = {
     sm: "w-10 h-10",
     md: "w-14 h-14",
-    lg: "w-full aspect-[3/4]",
+    lg: "w-full aspect-square",
   };
 
   if (src) {

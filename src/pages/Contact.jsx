@@ -237,14 +237,7 @@ export default function Contact() {
                       <p className="font-body text-body-md">+254 733 959 383</p>
                     </div>
                   </li>
-                  <li className="flex gap-4">
-                    <MapPin className="h-5 w-5 text-hope-orange shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-body text-label-bold opacity-70 mb-1">REGIONS</p>
-                      <p className="font-body text-body-md">Democratic Republic of Congo &middot; Uganda</p>
-                    </div>
-                  </li>
-                </ul>
+                  </ul>
               </div>
 
               {/* Social Card */}

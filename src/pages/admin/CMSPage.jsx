@@ -1,21 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { ChevronDown, Save, Check, Eye, EyeOff, RotateCcw } from "lucide-react";
+import { Save, Check, RotateCcw, Search, X, AlertCircle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const STORAGE_KEY = "khm_cms_content";
-
-function loadAll() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); }
-  catch { return {}; }
-}
-function saveAll(all) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
-  window.dispatchEvent(new Event("storage"));
-}
+import {
+  useAllPageContent,
+  useUpdatePageContent,
+  useResetPageContent,
+} from "@/hooks/usePageContent";
+import { primeCMSCache } from "@/hooks/useCMS";
 
 const PAGES = [
-  { id: "home", label: "Home Page", color: "vibrant-blue",
+  { id: "home", label: "Home Page", group: "Core",
     sections: [
       { id: "heroBadge", name: "Hero Badge", content: "Since 2009 \u00b7 DR Congo, Uganda & Kenya" },
       { id: "heroTitle", name: "Hero Title", content: "Hope, restored." },
@@ -46,14 +41,14 @@ const PAGES = [
       { id: "partnersSub", name: "Partners Subtitle", content: "Organizations that share our vision for a better Africa" },
     ]
   },
-  { id: "about", label: "About Page", color: "hope-orange",
+  { id: "about", label: "About Page", group: "Core",
     sections: [
       { id: "heroBadge", name: "Hero Badge", content: "Our Story" },
       { id: "heroTitle", name: "Hero Title", content: "Wisdom guided by empathy" },
       { id: "heroSubtitle", name: "Hero Subtitle", content: "In 2009, a group of young people migrated from India to the Democratic Republic of Congo with a vision to bring hope and healing to impoverished communities." },
       { id: "storyTitle", name: "Story Title", content: "Our Story" },
       { id: "storySubtitle", name: "Story Subtitle", content: "From a bold vision to a continent-wide movement of hope" },
-      { id: "storyContent", name: "Story Content", content: `Founded in 2009, Kadesh Hope Mission began when a group of passionate young people left their homes in India and traveled to the Democratic Republic of Congo. What started as a small community outreach has grown into a multi-country organization serving thousands across DR Congo, Uganda, and Kenya.
+      { id: "storyContent", name: "Story Content", type: "multiline", content: `Founded in 2009, Kadesh Hope Mission began when a group of passionate young people left their homes in India and traveled to the Democratic Republic of Congo. What started as a small community outreach has grown into a multi-country organization serving thousands across DR Congo, Uganda, and Kenya.
 
 Our approach combines practical aid with lasting solutions — building schools, drilling boreholes, providing healthcare, and feeding communities while empowering local leaders to sustain the change.` },
       { id: "missionTitle", name: "Mission Title", content: "Our Mission" },
@@ -77,7 +72,7 @@ Our approach combines practical aid with lasting solutions — building schools,
       { id: "impactLabel3", name: "Impact Label 3", content: "Families Fed Weekly", type: "single" },
     ]
   },
-  { id: "contact", label: "Contact Page", color: "green",
+  { id: "contact", label: "Contact Page", group: "Core",
     sections: [
       { id: "heroBadge", name: "Hero Badge", content: "Get In Touch" },
       { id: "heroTitle", name: "Hero Title", content: "We'd love to hear from you" },
@@ -91,7 +86,7 @@ Our approach combines practical aid with lasting solutions — building schools,
       { id: "successMsg", name: "Success Message", content: "Message sent successfully! We'll get back to you soon." },
     ]
   },
-  { id: "donate", label: "Donate Page", color: "hope-orange",
+  { id: "donate", label: "Donate Page", group: "Core",
     sections: [
       { id: "heroBadge", name: "Hero Badge", content: "Make a Difference" },
       { id: "heroTitle", name: "Hero Title", content: "Your Generosity Changes Lives" },
@@ -104,7 +99,7 @@ Our approach combines practical aid with lasting solutions — building schools,
       { id: "bankDetails", name: "Bank Details", content: "Contact us for bank transfer details and international wire instructions." },
     ]
   },
-  { id: "gallery", label: "Gallery Page", color: "vibrant-blue",
+  { id: "gallery", label: "Gallery Page", group: "Core",
     sections: [
       { id: "heroBadge", name: "Hero Badge", content: "Our Gallery" },
       { id: "heroTitle", name: "Hero Title", content: "Moments of Impact" },
@@ -112,7 +107,7 @@ Our approach combines practical aid with lasting solutions — building schools,
       { id: "searchPlaceholder", name: "Search Placeholder", content: "Search photos...", type: "single" },
     ]
   },
-  { id: "videos", label: "Videos Page", color: "red",
+  { id: "videos", label: "Videos Page", group: "Core",
     sections: [
       { id: "heroBadge", name: "Hero Badge", content: "Watch & Learn" },
       { id: "heroTitle", name: "Hero Title", content: "Our Stories in Motion" },
@@ -120,7 +115,7 @@ Our approach combines practical aid with lasting solutions — building schools,
       { id: "searchPlaceholder", name: "Search Placeholder", content: "Search videos...", type: "single" },
     ]
   },
-  { id: "sponsor", label: "Sponsor a Child", color: "hope-orange",
+  { id: "sponsor", label: "Sponsor a Child", group: "Core",
     sections: [
       { id: "heroBadge", name: "Hero Badge", content: "Sponsor a Child" },
       { id: "heroTitle", name: "Hero Title", content: "Change a Child's Future" },
@@ -130,7 +125,7 @@ Our approach combines practical aid with lasting solutions — building schools,
       { id: "benefitsTitle", name: "Benefits Title", content: "What Your Sponsorship Provides" },
     ]
   },
-  { id: "news", label: "News Page", color: "vibrant-blue",
+  { id: "news", label: "News Page", group: "Core",
     sections: [
       { id: "heroBadge", name: "Hero Badge", content: "Latest Updates" },
       { id: "heroTitle", name: "Hero Title", content: "News & Updates" },
@@ -140,7 +135,7 @@ Our approach combines practical aid with lasting solutions — building schools,
       { id: "emptyDesc", name: "Empty State Description", content: "Check back soon for news and updates from our programs." },
     ]
   },
-  { id: "childEducation", label: "Child Education Project", color: "vibrant-blue",
+  { id: "childEducation", label: "Child Education", group: "Projects",
     sections: [
       { id: "heroBadge", name: "Hero Badge", content: "Education" },
       { id: "heroTitle", name: "Hero Title", content: "Child Education Project" },
@@ -152,7 +147,7 @@ Our approach combines practical aid with lasting solutions — building schools,
       { id: "ctaDesc", name: "CTA Description", content: "Your donation keeps a child in school and gives them a future full of possibilities." },
     ]
   },
-  { id: "homeCare", label: "Home Care Project", color: "green",
+  { id: "homeCare", label: "Home Care", group: "Projects",
     sections: [
       { id: "heroBadge", name: "Hero Badge", content: "Healthcare" },
       { id: "heroTitle", name: "Hero Title", content: "Home Care" },
@@ -162,7 +157,7 @@ Our approach combines practical aid with lasting solutions — building schools,
       { id: "gallerySub", name: "Gallery Subtitle", content: "Moments captured from this project" },
     ]
   },
-  { id: "luminaCharis", label: "Lumina Charis School", color: "vibrant-blue",
+  { id: "luminaCharis", label: "Lumina Charis School", group: "Projects",
     sections: [
       { id: "heroBadge", name: "Hero Badge", content: "Education" },
       { id: "heroTitle", name: "Hero Title", content: "Lumina Charis School of Africa" },
@@ -172,7 +167,7 @@ Our approach combines practical aid with lasting solutions — building schools,
       { id: "gallerySub", name: "Gallery Subtitle", content: "A look inside Lumina Charis School" },
     ]
   },
-  { id: "borewell", label: "Borewell Project", color: "vibrant-blue",
+  { id: "borewell", label: "Borewell Project", group: "Projects",
     sections: [
       { id: "heroBadge", name: "Hero Badge", content: "Water Access" },
       { id: "heroTitle", name: "Hero Title", content: "Borewell Project" },
@@ -180,7 +175,7 @@ Our approach combines practical aid with lasting solutions — building schools,
       { id: "storyTitle", name: "Story Title", content: "Water is Life" },
     ]
   },
-  { id: "bethlehemBread", label: "Bethlehem Bread", color: "hope-orange",
+  { id: "bethlehemBread", label: "Bethlehem Bread", group: "Projects",
     sections: [
       { id: "heroBadge", name: "Hero Badge", content: "Food Security" },
       { id: "heroTitle", name: "Hero Title", content: "Bethlehem Bread" },
@@ -188,7 +183,7 @@ Our approach combines practical aid with lasting solutions — building schools,
       { id: "storyTitle", name: "Story Title", content: "Feeding the Hungry" },
     ]
   },
-  { id: "footer", label: "Footer", color: "gray",
+  { id: "footer", label: "Footer", group: "Site",
     sections: [
       { id: "tagline", name: "Tagline", content: "Transforming lives through education, healthcare, food security, and social development since 2009." },
       { id: "copyright", name: "Copyright", content: "Kadesh Hope Mission. All rights reserved.", type: "single" },
@@ -199,182 +194,240 @@ Our approach combines practical aid with lasting solutions — building schools,
   },
 ];
 
+const GROUPS = ["Core", "Projects", "Site"];
+
 const itemVariants = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4 } } };
 
 export default function CMSPage() {
   const [selectedPage, setSelectedPage] = useState(PAGES[0].id);
   const [editingSection, setEditingSection] = useState(null);
   const [editContent, setEditContent] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [savedFields, setSavedFields] = useState({});
-  const [storedContent, setStoredContent] = useState({});
   const [search, setSearch] = useState("");
+  const [errorMsg, setErrorMsg] = useState(null);
 
-  useEffect(() => { setStoredContent(loadAll()); }, []);
+  const { data: allContent, isLoading } = useAllPageContent();
+  const updateContent = useUpdatePageContent();
+  const resetContent = useResetPageContent();
+
+  // Build { pageSlug: { sectionKey: content } } from the flat Supabase rows
+  const contentMap = useMemo(() => {
+    const rows = allContent?.data ?? [];
+    const map = {};
+    for (const row of rows) {
+      if (!map[row.page_slug]) map[row.page_slug] = {};
+      map[row.page_slug][row.section_key] = row.content;
+    }
+    return map;
+  }, [allContent]);
 
   const currentPage = PAGES.find((p) => p.id === selectedPage);
 
   const getValue = (pageId, sectionId, defaultValue) => {
-    if (storedContent[pageId]?.[sectionId] !== undefined) return storedContent[pageId][sectionId];
-    return defaultValue;
+    const override = contentMap[pageId]?.[sectionId];
+    return override !== undefined ? override : defaultValue;
   };
+
+  const isEdited = (pageId, sectionId) => contentMap[pageId]?.[sectionId] !== undefined;
 
   const handleEdit = (section) => {
     setEditingSection(section.id);
     setEditContent(getValue(selectedPage, section.id, section.content));
-    setSaved(false);
+    setErrorMsg(null);
   };
 
-  const handleSave = (sectionId) => {
-    setSaving(true);
-    const pageContent = { ...(storedContent[selectedPage] || {}), [sectionId]: editContent };
-    const all = { ...storedContent, [selectedPage]: pageContent };
-    saveAll(all);
-    setStoredContent(all);
-    setTimeout(() => {
-      setSaving(false);
-      setSaved(true);
-      setSavedFields((prev) => ({ ...prev, [sectionId]: true }));
+  const handleSave = async (sectionId) => {
+    setErrorMsg(null);
+    try {
+      const { error } = await updateContent.mutateAsync({
+        pageSlug: selectedPage,
+        sectionKey: sectionId,
+        content: editContent,
+      });
+      if (error) throw error;
+      primeCMSCache(true); // refresh the cache the public pages read from
       setEditingSection(null);
-      setTimeout(() => setSaved(false), 2000);
-    }, 300);
+    } catch (err) {
+      setErrorMsg(err.message || "Failed to save this field.");
+    }
   };
 
-  const handleReset = (pageId) => {
-    const all = { ...storedContent };
-    delete all[pageId];
-    saveAll(all);
-    setStoredContent(all);
+  const handleReset = async (pageId) => {
+    setErrorMsg(null);
+    try {
+      const { error } = await resetContent.mutateAsync(pageId);
+      if (error) throw error;
+      primeCMSCache(true); // refresh the cache the public pages read from
+    } catch (err) {
+      setErrorMsg(err.message || "Failed to reset this page.");
+    }
   };
 
   const filteredSections = currentPage?.sections.filter((s) =>
     !search || s.name.toLowerCase().includes(search.toLowerCase()) || s.content.toLowerCase().includes(search.toLowerCase())
   );
 
+  const pageHasOverrides = (pageId) => contentMap[pageId] && Object.keys(contentMap[pageId]).length > 0;
+
   return (
     <motion.div variants={itemVariants} initial="hidden" animate="visible">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h2 className="font-display text-2xl font-semibold text-deep-navy">Content Management</h2>
-          <p className="font-body text-sm text-on-surface-variant mt-1">Edit any text across the entire site — changes save to browser storage instantly</p>
+          <p className="font-body text-sm text-on-surface-variant mt-1">
+            Edit any text across the entire site — changes save live and are shared with every admin
+          </p>
         </div>
       </div>
 
-      {/* Page selector + search */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <div className="flex flex-wrap gap-1.5 flex-1">
-          {PAGES.map((page) => (
-            <button
-              key={page.id}
-              onClick={() => { setSelectedPage(page.id); setEditingSection(null); }}
-              className={cn(
-                "px-3 py-1.5 rounded-xl font-body text-xs font-semibold transition-all duration-200 border",
-                selectedPage === page.id
-                  ? "bg-vibrant-blue text-white border-vibrant-blue shadow-md shadow-vibrant-blue/20 scale-[1.02]"
-                  : "bg-white text-on-surface-variant border-gray-200 hover:border-vibrant-blue/30 hover:text-deep-navy hover:shadow-sm"
-              )}
-            >
-              {page.label}
-              {storedContent[page.id] && Object.keys(storedContent[page.id]).length > 0 && (
-                <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              )}
-            </button>
-          ))}
+      {/* Page selector, grouped, with search alongside */}
+      <div className="flex flex-col lg:flex-row gap-4 mb-6">
+        <div className="flex-1 space-y-3">
+          {GROUPS.map((group) => {
+            const pagesInGroup = PAGES.filter((p) => p.group === group);
+            if (pagesInGroup.length === 0) return null;
+            return (
+              <div key={group} className="flex items-start gap-3">
+                <span className="font-body text-xs font-semibold uppercase tracking-wide text-gray-400 pt-1.5 w-16 shrink-0">
+                  {group}
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {pagesInGroup.map((page) => (
+                    <button
+                      key={page.id}
+                      onClick={() => { setSelectedPage(page.id); setEditingSection(null); setErrorMsg(null); }}
+                      className={cn(
+                        "px-3 py-1.5 rounded-xl font-body text-xs font-semibold transition-all duration-200 border inline-flex items-center gap-1.5",
+                        selectedPage === page.id
+                          ? "bg-vibrant-blue text-white border-vibrant-blue shadow-md shadow-vibrant-blue/20 scale-[1.02]"
+                          : "bg-white text-on-surface-variant border-gray-200 hover:border-vibrant-blue/30 hover:text-deep-navy hover:shadow-sm"
+                      )}
+                    >
+                      {page.label}
+                      {pageHasOverrides(page.id) && (
+                        <span className={cn(
+                          "inline-block w-1.5 h-1.5 rounded-full",
+                          selectedPage === page.id ? "bg-white/80" : "bg-emerald-400 animate-pulse"
+                        )} />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
-        <div className="relative w-full sm:w-56">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+
+        {/* Search field — icon and input are flex siblings inside one bordered
+            box, not an absolutely-positioned overlay, so they can never drift
+            apart on wrap/resize. */}
+        <div className="flex items-center gap-2 w-full lg:w-64 shrink-0 px-3 py-2.5 border border-gray-200 rounded-xl bg-white shadow-sm focus-within:ring-2 focus-within:ring-vibrant-blue/30 focus-within:border-vibrant-blue transition-all h-fit">
+          <Search className="h-4 w-4 text-gray-400 shrink-0" />
           <input
             type="text"
             placeholder="Search fields..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-9 py-2.5 border border-gray-200 rounded-xl bg-white font-body text-sm focus:outline-none focus:ring-2 focus:ring-vibrant-blue/30 focus:border-vibrant-blue transition-all shadow-sm"
+            className="w-full bg-transparent font-body text-sm focus:outline-none min-w-0"
           />
           {search && (
-            <button
-              onClick={() => setSearch("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 hover:text-gray-600"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            <button onClick={() => setSearch("")} className="shrink-0 text-gray-400 hover:text-gray-600">
+              <X className="h-4 w-4" />
             </button>
           )}
         </div>
       </div>
 
-      {saved && (
-        <div className="mb-4 flex items-center gap-2 px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-700 font-body text-sm">
-          <Check className="h-4 w-4" /> Changes saved — refresh pages to see updates
+      {errorMsg && (
+        <div className="mb-4 flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-red-700 font-body text-sm">
+          <AlertCircle className="h-4 w-4 shrink-0" /> {errorMsg}
         </div>
       )}
 
-      {storedContent[selectedPage] && Object.keys(storedContent[selectedPage]).length > 0 && (
-        <div className="mb-4">
-          <button onClick={() => handleReset(selectedPage)} className="inline-flex items-center gap-1.5 font-body text-sm text-red-500 hover:text-red-700 transition-colors">
-            <RotateCcw className="h-3.5 w-3.5" /> Reset {currentPage?.label} to defaults
-          </button>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-24">
+          <Loader2 className="h-8 w-8 text-vibrant-blue animate-spin" />
         </div>
-      )}
-
-      <div className="space-y-3">
-        {filteredSections?.map((section) => {
-          const currentValue = getValue(selectedPage, section.id, section.content);
-          const isEdited = storedContent[selectedPage]?.[section.id] !== undefined;
-          const isJson = section.type === "json";
-          const isMultiline = section.type === "multiline";
-
-          return (
-            <div key={section.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
-                <div className="flex items-center gap-2 min-w-0">
-                  <h3 className="font-display text-sm font-semibold text-deep-navy truncate">{section.name}</h3>
-                  {isEdited && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 font-body text-caption text-emerald-600 shrink-0">
-                      <Check className="h-2.5 w-2.5" /> Custom
-                    </span>
-                  )}
-                </div>
-                {editingSection !== section.id && (
-                  <button onClick={() => handleEdit(section)} className="font-body text-sm font-medium text-vibrant-blue hover:text-vibrant-blue/80 transition-colors shrink-0 ml-3">
-                    Edit
-                  </button>
-                )}
-              </div>
-
-              {editingSection === section.id ? (
-                <div className="p-4">
-                  {isJson ? (
-                    <div>
-                      <textarea value={editContent} onChange={(e) => setEditContent(e.target.value)} rows={10}
-                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 font-mono text-xs resize-y focus:outline-none focus:ring-2 focus:ring-vibrant-blue/20" />
-                      {(() => { try { JSON.parse(editContent); return null; } catch (e) { return <p className="mt-2 font-body text-caption text-red-500">Invalid JSON: {e.message}</p>; } })()}
-                    </div>
-                  ) : isMultiline ? (
-                    <textarea value={editContent} onChange={(e) => setEditContent(e.target.value)} rows={6}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 font-body text-sm resize-y focus:outline-none focus:ring-2 focus:ring-vibrant-blue/20" />
-                  ) : (
-                    <textarea value={editContent} onChange={(e) => setEditContent(e.target.value)} rows={4}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 font-body text-sm resize-y focus:outline-none focus:ring-2 focus:ring-vibrant-blue/20" />
-                  )}
-                  <div className="flex items-center gap-3 mt-3">
-                    <button onClick={() => handleSave(section.id)} disabled={saving}
-                      className={cn("inline-flex items-center gap-1.5 px-4 py-2 rounded-lg font-body text-sm font-semibold text-white transition-colors",
-                        saving ? "bg-vibrant-blue/60 cursor-not-allowed" : "bg-vibrant-blue hover:bg-vibrant-blue/90")}>
-                      <Save className="h-4 w-4" /> {saving ? "Saving..." : "Save"}
-                    </button>
-                    <button onClick={() => setEditingSection(null)}
-                      className="px-4 py-2 rounded-lg font-body text-sm text-gray-500 hover:bg-gray-100 transition-colors">Cancel</button>
-                  </div>
-                </div>
-              ) : (
-                <div className="px-5 py-3.5">
-                  <p className="font-body text-sm text-on-surface-variant leading-relaxed">{String(currentValue).slice(0, 200)}{String(currentValue).length > 200 ? "…" : ""}</p>
-                </div>
-              )}
+      ) : (
+        <>
+          {pageHasOverrides(selectedPage) && (
+            <div className="mb-4">
+              <button
+                onClick={() => handleReset(selectedPage)}
+                disabled={resetContent.isPending}
+                className="inline-flex items-center gap-1.5 font-body text-sm text-red-500 hover:text-red-700 transition-colors disabled:opacity-50"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                {resetContent.isPending ? "Resetting…" : `Reset ${currentPage?.label} to defaults`}
+              </button>
             </div>
-          );
-        })}
-      </div>
+          )}
+
+          <div className="space-y-3">
+            {filteredSections?.map((section) => {
+              const currentValue = getValue(selectedPage, section.id, section.content);
+              const edited = isEdited(selectedPage, section.id);
+              const isMultiline = section.type === "multiline";
+              const isThisSaving = updateContent.isPending && editingSection === section.id;
+
+              return (
+                <div key={section.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden transition-shadow hover:shadow-sm">
+                  <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <h3 className="font-display text-sm font-semibold text-deep-navy truncate">{section.name}</h3>
+                      {edited && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 font-body text-caption text-emerald-600 shrink-0">
+                          <Check className="h-2.5 w-2.5" /> Custom
+                        </span>
+                      )}
+                    </div>
+                    {editingSection !== section.id && (
+                      <button onClick={() => handleEdit(section)} className="font-body text-sm font-medium text-vibrant-blue hover:text-vibrant-blue/80 transition-colors shrink-0 ml-3">
+                        Edit
+                      </button>
+                    )}
+                  </div>
+
+                  {editingSection === section.id ? (
+                    <div className="p-4">
+                      <textarea
+                        value={editContent}
+                        onChange={(e) => setEditContent(e.target.value)}
+                        rows={isMultiline ? 6 : 4}
+                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 font-body text-sm resize-y focus:outline-none focus:ring-2 focus:ring-vibrant-blue/20"
+                      />
+                      <div className="flex items-center gap-3 mt-3">
+                        <button
+                          onClick={() => handleSave(section.id)}
+                          disabled={isThisSaving}
+                          className={cn(
+                            "inline-flex items-center gap-1.5 px-4 py-2 rounded-lg font-body text-sm font-semibold text-white transition-colors",
+                            isThisSaving ? "bg-vibrant-blue/60 cursor-not-allowed" : "bg-vibrant-blue hover:bg-vibrant-blue/90"
+                          )}
+                        >
+                          {isThisSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                          {isThisSaving ? "Saving..." : "Save"}
+                        </button>
+                        <button
+                          onClick={() => setEditingSection(null)}
+                          className="px-4 py-2 rounded-lg font-body text-sm text-gray-500 hover:bg-gray-100 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="px-5 py-3.5">
+                      <p className="font-body text-sm text-on-surface-variant leading-relaxed">
+                        {String(currentValue).slice(0, 200)}{String(currentValue).length > 200 ? "…" : ""}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
     </motion.div>
   );
 }

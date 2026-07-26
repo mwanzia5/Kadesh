@@ -30,18 +30,6 @@ import SectionHeading from "@/components/ui/SectionHeading";
 
 const relatedProjects = [
   {
-    slug: "community",
-    title: "Community Projects",
-    image: "/images/others/african-children-playing-football-in-the-village-near-mount-kilimanjaro-east-africa.webp",
-    category: "Social Development",
-  },
-  {
-    slug: "women-projects",
-    title: "Women Projects",
-    image: "/images/womensproject_1.jpeg",
-    category: "Social Development",
-  },
-  {
     slug: "bethlehem-bread",
     title: "Bethlehem Bread",
     image: "/bread-baking/Picture44.webp",
@@ -61,7 +49,7 @@ const galleryImages = [
 ];
 
 const keyFacts = [
-  { icon: Droplets, value: "25+", label: "Borewells Installed" },
+  { icon: Droplets, value: "1", label: "Borewell Installed" },
   { icon: Users, value: "10,000+", label: "People Served" },
   { icon: MapPin, value: "3", label: "Regions Covered" },
 ];
