@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Plus, Edit, Trash2, X, Save, Upload, Newspaper, Calendar, Tag, Eye, Loader2 } from "lucide-react";
+import { Plus, Edit, Trash2, X, Save, Upload, Newspaper, Calendar, Tag, Eye, Loader2, Image as ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   useAllNews,
@@ -8,6 +8,7 @@ import {
   useUpdateArticle,
   useDeleteArticle,
 } from "@/hooks/useNews";
+import { uploadAndConvert, getPublicUrl } from "@/services/upload";
 
 const CATEGORIES = ["Education", "Health", "Food Security", "Community", "Events", "Announcement"];
 
@@ -46,9 +47,33 @@ export default function NewsManager() {
   const [filterCategory, setFilterCategory] = useState("All");
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const imageInputRef = useRef(null);
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !file.type.startsWith("image/")) return;
+    e.target.value = "";
+
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      let path = `news/${Date.now()}.${ext}`;
+
+      const { error: uploadErr, path: finalPath } = await uploadAndConvert(file, "news", path);
+      if (uploadErr) throw uploadErr;
+
+      const publicUrl = getPublicUrl("news", finalPath || path);
+      setForm((prev) => ({ ...prev, image: publicUrl }));
+    } catch (err) {
+      alert("Image upload failed: " + err.message);
+    } finally {
+      setUploading(false);
+    }
   };
 
   const resetForm = () => {
@@ -219,14 +244,59 @@ export default function NewsManager() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Image URL (optional)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
                 <input
-                  type="url"
-                  value={form.image}
-                  onChange={(e) => handleChange("image", e.target.value)}
-                  placeholder="https://example.com/image.jpg"
-                  className={inputClasses}
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
                 />
+                {form.image ? (
+                  <div className="relative rounded-lg overflow-hidden border border-gray-200 group">
+                    <img
+                      src={form.image}
+                      alt="Article preview"
+                      className="w-full h-48 object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                      <button
+                        type="button"
+                        onClick={() => imageInputRef.current?.click()}
+                        disabled={uploading}
+                        className="px-4 py-2 bg-white text-deep-navy rounded-lg font-body text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100 disabled:opacity-50"
+                      >
+                        Change Image
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setForm((prev) => ({ ...prev, image: "" }))}
+                        className="absolute top-2 right-2 p-1.5 bg-black/50 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => imageInputRef.current?.click()}
+                    disabled={uploading}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-8 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-vibrant-blue hover:text-vibrant-blue transition-colors disabled:opacity-50"
+                  >
+                    {uploading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <ImageIcon className="w-5 h-5" />
+                        Upload Image
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
 
               <div>

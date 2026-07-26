@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 import PageTransition from "@/animations/PageTransition";
+import SEO from "@/components/ui/SEO";
 import {
   staggerContainer,
   slideUp,
@@ -74,6 +75,10 @@ const pillarColors = {
 export default function Home() {
   return (
     <PageTransition>
+      <SEO
+        title="Home"
+        description="Kadesh Hope Mission transforms lives through education, healthcare, food security, and social development in DR Congo, Uganda, and Kenya since 2009."
+      />
       <HeroSection />
       <PillarsSection />
       <PartnersSection />
@@ -140,7 +145,7 @@ function HeroSection() {
               <span className="h-px w-10 bg-hope-orange" />
             </motion.div>
 
-            <div className="max-w-3xl mb-8">
+            <h1>
               <SplitText
                 text="Hope, restored."
                 className="font-display text-5xl md:text-7xl lg:text-8xl font-bold leading-[1.05] block"
@@ -148,7 +153,7 @@ function HeroSection() {
                 duration={0.8}
                 stagger={0.03}
               />
-            </div>
+            </h1>
 
             <motion.p
               initial={{ opacity: 0, y: 16 }}

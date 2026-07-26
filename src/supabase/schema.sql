@@ -276,7 +276,22 @@ CREATE TRIGGER on_auth_user_created
   FOR EACH ROW EXECUTE FUNCTION handle_new_user();
 
 -- -------------------------------------------
--- ROW LEVEL SECURITY
+-- HELPER FUNCTION: Check if user is admin
+-- -------------------------------------------
+CREATE OR REPLACE FUNCTION is_admin()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM admin_users WHERE id = auth.uid()
+  );
+$$;
+
+-- -------------------------------------------
+-- ROW LEVEL SECURITY POLICIES
 -- -------------------------------------------
 
 ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
@@ -332,71 +347,71 @@ CREATE POLICY "Public can view children"
   ON children FOR SELECT
   USING (true);
 
--- Authenticated write policies (full CRUD for authenticated users)
+-- Admin write policies (only admin_users can write)
 
-CREATE POLICY "Authenticated can manage projects"
+CREATE POLICY "Admin can manage projects"
   ON projects FOR ALL
-  USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
+  USING (is_admin())
+  WITH CHECK (is_admin());
 
-CREATE POLICY "Authenticated can manage gallery"
+CREATE POLICY "Admin can manage gallery"
   ON gallery FOR ALL
-  USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
+  USING (is_admin())
+  WITH CHECK (is_admin());
 
-CREATE POLICY "Authenticated can manage videos"
+CREATE POLICY "Admin can manage videos"
   ON videos FOR ALL
-  USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
+  USING (is_admin())
+  WITH CHECK (is_admin());
 
-CREATE POLICY "Authenticated can manage partners"
+CREATE POLICY "Admin can manage partners"
   ON partners FOR ALL
-  USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
+  USING (is_admin())
+  WITH CHECK (is_admin());
 
-CREATE POLICY "Authenticated can manage testimonials"
+CREATE POLICY "Admin can manage testimonials"
   ON testimonials FOR ALL
-  USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
+  USING (is_admin())
+  WITH CHECK (is_admin());
 
-CREATE POLICY "Authenticated can manage news"
+CREATE POLICY "Admin can manage news"
   ON news FOR ALL
-  USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
+  USING (is_admin())
+  WITH CHECK (is_admin());
 
 CREATE POLICY "Anyone can insert contact messages"
   ON contact_messages FOR INSERT
   WITH CHECK (true);
 
-CREATE POLICY "Authenticated can manage contact messages"
+CREATE POLICY "Admin can manage contact messages"
   ON contact_messages FOR ALL
-  USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
+  USING (is_admin())
+  WITH CHECK (is_admin());
 
-CREATE POLICY "Authenticated can manage settings"
+CREATE POLICY "Admin can manage settings"
   ON settings FOR ALL
-  USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
+  USING (is_admin())
+  WITH CHECK (is_admin());
 
-CREATE POLICY "Authenticated can manage page content"
+CREATE POLICY "Admin can manage page content"
   ON page_content FOR ALL
-  USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
+  USING (is_admin())
+  WITH CHECK (is_admin());
 
-CREATE POLICY "Authenticated can manage admin users"
+CREATE POLICY "Admin can manage admin users"
   ON admin_users FOR ALL
-  USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
+  USING (is_admin())
+  WITH CHECK (is_admin());
 
-CREATE POLICY "Authenticated can manage donations"
+CREATE POLICY "Admin can manage donations"
   ON donations FOR ALL
-  USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
+  USING (is_admin())
+  WITH CHECK (is_admin());
 
-CREATE POLICY "Authenticated can manage children"
+CREATE POLICY "Admin can manage children"
   ON children FOR ALL
-  USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
+  USING (is_admin())
+  WITH CHECK (is_admin());
 
 CREATE POLICY "Users can view own donor profile"
   ON donor_profiles FOR SELECT
@@ -411,10 +426,10 @@ CREATE POLICY "Users can update own donor profile"
   USING (auth.uid() = id)
   WITH CHECK (auth.uid() = id);
 
-CREATE POLICY "Authenticated can manage donor profiles"
+CREATE POLICY "Admin can manage donor profiles"
   ON donor_profiles FOR ALL
-  USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
+  USING (is_admin())
+  WITH CHECK (is_admin());
 
 CREATE POLICY "Users can view own sponsorships"
   ON sponsorships FOR SELECT
@@ -429,10 +444,10 @@ CREATE POLICY "Users can update own sponsorships"
   USING (auth.uid() = donor_id)
   WITH CHECK (auth.uid() = donor_id);
 
-CREATE POLICY "Authenticated can manage sponsorships"
+CREATE POLICY "Admin can manage sponsorships"
   ON sponsorships FOR ALL
-  USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
+  USING (is_admin())
+  WITH CHECK (is_admin());
 
 CREATE POLICY "Public can insert donations"
   ON donations FOR INSERT
@@ -440,7 +455,7 @@ CREATE POLICY "Public can insert donations"
 
 CREATE POLICY "Public can view own donations"
   ON donations FOR SELECT
-  USING (donor_email = auth.email() OR auth.role() = 'authenticated');
+  USING (donor_email = auth.email() OR is_admin());
 
 -- -------------------------------------------
 -- STORAGE BUCKETS
@@ -452,27 +467,28 @@ VALUES
   ('thumbnails', 'thumbnails', true),
   ('videos', 'videos', true),
   ('sponsorship', 'sponsorship', true),
-  ('children', 'children', true);
+  ('children', 'children', true),
+  ('news', 'news', true);
 
 -- Public read access for storage objects
 
 CREATE POLICY "Public can view images"
   ON storage.objects FOR SELECT
-  USING (bucket_id IN ('images', 'thumbnails', 'videos', 'sponsorship', 'children'));
+  USING (bucket_id IN ('images', 'thumbnails', 'videos', 'sponsorship', 'children', 'news'));
 
--- Authenticated upload/update/delete
+-- Admin upload/update/delete storage policies
 
-CREATE POLICY "Authenticated can upload images"
+CREATE POLICY "Admin can upload"
   ON storage.objects FOR INSERT
-  WITH CHECK (bucket_id IN ('images', 'thumbnails', 'videos', 'sponsorship', 'children') AND auth.role() = 'authenticated');
+  WITH CHECK (bucket_id IN ('images', 'thumbnails', 'videos', 'sponsorship', 'children', 'news') AND is_admin());
 
-CREATE POLICY "Authenticated can update images"
+CREATE POLICY "Admin can update"
   ON storage.objects FOR UPDATE
-  USING (bucket_id IN ('images', 'thumbnails', 'videos', 'sponsorship', 'children') AND auth.role() = 'authenticated');
+  USING (bucket_id IN ('images', 'thumbnails', 'videos', 'sponsorship', 'children', 'news') AND is_admin());
 
-CREATE POLICY "Authenticated can delete images"
+CREATE POLICY "Admin can delete"
   ON storage.objects FOR DELETE
-  USING (bucket_id IN ('images', 'thumbnails', 'videos', 'sponsorship', 'children') AND auth.role() = 'authenticated');
+  USING (bucket_id IN ('images', 'thumbnails', 'videos', 'sponsorship', 'children', 'news') AND is_admin());
 
 -- Migration: Add category and author columns to news table
 ALTER TABLE news ADD COLUMN IF NOT EXISTS category TEXT;

@@ -30,6 +30,7 @@ import Button from "@/components/ui/Button";
 import OptimizedImage from "@/components/ui/OptimizedImage";
 import GlareHover from "@/components/ui/GlareHover";
 import SplitText from "@/components/ui/SplitText";
+import SEO from "@/components/ui/SEO";
 import AnimatedCounter from "@/components/ui/AnimatedCounter";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import SectionHeading from "@/components/ui/SectionHeading";
@@ -135,6 +136,10 @@ const PARTNERSHIP_TYPES = [
 export default function AboutUs() {
   return (
     <PageTransition>
+      <SEO
+        title="About Us"
+        description="Learn about Kadesh Hope Mission - founded in 2009, transforming lives across DR Congo, Uganda and Kenya through education, healthcare, and food security."
+      />
       <HeroSection />
       <StorySection />
       <MissionVisionSection />
@@ -178,7 +183,7 @@ function HeroSection() {
               </span>
             </motion.div>
 
-            <div className="max-w-4xl mb-8">
+            <h1>
               <SplitText
                 text="Wisdom guided by empathy"
                 className="font-display text-4xl md:text-6xl lg:text-7xl font-bold leading-tight block"
@@ -186,7 +191,7 @@ function HeroSection() {
                 duration={0.8}
                 stagger={0.02}
               />
-            </div>
+            </h1>
 
             <motion.p
               initial={{ opacity: 0, y: 20 }}

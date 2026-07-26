@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGalleryImages, useCreateGalleryImage, useDeleteGalleryImage } from "@/hooks/useGallery";
-import { uploadAndConvert, getPublicUrl } from "@/services/upload";
+import { uploadAndConvert, deleteImage, getPublicUrl, extractPathFromUrl } from "@/services/upload";
 import { shouldConvertImage, convertImageToWebP } from "@/lib/imageConverter";
 import ImageCropper from "@/components/admin/ImageCropper";
 
@@ -171,6 +171,13 @@ export default function MediaLibrary() {
 
   const handleDelete = async (id) => {
     try {
+      const image = images.find((img) => img.id === id);
+      if (image && image.src) {
+        const storagePath = extractPathFromUrl(image.src);
+        if (storagePath) {
+          await deleteImage("images", storagePath);
+        }
+      }
       await deleteGalleryImage.mutateAsync(id);
       setShowDeleteConfirm(null);
       if (selectedImage?.id === id) setSelectedImage(null);

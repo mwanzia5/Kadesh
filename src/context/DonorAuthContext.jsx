@@ -18,7 +18,25 @@ export function DonorAuthProvider({ children }) {
       .select("*")
       .eq("id", userId)
       .single();
-    setProfile(data || null);
+    if (data) {
+      setProfile(data);
+    } else {
+      const { data: userData } = await supabase.auth.getUser();
+      const meta = userData?.user?.user_metadata || {};
+      const { data: created } = await supabase
+        .from("donor_profiles")
+        .upsert({
+          id: userId,
+          first_name: meta.first_name || "",
+          last_name: meta.last_name || "",
+          email: userData?.user?.email || "",
+          phone: meta.phone || null,
+          location: meta.location || null,
+        })
+        .select("*")
+        .single();
+      setProfile(created || null);
+    }
   }, []);
 
   useEffect(() => {

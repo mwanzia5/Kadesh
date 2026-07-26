@@ -53,6 +53,11 @@ const galleryImages = [
   { src: "/borehole2/Picture1.webp", alt: "Borehole drilling in progress" },
   { src: "/borehole2/Picture2.webp", alt: "Community water access point" },
   { src: "/borehole2/Picture3.webp", alt: "Clean water flowing" },
+  { src: "/images/borewell project/borewell project_1.jpg", alt: "Borewell installation" },
+  { src: "/images/borewell project/borewell project_2.jpg", alt: "Clean water access" },
+  { src: "/images/borewell project/borewell project_3.jpg", alt: "Community water point" },
+  { src: "/images/borewell project/borewell project_4.jpg", alt: "Water purification system" },
+  { src: "/images/borewell project/borewell project_5.jpg", alt: "Borewell community impact" },
 ];
 
 const keyFacts = [

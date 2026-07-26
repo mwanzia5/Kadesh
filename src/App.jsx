@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, useLocation, Link } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import Layout from "@/components/layout/Layout";
 import PageLoader from "@/components/ui/PageLoader";
@@ -31,7 +31,7 @@ export default function App() {
   const isAdmin = location.pathname.startsWith("/admin");
 
   const routes = (
-    <Routes location={location} key={location.pathname}>
+    <Routes location={location}>
       <Route path="/" element={<Home />} />
       <Route path="/about" element={<About />} />
       <Route path="/contact" element={<Contact />} />
@@ -52,6 +52,7 @@ export default function App() {
       <Route path="/account" element={<DonorDashboard />} />
       <Route path="/admin/login" element={<AdminLoginPage />} />
       <Route path="/admin/*" element={<AdminDashboard />} />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 
@@ -71,5 +72,25 @@ export default function App() {
         </AnimatePresence>
       </Layout>
     </DonorAuthProvider>
+  );
+}
+
+function NotFound() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-deep-navy">
+      <div className="text-center text-white px-6">
+        <h1 className="font-display text-8xl font-bold text-vibrant-blue mb-4">404</h1>
+        <h2 className="font-display text-2xl font-semibold mb-4">Page Not Found</h2>
+        <p className="font-body text-white/60 mb-8 max-w-md mx-auto">
+          The page you're looking for doesn't exist or has been moved.
+        </p>
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-vibrant-blue text-white rounded-lg font-body text-sm font-semibold hover:bg-vibrant-blue/90 transition-colors"
+        >
+          Back to Home
+        </Link>
+      </div>
+    </div>
   );
 }

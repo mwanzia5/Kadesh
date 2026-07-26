@@ -101,36 +101,50 @@ export default function Contact() {
               <div className="bg-white rounded-2xl border border-soft-accent p-8 md:p-10">
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="firstName" className="sr-only">First Name</label>
+                      <input
+                        required
+                        type="text"
+                        id="firstName"
+                        name="firstName"
+                        placeholder="First Name"
+                        value={form.firstName}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 rounded-lg border border-soft-accent focus:ring-2 focus:ring-vibrant-blue focus:outline-none font-body"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="lastName" className="sr-only">Last Name</label>
+                      <input
+                        required
+                        type="text"
+                        id="lastName"
+                        name="lastName"
+                        placeholder="Last Name"
+                        value={form.lastName}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 rounded-lg border border-soft-accent focus:ring-2 focus:ring-vibrant-blue focus:outline-none font-body"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="email" className="sr-only">Email Address</label>
                     <input
                       required
-                      type="text"
-                      name="firstName"
-                      placeholder="First Name"
-                      value={form.firstName}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 rounded-lg border border-soft-accent focus:ring-2 focus:ring-vibrant-blue focus:outline-none font-body"
-                    />
-                    <input
-                      required
-                      type="text"
-                      name="lastName"
-                      placeholder="Last Name"
-                      value={form.lastName}
+                      type="email"
+                      id="email"
+                      name="email"
+                      placeholder="Email Address"
+                      value={form.email}
                       onChange={handleChange}
                       className="w-full px-4 py-3 rounded-lg border border-soft-accent focus:ring-2 focus:ring-vibrant-blue focus:outline-none font-body"
                     />
                   </div>
-                  <input
-                    required
-                    type="email"
-                    name="email"
-                    placeholder="Email Address"
-                    value={form.email}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-lg border border-soft-accent focus:ring-2 focus:ring-vibrant-blue focus:outline-none font-body"
-                  />
                   <div className="relative">
+                    <label htmlFor="subject" className="sr-only">Subject</label>
                     <select
+                      id="subject"
                       name="subject"
                       value={form.subject}
                       onChange={handleChange}
@@ -148,15 +162,19 @@ export default function Contact() {
                     </select>
                     <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-on-surface-variant pointer-events-none" />
                   </div>
-                  <textarea
-                    required
-                    name="message"
-                    placeholder="Your message"
-                    rows={6}
-                    value={form.message}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-lg border border-soft-accent focus:ring-2 focus:ring-vibrant-blue focus:outline-none font-body resize-none"
-                  />
+                  <div>
+                    <label htmlFor="message" className="sr-only">Your Message</label>
+                    <textarea
+                      required
+                      id="message"
+                      name="message"
+                      placeholder="Your message"
+                      rows={6}
+                      value={form.message}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 rounded-lg border border-soft-accent focus:ring-2 focus:ring-vibrant-blue focus:outline-none font-body resize-none"
+                    />
+                  </div>
                   <Button
                     type="submit"
                     disabled={status === "submitting"}
