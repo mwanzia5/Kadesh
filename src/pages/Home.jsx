@@ -271,16 +271,23 @@ function WhoWeAreSection() {
             <div className="relative">
               <div className="rounded-2xl overflow-hidden shadow-card">
                 <OptimizedImage
-                  src="/Eldoret/IMG-20250624-WA0040.jpg"
+                  src="/images/gallery/kadesh images_04.jpg"
                   alt="Kadesh Hope Mission classroom"
                   className="w-full aspect-[4/3] object-cover"
                 />
               </div>
 
-              <div className="absolute -bottom-6 -right-4 md:right-6 lg:-right-8 z-10 w-[85%] md:w-auto">
+              {/*
+                Mobile: the card sits below the image as a normal stacked
+                block (with a small negative top-margin so it still
+                "tucks" under the image edge) so it never covers the
+                photo. From md upward it switches back to an absolutely
+                positioned card floating over the bottom-right corner.
+              */}
+              <div className="relative -mt-10 mx-4 md:mt-0 md:mx-0 md:absolute md:-bottom-6 md:right-6 lg:-right-8 z-10 w-auto md:w-[75%] lg:w-auto md:max-w-sm">
                 <div className="glass-card rounded-xl p-5 md:p-6 shadow-glass">
-                  <Quote className="h-8 w-8 text-vibrant-blue mb-3 opacity-60" />
-                  <p className="font-display text-body-lg text-deep-navy italic leading-relaxed">
+                  <Quote className="h-7 w-7 md:h-8 md:w-8 text-vibrant-blue mb-2 md:mb-3 opacity-60" />
+                  <p className="font-display text-body-md md:text-body-lg text-deep-navy italic leading-relaxed">
                     &ldquo;Education is the most powerful weapon which you can
                     use to change the world.&rdquo;
                   </p>
