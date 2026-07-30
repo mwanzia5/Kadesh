@@ -111,7 +111,7 @@ function HeroSection() {
     <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden">
       <div className="absolute inset-0">
         <OptimizedImage
-          src="/lumina charis2/Picture2.webp"
+          src="/Luminahead.jpeg"
           alt="Lumina Charis School of Africa"
           className="w-full h-full object-cover"
         />

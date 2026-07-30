@@ -164,7 +164,7 @@ function HeroSection() {
     <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden">
       <div className="absolute inset-0">
         <OptimizedImage
-          src="/images/kadesh images_03.png"
+          src="/About.jpeg"
           alt="Kadesh Hope Mission community"
           className="w-full h-full object-cover"
         />
