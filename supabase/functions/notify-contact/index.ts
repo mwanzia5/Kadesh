@@ -2,7 +2,12 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 
 const NOTIFICATION_EMAIL = "kadeshhope.africa@gmail.com";
-const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+
+// Must be an address on a domain verified in Resend.
+// Change the local part (before the @) to whatever you prefer —
+// e.g. "hello@" or "no-reply@" — but keep the domain exactly as verified.
+const FROM_ADDRESS = "Kadesh Hope Mission <noreply@contact.kadeshhopemission.org>";
 
 interface ContactPayload {
   first_name: string;
@@ -24,6 +29,14 @@ function escapeHtml(value: unknown): string {
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
+  }
+
+  if (!RESEND_API_KEY) {
+    console.error("[notify-contact] RESEND_API_KEY is not set");
+    return new Response(
+      JSON.stringify({ success: false, error: "Server misconfiguration: missing RESEND_API_KEY" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
 
   try {
@@ -78,7 +91,7 @@ serve(async (req: Request) => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Kadesh Hope Website <onboarding@resend.dev>",
+        from: FROM_ADDRESS,
         to: [NOTIFICATION_EMAIL],
         reply_to: email,
         subject: `New Contact: ${subject || "General Inquiry"} \u2014 ${first_name} ${last_name}`,
@@ -95,14 +108,19 @@ serve(async (req: Request) => {
       }),
     });
 
-    const result = await resendResponse.json();
+    let result: unknown;
+    try {
+      result = await resendResponse.json();
+    } catch {
+      result = { raw: await resendResponse.text().catch(() => "") };
+    }
 
     if (!resendResponse.ok) {
-      throw new Error(`Resend error: ${JSON.stringify(result)}`);
+      throw new Error(`Resend error (${resendResponse.status}): ${JSON.stringify(result)}`);
     }
 
     return new Response(
-      JSON.stringify({ success: true, id: result.id }),
+      JSON.stringify({ success: true, id: (result as { id?: string }).id }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
