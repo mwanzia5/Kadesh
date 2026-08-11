@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/supabase/client";
+import { isAdminEmail } from "@/constants";
 
 const AdminAuthContext = createContext(null);
 
@@ -46,25 +47,42 @@ const NAV_ITEMS = [
 
 export default function AdminLayout({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthorizedAdmin, setIsAuthorizedAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const evaluateSession = (session) => {
       setIsAuthenticated(!!session);
+      // Authorization must be enforced here too — being logged in is NOT
+      // enough. Only the two allowlisted emails may use the admin area.
+      setIsAuthorizedAdmin(isAdminEmail(session?.user?.email));
+    };
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      evaluateSession(session);
       setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        setIsAuthenticated(!!session);
+        evaluateSession(session);
       }
     );
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // If a non-admin somehow holds a session (e.g. signed in on the public
+  // site), force a sign-out so they are bounced back to the login page.
+  useEffect(() => {
+    if (loading) return;
+    if (isAuthenticated && !isAuthorizedAdmin) {
+      supabase.auth.signOut();
+    }
+  }, [loading, isAuthenticated, isAuthorizedAdmin]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -80,6 +98,10 @@ export default function AdminLayout({ children }) {
   }
 
   if (!isAuthenticated) {
+    return <Navigate to="/admin/login" replace />;
+  }
+
+  if (!isAuthorizedAdmin) {
     return <Navigate to="/admin/login" replace />;
   }
 

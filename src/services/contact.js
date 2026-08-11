@@ -15,11 +15,9 @@ export async function getMessages() {
 
 export async function sendMessage(messageData) {
   try {
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("contact_messages")
-      .insert(messageData)
-      .select()
-      .single();
+      .insert(messageData);
 
     if (error) {
       console.error("[sendMessage] Supabase insert error:", error);
@@ -32,7 +30,7 @@ export async function sendMessage(messageData) {
         console.error("[sendMessage] notify-contact invoke error:", notifyErr);
       });
 
-    return { data, error: null };
+    return { data: true, error: null };
   } catch (err) {
     console.error("[sendMessage] Unexpected error:", err);
     return { data: null, error: err };

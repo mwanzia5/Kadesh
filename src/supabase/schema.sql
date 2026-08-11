@@ -278,6 +278,9 @@ CREATE TRIGGER on_auth_user_created
 -- -------------------------------------------
 -- HELPER FUNCTION: Check if user is admin
 -- -------------------------------------------
+-- Access is limited to the two allowlisted admin emails. Even if a row
+-- exists in admin_users, the user's auth email must match the allowlist
+-- for is_admin() to return true.
 CREATE OR REPLACE FUNCTION is_admin()
 RETURNS boolean
 LANGUAGE sql
@@ -286,7 +289,11 @@ SECURITY DEFINER
 SET search_path = ''
 AS $$
   SELECT EXISTS (
-    SELECT 1 FROM admin_users WHERE id = auth.uid()
+    SELECT 1
+    FROM public.admin_users au
+    JOIN auth.users u ON u.id = au.id
+    WHERE au.id = auth.uid()
+      AND LOWER(u.email) IN ('masooshem@gmail.com', 'kadeshhope.africa@gmail.com')
   );
 $$;
 

@@ -530,7 +530,9 @@ function TeamCard({ member }) {
       <div className="team-card__overlay"></div>
       <div className="team-card__content">
         <h3 className="team-card__name">{member.name}</h3>
-        <p className="team-card__role">{member.role}</p>
+        <div className="team-card__role-wrap">
+          <p className="team-card__role">{member.role}</p>
+        </div>
       </div>
     </motion.div>
   );
@@ -611,14 +613,8 @@ function TeamSection() {
           left: 0;
           right: 0;
           z-index: 3;
-          padding: 24px;
+          padding: 16px 24px 20px;
           background: linear-gradient(to top, rgba(13, 27, 62, 0.95), transparent);
-          transform: translateY(60%);
-          transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
-        }
-
-        .team-card:hover .team-card__content {
-          transform: translateY(0);
         }
 
         .team-card__name {
@@ -629,10 +625,24 @@ function TeamSection() {
           color: white;
         }
 
+        .team-card__role-wrap {
+          max-height: 0;
+          opacity: 0;
+          overflow: hidden;
+          transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .team-card:hover .team-card__role-wrap {
+          max-height: 140px;
+          opacity: 1;
+          margin-top: 4px;
+        }
+
         .team-card__role {
           margin: 4px 0 0;
           font-family: "Hanken Grotesk", system-ui, sans-serif;
           font-size: 0.875rem;
+          line-height: 1.4;
           color: rgba(255, 255, 255, 0.8);
         }
 
@@ -642,14 +652,18 @@ function TeamSection() {
             box-shadow: none;
           }
           .team-card__content {
-            transform: translateY(0);
-            padding: 16px;
+            padding: 14px 16px 16px;
           }
           .team-card__overlay {
             background: rgba(13, 27, 62, 0.6);
           }
           .team-card__name {
             font-size: 1.1rem;
+          }
+          .team-card__role-wrap {
+            max-height: 140px;
+            opacity: 1;
+            margin-top: 4px;
           }
           .team-card__role {
             font-size: 0.8rem;

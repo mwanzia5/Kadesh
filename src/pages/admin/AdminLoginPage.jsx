@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle, ArrowLeft, Loader2 } from "lucide-react";
 import { supabase } from "@/supabase/client";
 import Button from "@/components/ui/Button";
+import { isAdminEmail } from "@/constants";
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState("");
@@ -35,13 +36,33 @@ export default function AdminLoginPage() {
     setLoading(true);
     setError("");
 
-    const { error: authError } = await supabase.auth.signInWithPassword({
+    if (!isAdminEmail(email)) {
+      setError("This account is not authorized to access the admin area.");
+      setLoading(false);
+      return;
+    }
+
+    const {
+      data,
+      error: authError,
+    } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (authError) {
       setError(authError.message);
+      setLoading(false);
+      return;
+    }
+
+    // Defense in depth: re-check the authenticated user's email. If someone
+    // is signed in from a previous session with a non-admin email, sign
+    // them out so they can never reach /admin.
+    const signedInEmail = data?.user?.email;
+    if (!isAdminEmail(signedInEmail)) {
+      await supabase.auth.signOut();
+      setError("This account is not authorized to access the admin area.");
       setLoading(false);
       return;
     }
@@ -230,8 +251,8 @@ export default function AdminLoginPage() {
                 >
                   {loading ? (
                     <span className="flex items-center justify-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
                       Updating...
+                      <Loader2 className="h-4 w-4 animate-spin" />
                     </span>
                   ) : (
                     "Set New Password"
@@ -273,8 +294,8 @@ export default function AdminLoginPage() {
                 >
                   {loading ? (
                     <span className="flex items-center justify-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
                       Sending...
+                      <Loader2 className="h-4 w-4 animate-spin" />
                     </span>
                   ) : (
                     "Send Reset Link"

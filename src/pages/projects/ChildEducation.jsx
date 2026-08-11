@@ -35,6 +35,18 @@ const relatedProjects = [
     image: "/lumina charis2/Picture2.webp",
     category: "Education",
   },
+  {
+    slug: "home-care",
+    title: "Home Care",
+    image: "/images/healthcare/healthcare_1.jpg",
+    category: "Health & Wellness",
+  },
+  {
+    slug: "bethlehem-bread",
+    title: "Bethlehem Bread",
+    image: "/bread-baking/Picture44.webp",
+    category: "Food Security",
+  },
 ];
 
 const galleryImages = [

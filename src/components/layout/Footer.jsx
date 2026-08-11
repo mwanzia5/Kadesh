@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { MapPin } from "lucide-react";
 import { FacebookIcon, TwitterIcon, YoutubeIcon, LinkedinIcon } from "@/components/ui/SocialIcons";
 import { SITE_CONFIG } from "@/constants";
 
@@ -18,7 +19,6 @@ const exploreLinks = [
 ];
 
 const orgLinks = [
-  { label: "Partners", href: "/partners" },
   { label: "Contact", href: "/contact" },
   { label: "Donate", href: "/donate" },
   { label: "Get Involved", href: "/contact" },
@@ -115,11 +115,16 @@ export default function Footer() {
                   {SITE_CONFIG.phone}
                 </a>
               </li>
-              {SITE_CONFIG.regions.map((region) => (
-                <li key={region} className="text-body-md text-white/70">
-                  {region}
-                </li>
-              ))}
+              <li className="text-body-md text-white/70 flex items-start gap-2">
+                <MapPin className="h-4 w-4 mt-0.5 shrink-0 text-hope-orange" />
+                <span>
+                  {SITE_CONFIG.address.map((line) => (
+                    <span key={line} className="block">
+                      {line}
+                    </span>
+                  ))}
+                </span>
+              </li>
             </ul>
           </div>
         </div>

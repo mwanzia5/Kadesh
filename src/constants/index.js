@@ -2,6 +2,18 @@ export const SUPABASE_IMAGE_URL = import.meta.env.VITE_SUPABASE_URL
   ? `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public`
   : "";
 
+// Only these emails are allowed to access the admin area.
+// Enforced client-side (login + layout guards) AND server-side via the
+// is_admin() SQL function (see supabase/migrations.sql).
+export const ADMIN_EMAILS = [
+  "masooshem@gmail.com",
+  "kadeshhope.africa@gmail.com",
+];
+
+export function isAdminEmail(email) {
+  return ADMIN_EMAILS.includes((email || "").trim().toLowerCase());
+}
+
 export const SITE_CONFIG = {
   name: "Kadesh Hope Mission",
   fullName: "Kadesh Hope Mission of Africa",
@@ -10,6 +22,11 @@ export const SITE_CONFIG = {
     "Transforming lives through education, healthcare, food security, and social development since 2009.",
   founded: 2009,
   regions: ["Democratic Republic of Congo", "Uganda"],
+  address: [
+    "Kadesh Hope Mission of Africa",
+    "Bulemezi Block 30, Plot No. 106,",
+    "Nakaseta (Mpande), Kalule, Uganda.",
+  ],
   email: "kadeshhope.africa@gmail.com",
   phone: "+254 733 959 383",
   whatsapp: "https://wa.me/254733959383",
@@ -152,30 +169,35 @@ export const PROGRAM_PILLARS = [
     icon: "School",
     description: "Ensuring access to education for every child.",
     color: "vibrant-blue",
+    href: "/projects/lumina-charis",
   },
   {
     title: "Health",
     icon: "Heart",
     description: "Home-based healthcare for underserved populations.",
     color: "hope-orange",
+    href: "/projects/home-care",
   },
   {
     title: "Food Security",
     icon: "UtensilsCrossed",
     description: "Daily meals through the Bethlehem Bread Project.",
     color: "vibrant-blue",
+    href: "/projects/bethlehem-bread",
   },
   {
     title: "Enterprise Programs",
     icon: "Rocket",
     description: "Skills training and mentorship for youth.",
     color: "hope-orange",
+    href: "/projects/child-education",
   },
   {
     title: "Social Development",
     icon: "Users",
     description: "Micro-financing for women's empowerment.",
     color: "vibrant-blue",
+    href: "/projects/borewell",
   },
 ];
 

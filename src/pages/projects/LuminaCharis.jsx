@@ -37,6 +37,18 @@ const relatedProjects = [
     image: "/images/child to school/child project_1.jpeg",
     category: "Child to School",
   },
+  {
+    slug: "borewell",
+    title: "Borewell Project",
+    image: "/borehole2/Picture1.webp",
+    category: "Social Development",
+  },
+  {
+    slug: "bethlehem-bread",
+    title: "Bethlehem Bread",
+    image: "/bread-baking/Picture44.webp",
+    category: "Food Security",
+  },
 ];
 
 const galleryImages = [
@@ -339,10 +351,8 @@ function ProfileDownloadSection() {
               future expansion plans — in our institutional profile document.
             </p>
             <a
-              href="/documents/lumina-charis-institutional-profile.pdf"
-              download
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/documents/LUMINA%20SCHOOL%20OF%20AFRICA%20PROFILE.pdf"
+              download="LUMINA SCHOOL OF AFRICA PROFILE.pdf"
             >
               <Button variant="primary" size="lg">
                 Download Institutional Profile (PDF)

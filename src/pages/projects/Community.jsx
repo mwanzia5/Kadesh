@@ -41,6 +41,12 @@ const relatedProjects = [
     image: "/bread-baking/Picture44.webp",
     category: "Food Security",
   },
+  {
+    slug: "child-education",
+    title: "Child Education Project",
+    image: "/images/child to school/child project_1.jpeg",
+    category: "Child to School",
+  },
 ];
 
 const galleryImages = [

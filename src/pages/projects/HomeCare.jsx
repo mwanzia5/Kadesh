@@ -429,10 +429,8 @@ function NewsletterDownloadSection() {
               from the opening — in our 2026 newsletter.
             </p>
             <a
-              href="/documents/Ohana Clinic_Kadesh Newsletter 1.pdf"
-              download
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/documents/Ohana%20Clinic_Kadesh%20Newsletter%201.pdf"
+              download="Ohana Clinic_Kadesh Newsletter 1.pdf"
             >
               <Button variant="primary" size="lg">
                 Download Newsletter (PDF)

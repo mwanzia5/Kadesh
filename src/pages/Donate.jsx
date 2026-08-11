@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import { Shield, Award, Heart, Gift, Building2, Globe, ChevronDown } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import { Shield, Award, Heart, Globe, ChevronDown } from "lucide-react";
 import PageTransition from "@/animations/PageTransition";
 import Section from "@/components/ui/Section";
 import SectionHeading from "@/components/ui/SectionHeading";
@@ -245,28 +245,66 @@ export default function Donate() {
                 </div>
               </div>
 
-              {/* Frequency Toggle */}
-              <div className="flex bg-cream rounded-lg p-1 max-w-xs mb-8">
-                <button
-                  onClick={() => setFrequency("monthly")}
-                  className={`flex-1 py-2.5 rounded-md text-sm font-body font-medium transition-all ${
-                    frequency === "monthly"
-                      ? "bg-navy text-white shadow-sm"
-                      : "text-on-surface-variant hover:text-on-background"
-                  }`}
-                >
-                  Monthly
-                </button>
-                <button
-                  onClick={() => setFrequency("one-time")}
-                  className={`flex-1 py-2.5 rounded-md text-sm font-body font-medium transition-all ${
-                    frequency === "one-time"
-                      ? "bg-navy text-white shadow-sm"
-                      : "text-on-surface-variant hover:text-on-background"
-                  }`}
-                >
-                  One-time
-                </button>
+              {/* Frequency Selection */}
+              <div className="mb-8">
+                <label className="block text-sm font-medium text-on-background mb-3">
+                  Giving Frequency
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setFrequency("monthly")}
+                    aria-pressed={frequency === "monthly"}
+                    className={`flex items-center gap-3 px-4 py-4 rounded-xl border-2 text-left transition-all duration-200 ${
+                      frequency === "monthly"
+                        ? "border-vibrant-blue bg-vibrant-blue/5 shadow-md"
+                        : "border-soft-accent bg-white hover:border-vibrant-blue/40 hover:bg-vibrant-blue/5"
+                    }`}
+                  >
+                    <span
+                      className={`flex items-center justify-center w-10 h-10 rounded-full shrink-0 transition-colors ${
+                        frequency === "monthly"
+                          ? "bg-vibrant-blue text-white"
+                          : "bg-cream text-on-surface-variant"
+                      }`}
+                    >
+                      <Heart className="w-5 h-5" />
+                    </span>
+                    <span>
+                      <span className="block font-body font-semibold text-on-background">Monthly</span>
+                      <span className="block text-sm font-body text-on-surface-variant">
+                        Sustained support every month
+                      </span>
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFrequency("one-time")}
+                    aria-pressed={frequency === "one-time"}
+                    className={`flex items-center gap-3 px-4 py-4 rounded-xl border-2 text-left transition-all duration-200 ${
+                      frequency === "one-time"
+                        ? "border-vibrant-blue bg-vibrant-blue/5 shadow-md"
+                        : "border-soft-accent bg-white hover:border-vibrant-blue/40 hover:bg-vibrant-blue/5"
+                    }`}
+                  >
+                    <span
+                      className={`flex items-center justify-center w-10 h-10 rounded-full shrink-0 transition-colors ${
+                        frequency === "one-time"
+                          ? "bg-vibrant-blue text-white"
+                          : "bg-cream text-on-surface-variant"
+                      }`}
+                    >
+                      <Heart className="w-5 h-5" />
+                    </span>
+                    <span>
+                      <span className="block font-body font-semibold text-on-background">One-time</span>
+                      <span className="block text-sm font-body text-on-surface-variant">
+                        A single gift when it suits you
+                      </span>
+                    </span>
+                  </button>
+                </div>
               </div>
 
               {/* Currency Selector */}
@@ -474,32 +512,6 @@ export default function Donate() {
                 </div>
               </div>
 
-              {/* Other Ways to Give */}
-              <div className="bg-white rounded-2xl border border-soft-accent p-6">
-                <h3 className="text-lg font-display font-bold text-navy mb-4">Other Ways to Give</h3>
-                <div className="space-y-4">
-                  <Link to="/partners" className="flex items-center gap-3 group">
-                    <div className="w-9 h-9 rounded-full bg-cream flex items-center justify-center flex-shrink-0 group-hover:bg-vibrant-blue group-hover:text-white transition-colors">
-                      <Heart className="w-4 h-4" />
-                    </div>
-                    <span className="text-sm font-body font-medium text-on-background group-hover:text-vibrant-blue transition-colors">
-                      Sponsor a specific child
-                    </span>
-                  </Link>
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-cream flex items-center justify-center flex-shrink-0">
-                      <Gift className="w-4 h-4" />
-                    </div>
-                    <span className="text-sm font-body font-medium text-on-background">Gift Catalog</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-cream flex items-center justify-center flex-shrink-0">
-                      <Building2 className="w-4 h-4" />
-                    </div>
-                    <span className="text-sm font-body font-medium text-on-background">Corporate matching &amp; partnerships</span>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>

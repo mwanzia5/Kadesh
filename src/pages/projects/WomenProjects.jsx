@@ -41,6 +41,12 @@ const relatedProjects = [
     image: "/images/child to school/child project_1.jpeg",
     category: "Child to School",
   },
+  {
+    slug: "home-care",
+    title: "Home Care",
+    image: "/images/healthcare/healthcare_1.jpg",
+    category: "Health & Wellness",
+  },
 ];
 
 const galleryImages = [

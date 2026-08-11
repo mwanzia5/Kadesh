@@ -239,19 +239,26 @@ function PillarsSection() {
                   glareColor={pillar.color === "hope-orange" ? "#F37021" : "#2563EB"}
                   className="h-full"
                 >
-                  <div className="flex flex-col items-center text-center p-6 rounded-xl bg-white border border-soft-accent/50 h-full transition-shadow duration-300 hover:shadow-card">
+                  <Link
+                    to={pillar.href}
+                    className="group flex flex-col items-center text-center p-6 rounded-xl bg-white border border-soft-accent/50 h-full transition-all duration-300 hover:shadow-card hover:border-vibrant-blue/30 hover:-translate-y-1"
+                  >
                     <div
-                      className={`flex items-center justify-center w-14 h-14 rounded-xl mb-5 ${colorClass}`}
+                      className={`flex items-center justify-center w-14 h-14 rounded-xl mb-5 transition-transform duration-300 group-hover:scale-110 ${colorClass}`}
                     >
                       {Icon && <Icon className="h-7 w-7" />}
                     </div>
-                    <h3 className="font-display text-headline-md text-deep-navy mb-3 leading-tight text-balance break-words px-1">
+                    <h3 className="font-display text-headline-md text-deep-navy mb-3 leading-tight text-balance break-words px-1 group-hover:text-vibrant-blue transition-colors">
                       {pillar.title}
                     </h3>
                     <p className="font-body text-body-md text-on-surface-variant leading-relaxed">
                       {pillar.description}
                     </p>
-                  </div>
+                    <span className="mt-4 inline-flex items-center gap-1.5 font-body text-label-bold text-vibrant-blue opacity-0 group-hover:opacity-100 transition-opacity">
+                      Explore Project
+                      <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                    </span>
+                  </Link>
                 </GlareHover>
               </motion.div>
             );
@@ -327,7 +334,7 @@ function WhoWeAreSection() {
               </div>
 
               <Button variant="primary" size="lg" as={Link} to="/about">
-                {getCMSContent("home", "whoWeAreCta", "Learn More")}
+                {getCMSContent("home", "whoWeAreCta", "Know More About Us")}
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </div>
@@ -394,7 +401,7 @@ function ProjectsSection() {
         </motion.div>
 
         <ScrollReveal delay={0.3} className="mt-12 text-center">
-          <Button variant="primary" size="lg" as={Link} to="/projects">
+          <Button variant="primary" size="lg" as={Link} to="/projects/bethlehem-bread">
             {getCMSContent("home", "projectsCta", "View All Projects")}
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>

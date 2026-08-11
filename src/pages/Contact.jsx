@@ -184,13 +184,13 @@ export default function Contact() {
                   >
                     {status === "submitting" ? (
                       <>
-                        <Loader2 className="h-5 w-5 animate-spin mr-2" />
                         Sending...
+                        <Loader2 className="h-5 w-5 animate-spin ml-2" />
                       </>
                     ) : (
                       <>
-                        <Send className="h-5 w-5 mr-2" />
                         Send Message
+                        <Send className="h-5 w-5 ml-2" />
                       </>
                     )}
                   </Button>
@@ -227,7 +227,12 @@ export default function Contact() {
                     <Mail className="h-5 w-5 text-hope-orange shrink-0 mt-0.5" />
                     <div>
                       <p className="font-body text-label-bold opacity-70 mb-1">EMAIL</p>
-                      <p className="font-body text-body-md">kadeshhope.africa@gmail.com</p>
+                      <a
+                        href={`mailto:${office.email}`}
+                        className="font-body text-body-md hover:text-hope-orange underline decoration-hope-orange/40 underline-offset-4 transition-colors"
+                      >
+                        kadeshhope.africa@gmail.com
+                      </a>
                     </div>
                   </li>
                   <li className="flex gap-4">

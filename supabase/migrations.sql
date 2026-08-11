@@ -17,6 +17,10 @@ ALTER TABLE news ADD COLUMN IF NOT EXISTS author TEXT;
 --    reference must be schema-qualified (public.admin_users),
 --    otherwise Postgres cannot resolve it at CREATE FUNCTION time.
 -- ----------------------------------------------------
+-- SECURITY: Admin access is limited to the two allowlisted emails below.
+-- Even if a row exists in admin_users, the user's auth email must match
+-- the allowlist for is_admin() to return true. This is the authoritative
+-- server-side gate that backs every RLS policy.
 CREATE OR REPLACE FUNCTION is_admin()
 RETURNS boolean
 LANGUAGE sql
@@ -25,9 +29,20 @@ SECURITY DEFINER
 SET search_path = ''
 AS $$
   SELECT EXISTS (
-    SELECT 1 FROM public.admin_users WHERE id = auth.uid()
+    SELECT 1
+    FROM public.admin_users au
+    JOIN auth.users u ON u.id = au.id
+    WHERE au.id = auth.uid()
+      AND LOWER(u.email) IN ('masooshem@gmail.com', 'kadeshhope.africa@gmail.com')
   );
 $$;
+
+-- Purge any existing admin_users rows whose email is not allowlisted, so
+-- no other account retains admin access (re-runnable, no-op if clean).
+DELETE FROM public.admin_users au
+USING auth.users u
+WHERE au.id = u.id
+  AND LOWER(u.email) NOT IN ('masooshem@gmail.com', 'kadeshhope.africa@gmail.com');
 
 -- 3. Drop old + current policies so this file is truly re-runnable
 --    (ignore "policy does not exist" errors — IF EXISTS handles that)

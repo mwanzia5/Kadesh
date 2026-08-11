@@ -304,8 +304,8 @@ export default function DonorAuth() {
                     >
                       {loading ? (
                         <>
-                          <Loader2 className="h-5 w-5 animate-spin mr-2" />
                           Updating...
+                          <Loader2 className="h-5 w-5 animate-spin ml-2" />
                         </>
                       ) : (
                         "Set New Password"
@@ -346,8 +346,8 @@ export default function DonorAuth() {
                     >
                       {loading ? (
                         <>
-                          <Loader2 className="h-5 w-5 animate-spin mr-2" />
                           Sending...
+                          <Loader2 className="h-5 w-5 animate-spin ml-2" />
                         </>
                       ) : (
                         "Send Reset Link"
@@ -503,18 +503,18 @@ export default function DonorAuth() {
                   type="submit"
                   variant="primary"
                   size="lg"
-                  className="w-full"
+                  className="w-full gap-2"
                   disabled={loading}
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                      {mode === "signup" ? "Creating Account..." : "Logging in..."}
+                      <span>{mode === "signup" ? "Creating Account..." : "Logging in..."}</span>
+                      <Loader2 className="h-5 w-5 shrink-0 animate-spin" aria-hidden="true" />
                     </>
                   ) : (
                     <>
-                      <Heart className="h-5 w-5 mr-2" />
-                      {mode === "signup" ? "Create Account & Start Giving" : "Log In to Donate"}
+                      <span>{mode === "signup" ? "Create Account & Start Giving" : "Log In to Donate"}</span>
+                      <Heart className="h-5 w-5 shrink-0" aria-hidden="true" />
                     </>
                   )}
                 </Button>
