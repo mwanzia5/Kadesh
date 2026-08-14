@@ -280,7 +280,7 @@ function WhoWeAreSection() {
                 <OptimizedImage
                   src="/images/gallery/kadesh images_04.jpg"
                   alt="Kadesh Hope Mission classroom"
-                  className="w-full aspect-[4/3] object-cover"
+                  className="w-full h-auto"
                 />
               </div>
 
@@ -371,11 +371,11 @@ function ProjectsSection() {
                   to={`/projects/${project.slug}`}
                   className="group flex flex-col h-full rounded-xl overflow-hidden bg-white border border-soft-accent/50 shadow-card hover:shadow-card-hover transition-shadow duration-300"
                 >
-                  <div className="relative overflow-hidden aspect-[16/10]">
+                  <div className="relative overflow-hidden">
                     <OptimizedImage
                       src={project.image}
                       alt={project.title}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      className="w-full h-auto transition-transform duration-500 group-hover:scale-105"
                     />
                     <span className="absolute top-4 left-4 inline-block rounded-full bg-vibrant-blue px-4 py-1.5 font-body text-caption font-medium text-white">
                       {project.category}
@@ -430,7 +430,7 @@ function GallerySection() {
                   <OptimizedImage
                     src={image.src}
                     alt={image.alt}
-                    className="w-full aspect-[4/3] object-cover transition-transform duration-500 group-hover:scale-110"
+                    className="w-full h-auto transition-transform duration-500 group-hover:scale-110"
                   />
                 </div>
               </GlareHover>

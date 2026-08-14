@@ -158,11 +158,11 @@ export default function News() {
                   >
                     <div className="flex flex-col lg:flex-row">
                       {featured.image && (
-                        <div className="lg:w-1/2 h-64 lg:h-auto bg-gray-100">
+                        <div className="lg:w-1/2 bg-gray-100">
                           <img
                             src={featured.image}
                             alt={featured.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            className="w-full h-auto group-hover:scale-105 transition-transform duration-500"
                           />
                         </div>
                       )}
@@ -222,11 +222,11 @@ export default function News() {
                           className="group flex flex-col h-full bg-white rounded-2xl border border-soft-accent overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-300"
                         >
                           {article.image && (
-                            <div className="relative overflow-hidden aspect-[16/10]">
+                            <div className="relative overflow-hidden">
                               <img
                                 src={article.image}
                                 alt={article.title}
-                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                className="w-full h-auto transition-transform duration-500 group-hover:scale-105"
                               />
                             </div>
                           )}

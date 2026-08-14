@@ -164,7 +164,7 @@ function HeroSection() {
     <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden">
       <div className="absolute inset-0">
         <OptimizedImage
-          src="/About.jpeg"
+          src="/images/child to school/child project_3.png"
           alt="Kadesh Hope Mission community"
           className="w-full h-full object-cover"
         />
@@ -277,7 +277,7 @@ function StorySection() {
                   <OptimizedImage
                     src="/Egypt/IMG-20250628-WA0072.jpg"
                     alt="Kadesh Hope Mission story"
-                    className="w-full aspect-[4/3] object-cover"
+                    className="w-full"
                   />
                 </div>
 
@@ -565,7 +565,7 @@ function TeamSection() {
         .team-card {
           position: relative;
           width: 100%;
-          aspect-ratio: 3 / 4;
+          aspect-ratio: 1 / 1;
           background: linear-gradient(-45deg, #2563EB 0%, #F37021 100%);
           border-radius: 12px;
           display: flex;
@@ -806,7 +806,7 @@ function AboutPartnershipSection() {
                 <OptimizedImage
                   src="/images/partners.png"
                   alt="Kadesh Hope Mission partnership"
-                  className="w-full aspect-[4/3] object-cover"
+                  className="w-full h-auto"
                 />
               </div>
             </ScrollReveal>
@@ -920,6 +920,7 @@ function FinalCTASection() {
                   >
                     Get Involved
                     <ArrowRight className="ml-2 h-5 w-5" />
+
                   </Button>
                 </motion.div>
               </div>

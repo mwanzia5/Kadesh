@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Shield, Award, Heart, Globe, ChevronDown } from "lucide-react";
+import { Shield, Heart, Globe, ChevronDown } from "lucide-react";
 import PageTransition from "@/animations/PageTransition";
 import Section from "@/components/ui/Section";
 import SectionHeading from "@/components/ui/SectionHeading";
@@ -498,17 +498,6 @@ export default function Donate() {
                       <div className="h-full bg-orange-500 rounded-full" style={{ width: "3%" }} />
                     </div>
                   </div>
-                </div>
-              </div>
-
-              {/* Certified Transparency */}
-              <div className="bg-cream rounded-2xl p-6 flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-navy text-white flex items-center justify-center flex-shrink-0">
-                  <Award className="w-6 h-6" />
-                </div>
-                <div>
-                  <p className="font-display font-bold text-navy">Certified Transparency</p>
-                  <p className="text-sm font-body text-on-surface-variant">Verified by independent auditors</p>
                 </div>
               </div>
 

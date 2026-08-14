@@ -223,15 +223,11 @@ function GallerySection() {
           subtitle="Moments from our Borewell Project"
         />
 
-        <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 auto-rows-[180px] sm:auto-rows-[160px] lg:auto-rows-[180px] gap-4">
+        <div className="mt-16 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {galleryImages.map((image, index) => (
-            <ScrollReveal
-              key={index}
-              delay={index * 0.1}
-              className={`h-full ${index === 0 ? "sm:col-span-2 sm:row-span-2" : ""}`}
-            >
+            <ScrollReveal key={index} delay={index * 0.1}>
               <GlareHover glareColor="#2563EB" className="h-full rounded-xl overflow-hidden group">
-                <div className="relative h-full w-full overflow-hidden rounded-xl">
+                <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl">
                   <OptimizedImage
                     src={image.src}
                     alt={image.alt}
@@ -350,11 +346,11 @@ function RelatedProjects() {
                   to={`/projects/${project.slug}`}
                   className="group flex flex-col h-full rounded-xl overflow-hidden bg-white border border-soft-accent/50 shadow-card hover:shadow-card-hover transition-shadow duration-300"
                 >
-                  <div className="relative overflow-hidden aspect-[16/10]">
+                  <div className="relative overflow-hidden">
                     <OptimizedImage
                       src={project.image}
                       alt={project.title}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      className="w-full h-auto transition-transform duration-500 group-hover:scale-105"
                     />
                     <span className="absolute top-4 left-4 inline-block rounded-full bg-vibrant-blue px-4 py-1.5 font-body text-caption font-medium text-white">
                       {project.category}

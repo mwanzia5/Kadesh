@@ -92,7 +92,7 @@ export default function Teams() {
         .team-card {
           position: relative;
           width: 100%;
-          aspect-ratio: 3 / 4;
+          aspect-ratio: 1 / 1;
           background: linear-gradient(-45deg, #2563EB 0%, #F37021 100%);
           border-radius: 12px;
           display: flex;

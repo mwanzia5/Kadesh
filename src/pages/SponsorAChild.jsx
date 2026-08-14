@@ -101,12 +101,12 @@ class ChildCardBoundary extends Component {
 function ChildCard({ child }) {
   return (
     <div className="group flex flex-col h-full rounded-xl overflow-hidden bg-white border border-soft-accent/50 shadow-card hover:shadow-card-hover transition-shadow duration-300">
-      <div className="relative overflow-hidden aspect-square">
+      <div className="relative overflow-hidden">
         {child.photo_url ? (
           <OptimizedImage
             src={child.photo_url}
             alt={child.first_name || "Child"}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="w-full h-auto transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-vibrant-blue/20 to-hope-orange/20 flex items-center justify-center">

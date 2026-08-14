@@ -145,7 +145,7 @@ export const PROJECTS = [
     title: "Lumina Charis School of Africa",
     category: "Education",
     shortDescription: "Constructing schools and learning centers for African youth.",
-    image: "/lumina charis2/Picture2.webp",
+    image: "/images/Lumina School/Lumina School_01.jpeg",
   },
   {
     slug: "borewell",

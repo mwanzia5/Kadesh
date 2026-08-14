@@ -166,8 +166,8 @@ export default function NewsArticle() {
                       className="group block bg-surface rounded-xl border border-soft-accent overflow-hidden hover:shadow-card transition-shadow"
                     >
                       {a.image && (
-                        <div className="aspect-[16/10] overflow-hidden">
-                          <img src={a.image} alt={a.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        <div className="overflow-hidden">
+                          <img src={a.image} alt={a.title} className="w-full h-auto group-hover:scale-105 transition-transform duration-500" />
                         </div>
                       )}
                       <div className="p-4">

@@ -107,12 +107,12 @@ export default function ChildProfile() {
             <ScrollReveal direction="left" className="lg:col-span-5">
               <div className="lg:sticky lg:top-8">
                 <div className="bg-white rounded-2xl overflow-hidden shadow-card border border-soft-accent/50">
-                  <div className="aspect-square overflow-hidden">
+                  <div className="overflow-hidden">
                     {child.photo_url ? (
                       <OptimizedImage
                         src={child.photo_url}
                         alt={child.first_name}
-                        className="w-full h-full object-cover"
+                        className="w-full h-auto"
                       />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-vibrant-blue/20 to-hope-orange/20 flex items-center justify-center">

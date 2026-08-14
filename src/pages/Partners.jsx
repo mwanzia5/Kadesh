@@ -209,7 +209,7 @@ function AboutPartnershipSection() {
                   <OptimizedImage
                     src="/images/partners.png"
                     alt="Kadesh Hope Mission partnership"
-                    className="w-full aspect-[4/3] object-cover"
+                    className="w-full h-auto"
                   />
                 </div>
 

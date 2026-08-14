@@ -321,12 +321,12 @@ export default function DonorDashboard() {
                     >
                       <div className="flex flex-col sm:flex-row">
                         {/* Child photo */}
-                        <div className="sm:w-40 h-48 sm:h-auto overflow-hidden">
+                        <div className="sm:w-40 overflow-hidden">
                           {sponsorship.children?.photo_url ? (
                             <OptimizedImage
                               src={sponsorship.children.photo_url}
                               alt={sponsorship.children.first_name}
-                              className="w-full h-full object-cover"
+                              className="w-full h-auto"
                             />
                           ) : (
                             <div className="w-full h-full bg-gradient-to-br from-vibrant-blue/15 to-hope-orange/15 flex items-center justify-center min-h-[12rem]">
