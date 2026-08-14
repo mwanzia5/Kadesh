@@ -312,11 +312,13 @@ export default function SponsorAChild() {
     <PageTransition>
       {/* Hero */}
       <section className="relative min-h-[40vh] sm:min-h-[50vh] flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-deep-navy via-vibrant-blue/90 to-deep-navy">
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-20 left-[10%] w-40 h-40 sm:w-64 sm:h-64 rounded-full bg-hope-orange/30 blur-3xl" />
-            <div className="absolute bottom-10 right-[15%] w-56 h-56 sm:w-80 sm:h-80 rounded-full bg-vibrant-blue/30 blur-3xl" />
-          </div>
+        <div className="absolute inset-0">
+          <OptimizedImage
+            src="/images/kadesh images_05.jpg"
+            alt="Sponsor a Child"
+            className="w-full h-full object-cover"
+          />
+          <div className="hero-gradient absolute inset-0" />
         </div>
 
         <div className="relative z-10 w-full">

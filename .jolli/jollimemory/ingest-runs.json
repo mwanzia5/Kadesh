@@ -82,5 +82,17 @@
 		"routeCalls": 1,
 		"reconcileCalls": 0,
 		"topicFailures": []
+	},
+	{
+		"startedAt": "2026-08-14T07:53:33.090Z",
+		"durationMs": 2672,
+		"triggeredBy": "post-commit",
+		"outcome": "OK",
+		"batches": 1,
+		"ingested": 1,
+		"touchedSlugs": 0,
+		"routeCalls": 1,
+		"reconcileCalls": 0,
+		"topicFailures": []
 	}
 ]

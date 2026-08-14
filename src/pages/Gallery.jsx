@@ -88,7 +88,6 @@ export default function Gallery() {
   const highlightCat = activeFilter === "All" ? null : activeFilter;
 
   const showDome = filteredImages.length >= GRID_TO_DOME_THRESHOLD;
-  const remaining = Math.max(0, GRID_TO_DOME_THRESHOLD - filteredImages.length);
 
   return (
     <PageTransition>
@@ -142,35 +141,6 @@ export default function Gallery() {
           <Container>
             {filteredImages.length > 0 ? (
               <>
-                <div className="text-center mb-8">
-                  <p className="font-body text-sm text-on-surface-variant">
-                    {filteredImages.length} image{filteredImages.length !== 1 ? "s" : ""}{" "}
-                    uploaded &middot;{" "}
-                    {remaining > 0 ? (
-                      <span>
-                        Add {remaining} more to unlock the{" "}
-                        <span className="text-vibrant-blue font-semibold">3D Dome Gallery</span>
-                      </span>
-                    ) : (
-                      <span className="text-vibrant-blue font-semibold">
-                        3D Dome Gallery unlocked!
-                      </span>
-                    )}
-                  </p>
-                  {remaining > 0 && (
-                    <div className="w-48 h-1.5 bg-gray-200 rounded-full mx-auto mt-3 overflow-hidden">
-                      <motion.div
-                        className="h-full bg-gradient-to-r from-vibrant-blue to-hope-orange rounded-full"
-                        initial={{ width: 0 }}
-                        animate={{
-                          width: `${(filteredImages.length / GRID_TO_DOME_THRESHOLD) * 100}%`,
-                        }}
-                        transition={{ duration: 0.6, ease: "easeOut" }}
-                      />
-                    </div>
-                  )}
-                </div>
-
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                   {filteredImages.map((img, i) => (
                     <motion.div
