@@ -171,7 +171,7 @@ export default function DonorAuth() {
 
   return (
     <PageTransition>
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-deep-navy py-28">
+      <section className="relative min-h-screen flex items-start sm:items-center justify-center overflow-hidden bg-deep-navy pt-24 pb-16 sm:py-28">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-40 -left-40 w-80 h-80 rounded-full bg-vibrant-blue/20 blur-3xl" />
           <div className="absolute -bottom-40 -right-40 w-96 h-96 rounded-full bg-hope-orange/20 blur-3xl" />
@@ -216,7 +216,7 @@ export default function DonorAuth() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="bg-white rounded-2xl p-8 md:p-10 shadow-xl"
+              className="bg-white rounded-2xl p-6 sm:p-8 md:p-10 shadow-xl"
             >
               {error && (
                 <div className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-3 mb-6">

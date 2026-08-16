@@ -2,9 +2,10 @@ import { useEffect, useState, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronDown } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getGravatarUrl } from "@/lib/utils";
 import Button from "@/components/ui/Button";
 import { NAV_LINKS } from "@/constants";
+import { useDonorAuth } from "@/context/DonorAuthContext";
 
 const overlayVariants = {
   hidden: { opacity: 0 },
@@ -18,6 +19,7 @@ const panelVariants = {
 
 export default function MobileMenu({ isOpen, onClose }) {
   const { pathname } = useLocation();
+  const { user, profile, loading: authLoading } = useDonorAuth();
   const [expandedSections, setExpandedSections] = useState({});
   const closeRef = useRef(null);
   const panelRef = useRef(null);
@@ -207,7 +209,39 @@ export default function MobileMenu({ isOpen, onClose }) {
               })}
             </nav>
 
-            <div className="p-5 border-t border-soft-accent">
+            <div className="p-5 border-t border-soft-accent space-y-3">
+              {!authLoading &&
+                (user ? (
+                  <Link
+                    to="/account"
+                    className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl font-body text-body font-semibold text-vibrant-blue bg-vibrant-blue/5 hover:bg-vibrant-blue/10 transition-colors"
+                  >
+                    <div className="w-7 h-7 rounded-full bg-vibrant-blue flex items-center justify-center overflow-hidden">
+                      {getGravatarUrl(user?.email) ? (
+                        <img
+                          src={getGravatarUrl(user.email, 56)}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-white text-xs font-semibold">
+                          {profile?.first_name?.charAt(0) || "D"}
+                        </span>
+                      )}
+                    </div>
+                    <span>{profile?.first_name || "My Account"}</span>
+                  </Link>
+                ) : (
+                  <Button
+                    as={Link}
+                    to="/donor-auth?mode=signup"
+                    variant="primary"
+                    size="md"
+                    className="w-full"
+                  >
+                    Sign Up
+                  </Button>
+                ))}
               <Button as={Link} to="/donate" variant="lightblue" size="md" className="w-full">
                 Donate
               </Button>
