@@ -25,7 +25,13 @@ import ScrollReveal from "@/components/ui/ScrollReveal";
 import { useChildren } from "@/hooks/useChildren";
 import { cn } from "@/lib/utils";
 
-const STATUS_FILTERS = ["All", "Available", "Sponsored", "Pending"];
+const STATUS_FILTERS = ["Available", "All", "Sponsored", "Pending"];
+// Default view: only children who can actually be sponsored. "All" is still
+// available as an explicit pill so admins/curious donors can see the full
+// roster, but a freshly sponsored child no longer lingers on the default
+// landing view once its sponsorship_status flips away from "available".
+const DEFAULT_STATUS_FILTER = "Available";
+
 const GENDER_FILTERS = ["All", "Male", "Female"];
 const AGE_PRESETS = [
   { id: "all", label: "All Ages", min: "", max: "" },
@@ -205,7 +211,7 @@ function PillGroup({ label, options, activeValue, counts, onSelect, activeClass,
 }
 
 export default function SponsorAChild() {
-  const [statusFilter, setStatusFilter] = useState("All");
+  const [statusFilter, setStatusFilter] = useState(DEFAULT_STATUS_FILTER);
   const [genderFilter, setGenderFilter] = useState("All");
   const [agePreset, setAgePreset] = useState("all");
   const [ageMin, setAgeMin] = useState("");
@@ -218,7 +224,8 @@ export default function SponsorAChild() {
 
   const statusCounts = useMemo(() => {
     const counts = { All: children.length };
-    for (const s of STATUS_FILTERS.slice(1)) {
+    for (const s of STATUS_FILTERS) {
+      if (s === "All") continue;
       counts[s] = children.filter(
         (c) => (c.sponsorship_status || "").toLowerCase() === s.toLowerCase()
       ).length;
@@ -253,7 +260,7 @@ export default function SponsorAChild() {
   };
 
   const hasActiveFilters =
-    statusFilter !== "All" ||
+    statusFilter !== DEFAULT_STATUS_FILTER ||
     genderFilter !== "All" ||
     agePreset !== "all" ||
     ageMin !== "" ||
@@ -261,14 +268,17 @@ export default function SponsorAChild() {
     searchQuery !== "";
 
   const activeFilterCount = [
-    statusFilter !== "All",
+    statusFilter !== DEFAULT_STATUS_FILTER,
     genderFilter !== "All",
     agePreset !== "all" || ageMin !== "" || ageMax !== "",
     searchQuery !== "",
   ].filter(Boolean).length;
 
+  // Resets back to the default "Available" view, not "All" — so clearing
+  // filters never brings sponsored/pending children back into view unless
+  // the user deliberately picks the "All" or "Sponsored" pill.
   const clearFilters = () => {
-    setStatusFilter("All");
+    setStatusFilter(DEFAULT_STATUS_FILTER);
     setGenderFilter("All");
     setAgePreset("all");
     setAgeMin("");
@@ -276,8 +286,7 @@ export default function SponsorAChild() {
     setSearchQuery("");
   };
 
-  const handleStatusSelect = (status) =>
-    status === "All" ? clearFilters() : setStatusFilter(status);
+  const handleStatusSelect = (status) => setStatusFilter(status);
 
   const filteredChildren = useMemo(() => {
     return children.filter((child) => {

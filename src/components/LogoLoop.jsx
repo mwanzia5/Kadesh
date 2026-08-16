@@ -167,12 +167,24 @@ export const LogoLoop = memo(
     const [copyCount, setCopyCount] = useState(ANIMATION_CONFIG.MIN_COPIES);
     const [isHovered, setIsHovered] = useState(false);
 
+    const supportsHover = useMemo(
+      () =>
+        typeof window !== 'undefined' &&
+        !!window.matchMedia &&
+        window.matchMedia('(hover: hover) and (pointer: fine)').matches,
+      []
+    );
+
     const effectiveHoverSpeed = useMemo(() => {
+      // Touch devices report a stuck :hover after a tap (no mouseleave), which
+      // would freeze the loop via pauseOnHover. Disable hover-based speed
+      // control entirely where there is no real hover.
+      if (!supportsHover) return undefined;
       if (hoverSpeed !== undefined) return hoverSpeed;
       if (pauseOnHover === true) return 0;
       if (pauseOnHover === false) return undefined;
       return 0;
-    }, [hoverSpeed, pauseOnHover]);
+    }, [hoverSpeed, pauseOnHover, supportsHover]);
 
     const isVertical = direction === 'up' || direction === 'down';
 

@@ -34,6 +34,10 @@ export function useCreateDonation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["donations"] });
       queryClient.invalidateQueries({ queryKey: ["donation-stats"] });
+      // DonorDashboard reads via hooks/useSponsorships.js's useDonorDonations,
+      // keyed ["donor-donations", donorId] — invalidate the whole family so
+      // both that hook and this file's own useDonorDonations(email) refresh.
+      queryClient.invalidateQueries({ queryKey: ["donor-donations"] });
     },
   });
 }
@@ -46,6 +50,7 @@ export function useUpdateDonationStatus() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["donations"] });
       queryClient.invalidateQueries({ queryKey: ["donation-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["donor-donations"] });
     },
   });
 }
