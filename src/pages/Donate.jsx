@@ -1,16 +1,16 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Shield, Heart, Globe, ChevronDown } from "lucide-react";
+import { Shield, Heart, Globe, ChevronDown, CheckCircle2, XCircle } from "lucide-react";
 import PageTransition from "@/animations/PageTransition";
 import Section from "@/components/ui/Section";
 import SectionHeading from "@/components/ui/SectionHeading";
 import Button from "@/components/ui/Button";
-import { useCreateDonation } from "@/hooks/useDonations";
-import { useCreateSponsorship } from "@/hooks/useSponsorships";
-import { useUpdateChild } from "@/hooks/useChildren";
 import { useDonorAuth } from "@/context/DonorAuthContext";
+import supabase from "@/supabase/client";
 
 const USD_AMOUNTS = [10, 25, 50, 100, 250, 500];
+const MIN_USD_AMOUNT = 1; // Paystack's practical floor — anything below this
+// (e.g. a mistyped "$0.0077") is rejected before it ever reaches Paystack.
 
 const currencies = [
   { code: "USD", symbol: "$", name: "US Dollar", rate: 1, country: "United States" },
@@ -44,9 +44,6 @@ function formatCurrency(amount, currency) {
 }
 
 export default function Donate() {
-  const createDonation = useCreateDonation();
-  const createSponsorship = useCreateSponsorship();
-  const updateChild = useUpdateChild();
   const { user, profile } = useDonorAuth();
   const [searchParams] = useSearchParams();
 
@@ -65,6 +62,10 @@ export default function Donate() {
   const [donorEmail, setDonorEmail] = useState("");
   const [donorLocation, setDonorLocation] = useState("");
   const [donorPhone, setDonorPhone] = useState("");
+  // Explicit result banner instead of a blocking alert() — and it only shows
+  // once we actually know whether the server verified the payment, not just
+  // whether Paystack's popup closed.
+  const [result, setResult] = useState(null); // { type: "success" | "error", message }
 
   useEffect(() => {
     if (profile) {
@@ -80,6 +81,7 @@ export default function Donate() {
   }, [profile, user]);
 
   const baseAmount = isOther ? Number(customAmount) || 0 : selectedUSD;
+  const isValidAmount = baseAmount >= MIN_USD_AMOUNT;
   const convertedAmount = Math.round(baseAmount * currency.rate);
   const impactText = impactMap[baseAmount] || "Every gift makes a difference";
 
@@ -95,17 +97,62 @@ export default function Donate() {
     setIsOther(false);
     setCustomAmount("");
     setSelectedUSD(amount);
+    setResult(null);
+  };
+
+  // Confirms the payment with our own backend (which re-checks with Paystack
+  // directly) instead of trusting the browser-side popup callback alone.
+  // This is what actually gets called whether onSuccess fires cleanly or the
+  // donor has to retry after a flaky callback.
+  const confirmPayment = async (reference) => {
+    const { data, error } = await supabase.functions.invoke(
+      "verify-paystack-transaction",
+      {
+        body: {
+          reference,
+          donor_name: donorName,
+          donor_email: donorEmail,
+          donor_id: user?.id || null,
+          frequency,
+          location: donorLocation || null,
+          phone: donorPhone || null,
+          sponsorship:
+            isSponsorship && sponsorshipChildId && user?.id
+              ? {
+                  child_id: sponsorshipChildId,
+                  monthly_amount: frequency === "monthly" ? baseAmount : null,
+                }
+              : null,
+        },
+      }
+    );
+
+    if (error || data?.error) {
+      throw new Error(data?.error || error?.message || "Verification failed");
+    }
+    return data;
   };
 
   const handlePay = () => {
-    if (!baseAmount || baseAmount <= 0 || !donorEmail) return;
+    if (!isValidAmount || !donorEmail) return;
 
     setProcessing(true);
+    setResult(null);
 
     // Always bill in KES regardless of whichever display currency the donor
     // picked in the selector above — that picker is dummy/display-only.
     const amountInKES = Math.round(baseAmount * KES_RATE);
     const amountInKESSubunit = amountInKES * 100; // Paystack expects subunits
+
+    if (typeof PaystackPop === "undefined") {
+      setProcessing(false);
+      setResult({
+        type: "error",
+        message:
+          "Payment couldn't start — the payment provider failed to load. Please disable any ad blocker or privacy extension for this site and try again.",
+      });
+      return;
+    }
 
     const handler = PaystackPop.setup({
       key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
@@ -126,38 +173,24 @@ export default function Donate() {
       },
       onSuccess: async (transaction) => {
         try {
-          await createDonation.mutateAsync({
-            donor_name: donorName,
-            donor_email: donorEmail,
-            donor_id: user?.id || null,
-            amount: baseAmount, // USD headline figure
-            currency: "KES", // what was actually charged
-            converted_amount: amountInKES, // actual KES amount charged
-            frequency,
-            status: "completed",
-            payment_reference: transaction.reference,
-            location: donorLocation || null,
-            phone: donorPhone || null,
+          await confirmPayment(transaction.reference);
+          setResult({
+            type: "success",
+            message: `Thank you for your donation! Reference: ${transaction.reference}`,
           });
-
-          if (isSponsorship && sponsorshipChildId && user?.id) {
-            await createSponsorship.mutateAsync({
-              donor_id: user.id,
-              child_id: sponsorshipChildId,
-              status: "active",
-              monthly_amount: frequency === "monthly" ? baseAmount : null,
-            });
-
-            await updateChild.mutateAsync({
-              id: sponsorshipChildId,
-              data: { sponsorship_status: "sponsored" },
-            });
-          }
-        } catch (dbErr) {
-          console.error("Failed to save record:", dbErr);
+        } catch (err) {
+          console.error("Payment verification failed:", err);
+          // The charge went through on Paystack's side, but our backend
+          // couldn't confirm/record it — say so plainly instead of a
+          // generic success message, and keep the reference visible so
+          // support can look it up manually if needed.
+          setResult({
+            type: "error",
+            message: `Your payment (ref: ${transaction.reference}) was received by Paystack, but we couldn't confirm it on our end. Please contact us with this reference so we can verify it manually.`,
+          });
+        } finally {
+          setProcessing(false);
         }
-        setProcessing(false);
-        alert(`Thank you for your donation! Reference: ${transaction.reference}`);
       },
       onClose: () => {
         setProcessing(false);
@@ -185,6 +218,29 @@ export default function Donate() {
             title={isSponsorship ? "Complete Your Sponsorship" : "Choose your impact level"}
             subtitle={isSponsorship ? "Your generosity transforms a child's life" : "Your generosity transforms lives across Africa"}
           />
+
+          {result && (
+            <div
+              className={`mt-8 rounded-xl p-4 flex items-start gap-3 border ${
+                result.type === "success"
+                  ? "bg-green-50 border-green-200"
+                  : "bg-red-50 border-red-200"
+              }`}
+            >
+              {result.type === "success" ? (
+                <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+              ) : (
+                <XCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+              )}
+              <p
+                className={`font-body text-sm ${
+                  result.type === "success" ? "text-green-800" : "text-red-800"
+                }`}
+              >
+                {result.message}
+              </p>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 mt-16">
             {/* Donation Form */}
@@ -371,7 +427,10 @@ export default function Donate() {
                   </button>
                 ))}
                 <button
-                  onClick={() => setIsOther(true)}
+                  onClick={() => {
+                    setIsOther(true);
+                    setResult(null);
+                  }}
                   className={`py-3 rounded-lg font-body font-semibold text-sm transition-all ${
                     isOther
                       ? "bg-vibrant-blue text-white shadow-md"
@@ -393,15 +452,24 @@ export default function Donate() {
                     <input
                       id="customAmount"
                       type="number"
-                      min="1"
+                      min={MIN_USD_AMOUNT}
+                      step="1"
                       placeholder="0"
                       value={customAmount}
-                      onChange={(e) => setCustomAmount(e.target.value)}
+                      onChange={(e) => {
+                        setCustomAmount(e.target.value);
+                        setResult(null);
+                      }}
                       className={`${inputClasses} pl-8`}
                     />
                     {baseAmount > 0 && currency.code !== "USD" && (
                       <p className="mt-1 text-sm text-on-surface-variant font-body">
                         ≈ {formatCurrency(convertedAmount, currency)}
+                      </p>
+                    )}
+                    {customAmount !== "" && !isValidAmount && (
+                      <p className="mt-1 text-sm text-red-600 font-body">
+                        Minimum donation is ${MIN_USD_AMOUNT}.
                       </p>
                     )}
                   </div>
@@ -455,7 +523,7 @@ export default function Donate() {
               <Button
                 className="w-full mt-6 bg-lightblue hover:bg-vibrant-blue text-white py-4 text-lg"
                 onClick={handlePay}
-                disabled={processing || baseAmount <= 0}
+                disabled={processing || !isValidAmount || !donorEmail}
               >
                 {processing
                   ? "Processing..."
