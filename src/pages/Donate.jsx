@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useLocation, useNavigate, Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { Shield, Heart, Globe, ChevronDown, CheckCircle2, XCircle } from "lucide-react";
+import { Shield, Heart, Globe, ChevronDown, CheckCircle2, XCircle, UserPlus, Loader2 } from "lucide-react";
 import PageTransition from "@/animations/PageTransition";
 import Section from "@/components/ui/Section";
 import SectionHeading from "@/components/ui/SectionHeading";
@@ -45,8 +45,10 @@ function formatCurrency(amount, currency) {
 }
 
 export default function Donate() {
-  const { user, profile } = useDonorAuth();
+  const { user, profile, loading: authLoading } = useDonorAuth();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const sponsorshipChildId = searchParams.get("child_id");
@@ -251,6 +253,63 @@ export default function Donate() {
 
     handler.openIframe();
   };
+
+  // Full current URL (path + query) so a sponsorship deep link's child_id/
+  // child_name/purpose params survive the round trip through sign-in/sign-up
+  // and land the donor right back where they started, form intact.
+  const redirectTarget = encodeURIComponent(`${location.pathname}${location.search}`);
+
+  if (authLoading) {
+    return (
+      <PageTransition>
+        <div className="min-h-screen flex items-center justify-center">
+          <Loader2 className="h-10 w-10 animate-spin text-vibrant-blue" />
+        </div>
+      </PageTransition>
+    );
+  }
+
+  if (!user) {
+    return (
+      <PageTransition>
+        <Section className="pt-32 pb-20">
+          <div className="max-w-lg mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            {isSponsorship && sponsorshipChildName && (
+              <div className="bg-hope-orange/10 border border-hope-orange/30 rounded-xl p-4 mb-8 flex items-center gap-3 text-left">
+                <Heart className="h-5 w-5 text-hope-orange shrink-0" />
+                <p className="font-body text-sm text-deep-navy">
+                  You're about to sponsor <strong>{decodeURIComponent(sponsorshipChildName)}</strong>.
+                  Sign in or create a free account first so this sponsorship is saved to yours.
+                </p>
+              </div>
+            )}
+
+            <SectionHeading
+              title="Sign in to continue"
+              subtitle="An account lets you track your donations and sponsorships in one place"
+            />
+
+            <div className="mt-10 flex justify-center">
+              <Button
+                variant="lightblue"
+                size="lg"
+                as={Link}
+                to={`/donor-auth?mode=signup&redirect=${redirectTarget}`}
+                className="w-full sm:w-auto"
+              >
+                Get Started
+                <UserPlus className="ml-2 h-5 w-5" />
+              </Button>
+            </div>
+
+            <p className="mt-6 font-body text-sm text-on-surface-variant">
+              Already have an account? You can sign in from the next screen.
+            </p>
+          </div>
+        </Section>
+      </PageTransition>
+    );
+  }
 
   return (
     <PageTransition>
