@@ -652,15 +652,26 @@ export default function Donate() {
 
               {/* Submit Button */}
               <Button
-                className="w-full mt-6 bg-lightblue hover:bg-vibrant-blue text-white py-4 text-lg"
+                className={`w-full mt-6 py-4 text-lg text-white ${
+                  result?.type === "success" && !processing
+                    ? "bg-green-600 hover:bg-green-600"
+                    : "bg-lightblue hover:bg-vibrant-blue"
+                }`}
                 onClick={handlePay}
-                disabled={processing || !isValidAmount}
+                disabled={processing || !isValidAmount || (result?.type === "success" && !processing)}
               >
-                {processing
-                  ? "Processing..."
-                  : isSponsorship
-                    ? `Sponsor ${formatCurrency(convertedAmount, currency)}`
-                    : `Donate ${formatCurrency(convertedAmount, currency)}`}
+                {processing ? (
+                  "Processing..."
+                ) : result?.type === "success" ? (
+                  <span className="inline-flex items-center justify-center gap-2">
+                    <CheckCircle2 className="h-5 w-5" />
+                    Payment Successful
+                  </span>
+                ) : isSponsorship ? (
+                  `Sponsor ${formatCurrency(convertedAmount, currency)}`
+                ) : (
+                  `Donate ${formatCurrency(convertedAmount, currency)}`
+                )}
               </Button>
               {attemptedSubmit && hasFieldErrors && (
                 <p className="mt-3 text-sm text-red-600 font-body text-center">
