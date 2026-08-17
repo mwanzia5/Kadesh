@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { Shield, Heart, Globe, ChevronDown, CheckCircle2, XCircle } from "lucide-react";
 import PageTransition from "@/animations/PageTransition";
 import Section from "@/components/ui/Section";
@@ -46,6 +47,7 @@ function formatCurrency(amount, currency) {
 export default function Donate() {
   const { user, profile } = useDonorAuth();
   const [searchParams] = useSearchParams();
+  const queryClient = useQueryClient();
 
   const sponsorshipChildId = searchParams.get("child_id");
   const sponsorshipChildName = searchParams.get("child_name");
@@ -66,6 +68,7 @@ export default function Donate() {
   // once we actually know whether the server verified the payment, not just
   // whether Paystack's popup closed.
   const [result, setResult] = useState(null); // { type: "success" | "error", message }
+  const [attemptedSubmit, setAttemptedSubmit] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -84,6 +87,20 @@ export default function Donate() {
   const isValidAmount = baseAmount >= MIN_USD_AMOUNT;
   const convertedAmount = Math.round(baseAmount * currency.rate);
   const impactText = impactMap[baseAmount] || "Every gift makes a difference";
+
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const fieldErrors = {
+    donorName: donorName.trim() ? null : "Name is required",
+    donorEmail: !donorEmail.trim()
+      ? "Email is required"
+      : !EMAIL_RE.test(donorEmail.trim())
+        ? "Enter a valid email address"
+        : null,
+    donorLocation: donorLocation.trim() ? null : "Location is required",
+    donorPhone: donorPhone.trim() ? null : "Phone number is required",
+  };
+  const hasFieldErrors = Object.values(fieldErrors).some(Boolean);
+  const formIsValid = !hasFieldErrors && isValidAmount;
 
   useEffect(() => {
     const handleClick = () => setShowCurrencyPicker(false);
@@ -104,26 +121,34 @@ export default function Donate() {
   // directly) instead of trusting the browser-side popup callback alone.
   // This is what actually gets called whether onSuccess fires cleanly or the
   // donor has to retry after a flaky callback.
-  //
-  // Sponsorship-relevant fields still come only from Paystack's verified
-  // metadata server-side (can't be spoofed here). donor_name/location/phone
-  // ARE also sent directly from the form as a fallback: they're display-only,
-  // not security-relevant, and this covers cases where Paystack's metadata
-  // doesn't come back populated, or where the paystack-webhook backstop won
-  // the insert race before this call landed — the backend patches those
-  // fields in on top of whatever was already recorded.
   const confirmPayment = async (reference) => {
-    const { data, error } = await supabase.functions.invoke(
-      "verify-paystack-transaction",
-      {
-        body: {
-          reference,
-          donor_name: donorName,
-          location: donorLocation,
-          phone: donorPhone,
-        },
-      }
+    // Only the reference is required now — donor and sponsorship details are
+    // read server-side from the metadata attached at payment time (Paystack's
+    // own verified record), not re-supplied by the browser after the fact.
+    //
+    // A hard timeout prevents an indefinite "Processing..." state if the
+    // Edge Function call stalls (cold start, slow network, dropped
+    // connection) — the payment itself already succeeded on Paystack's side
+    // regardless, and the webhook will still record it in the background
+    // even if this call times out client-side. Promise.race is used instead
+    // of AbortSignal since supabase-js's functions.invoke doesn't reliably
+    // support cancellation signals across client versions.
+    const invokePromise = supabase.functions.invoke("verify-paystack-transaction", {
+      body: { reference },
+    });
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(
+        () =>
+          reject(
+            new Error(
+              "Verification is taking longer than expected. Your payment may still have succeeded — we'll confirm it automatically shortly."
+            )
+          ),
+        15000
+      )
     );
+
+    const { data, error } = await Promise.race([invokePromise, timeoutPromise]);
 
     if (error || data?.error) {
       throw new Error(data?.error || error?.message || "Verification failed");
@@ -132,10 +157,18 @@ export default function Donate() {
   };
 
   const handlePay = () => {
-    if (!isValidAmount || !donorEmail) return;
+    setAttemptedSubmit(true);
 
-    setProcessing(true);
+    if (!formIsValid) {
+      setResult({
+        type: "error",
+        message: "Please fill in all required fields correctly before donating.",
+      });
+      return;
+    }
+
     setResult(null);
+    setProcessing(true);
 
     // Always bill in KES regardless of whichever display currency the donor
     // picked in the selector above — that picker is dummy/display-only.
@@ -180,6 +213,19 @@ export default function Donate() {
       onSuccess: async (transaction) => {
         try {
           await confirmPayment(transaction.reference);
+
+          // The donation (and, if applicable, the sponsorship + child status
+          // flip) were just written server-side by the Edge Function, not by
+          // a React Query mutation running in this component — so nothing
+          // has invalidated the relevant caches yet. Do that manually here,
+          // otherwise the child stays "Available" and dashboard totals stay
+          // stale until the 5-minute staleTime lapses or a hard refresh.
+          queryClient.invalidateQueries({ queryKey: ["donations"] });
+          queryClient.invalidateQueries({ queryKey: ["donation-stats"] });
+          queryClient.invalidateQueries({ queryKey: ["donor-donations"] });
+          queryClient.invalidateQueries({ queryKey: ["sponsorships"] });
+          queryClient.invalidateQueries({ queryKey: ["children"] });
+
           setResult({
             type: "success",
             message: `Thank you for your donation! Reference: ${transaction.reference}`,
@@ -255,7 +301,7 @@ export default function Donate() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
                 <div>
                   <label htmlFor="donorName" className="block text-sm font-medium text-on-background mb-2">
-                    Your Name
+                    Your Name <span className="text-red-500">*</span>
                   </label>
                   <input
                     id="donorName"
@@ -263,12 +309,17 @@ export default function Donate() {
                     placeholder="John Doe"
                     value={donorName}
                     onChange={(e) => setDonorName(e.target.value)}
-                    className={inputClasses}
+                    className={`${inputClasses} ${
+                      attemptedSubmit && fieldErrors.donorName ? "border-red-400 focus:ring-red-300 focus:border-red-400" : ""
+                    }`}
                   />
+                  {attemptedSubmit && fieldErrors.donorName && (
+                    <p className="mt-1 text-sm text-red-600 font-body">{fieldErrors.donorName}</p>
+                  )}
                 </div>
                 <div>
                   <label htmlFor="donorEmail" className="block text-sm font-medium text-on-background mb-2">
-                    Email Address
+                    Email Address <span className="text-red-500">*</span>
                   </label>
                   <input
                     id="donorEmail"
@@ -276,12 +327,17 @@ export default function Donate() {
                     placeholder="john@example.com"
                     value={donorEmail}
                     onChange={(e) => setDonorEmail(e.target.value)}
-                    className={inputClasses}
+                    className={`${inputClasses} ${
+                      attemptedSubmit && fieldErrors.donorEmail ? "border-red-400 focus:ring-red-300 focus:border-red-400" : ""
+                    }`}
                   />
+                  {attemptedSubmit && fieldErrors.donorEmail && (
+                    <p className="mt-1 text-sm text-red-600 font-body">{fieldErrors.donorEmail}</p>
+                  )}
                 </div>
                 <div>
                   <label htmlFor="donorLocation" className="block text-sm font-medium text-on-background mb-2">
-                    Location
+                    Location <span className="text-red-500">*</span>
                   </label>
                   <input
                     id="donorLocation"
@@ -289,12 +345,17 @@ export default function Donate() {
                     placeholder="City, Country"
                     value={donorLocation}
                     onChange={(e) => setDonorLocation(e.target.value)}
-                    className={inputClasses}
+                    className={`${inputClasses} ${
+                      attemptedSubmit && fieldErrors.donorLocation ? "border-red-400 focus:ring-red-300 focus:border-red-400" : ""
+                    }`}
                   />
+                  {attemptedSubmit && fieldErrors.donorLocation && (
+                    <p className="mt-1 text-sm text-red-600 font-body">{fieldErrors.donorLocation}</p>
+                  )}
                 </div>
                 <div>
                   <label htmlFor="donorPhone" className="block text-sm font-medium text-on-background mb-2">
-                    Phone Number
+                    Phone Number <span className="text-red-500">*</span>
                   </label>
                   <input
                     id="donorPhone"
@@ -302,8 +363,13 @@ export default function Donate() {
                     placeholder="+1 234 567 8900"
                     value={donorPhone}
                     onChange={(e) => setDonorPhone(e.target.value)}
-                    className={inputClasses}
+                    className={`${inputClasses} ${
+                      attemptedSubmit && fieldErrors.donorPhone ? "border-red-400 focus:ring-red-300 focus:border-red-400" : ""
+                    }`}
                   />
+                  {attemptedSubmit && fieldErrors.donorPhone && (
+                    <p className="mt-1 text-sm text-red-600 font-body">{fieldErrors.donorPhone}</p>
+                  )}
                 </div>
               </div>
 
@@ -529,7 +595,7 @@ export default function Donate() {
               <Button
                 className="w-full mt-6 bg-lightblue hover:bg-vibrant-blue text-white py-4 text-lg"
                 onClick={handlePay}
-                disabled={processing || !isValidAmount || !donorEmail}
+                disabled={processing || !isValidAmount}
               >
                 {processing
                   ? "Processing..."
@@ -537,6 +603,11 @@ export default function Donate() {
                     ? `Sponsor ${formatCurrency(convertedAmount, currency)}`
                     : `Donate ${formatCurrency(convertedAmount, currency)}`}
               </Button>
+              {attemptedSubmit && hasFieldErrors && (
+                <p className="mt-3 text-sm text-red-600 font-body text-center">
+                  Please fill in all required fields above before donating.
+                </p>
+              )}
             </div>
 
             {/* Sidebar */}
