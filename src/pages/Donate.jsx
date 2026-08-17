@@ -105,26 +105,12 @@ export default function Donate() {
   // This is what actually gets called whether onSuccess fires cleanly or the
   // donor has to retry after a flaky callback.
   const confirmPayment = async (reference) => {
+    // Only the reference is required now — donor and sponsorship details are
+    // read server-side from the metadata attached at payment time (Paystack's
+    // own verified record), not re-supplied by the browser after the fact.
     const { data, error } = await supabase.functions.invoke(
       "verify-paystack-transaction",
-      {
-        body: {
-          reference,
-          donor_name: donorName,
-          donor_email: donorEmail,
-          donor_id: user?.id || null,
-          frequency,
-          location: donorLocation || null,
-          phone: donorPhone || null,
-          sponsorship:
-            isSponsorship && sponsorshipChildId && user?.id
-              ? {
-                  child_id: sponsorshipChildId,
-                  monthly_amount: frequency === "monthly" ? baseAmount : null,
-                }
-              : null,
-        },
-      }
+      { body: { reference } }
     );
 
     if (error || data?.error) {
@@ -162,6 +148,7 @@ export default function Donate() {
       ref: `KHM-${Date.now()}`,
       metadata: {
         donor_name: donorName,
+        donor_id: user?.id || null,
         frequency,
         display_currency: currency.code,
         display_amount: convertedAmount,
@@ -170,6 +157,13 @@ export default function Donate() {
         charged_amount: amountInKES,
         location: donorLocation,
         phone: donorPhone,
+        // Sponsorship intent travels with the transaction itself, so it's
+        // recoverable from Paystack's own records (via verify or webhook)
+        // even if the donor's browser never calls back successfully.
+        is_sponsorship: isSponsorship && !!sponsorshipChildId && !!user?.id,
+        child_id: isSponsorship ? sponsorshipChildId || null : null,
+        monthly_amount:
+          isSponsorship && frequency === "monthly" ? baseAmount : null,
       },
       onSuccess: async (transaction) => {
         try {
