@@ -5,6 +5,8 @@ import {
   markAsRead,
   markAsUnread,
   deleteMessage,
+  updateMessage,
+  replyToMessage,
 } from "@/services/contact";
 
 export function useMessages() {
@@ -53,6 +55,31 @@ export function useDeleteMessage() {
 
   return useMutation({
     mutationFn: deleteMessage,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["messages"] });
+    },
+  });
+}
+
+// Generic { id, data } patch — matches the { id, data } shape already used
+// by useUpdateSponsorship / useUpdateChild elsewhere in this codebase.
+export function useUpdateMessage() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateMessage,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["messages"] });
+    },
+  });
+}
+
+// { id, reply } — sends the reply email and records it on the message.
+export function useReplyToMessage() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: replyToMessage,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["messages"] });
     },
