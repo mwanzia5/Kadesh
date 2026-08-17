@@ -104,13 +104,25 @@ export default function Donate() {
   // directly) instead of trusting the browser-side popup callback alone.
   // This is what actually gets called whether onSuccess fires cleanly or the
   // donor has to retry after a flaky callback.
+  //
+  // Sponsorship-relevant fields still come only from Paystack's verified
+  // metadata server-side (can't be spoofed here). donor_name/location/phone
+  // ARE also sent directly from the form as a fallback: they're display-only,
+  // not security-relevant, and this covers cases where Paystack's metadata
+  // doesn't come back populated, or where the paystack-webhook backstop won
+  // the insert race before this call landed — the backend patches those
+  // fields in on top of whatever was already recorded.
   const confirmPayment = async (reference) => {
-    // Only the reference is required now — donor and sponsorship details are
-    // read server-side from the metadata attached at payment time (Paystack's
-    // own verified record), not re-supplied by the browser after the fact.
     const { data, error } = await supabase.functions.invoke(
       "verify-paystack-transaction",
-      { body: { reference } }
+      {
+        body: {
+          reference,
+          donor_name: donorName,
+          location: donorLocation,
+          phone: donorPhone,
+        },
+      }
     );
 
     if (error || data?.error) {

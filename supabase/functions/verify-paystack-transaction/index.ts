@@ -2,15 +2,31 @@
 //
 // Called from the browser right after Paystack's popup reports success.
 // Re-verifies the transaction against Paystack's own servers before writing
-// anything — the client only ever sends a reference, never donor/sponsorship
-// details, since those are read from Paystack's verified metadata instead.
-// This is the "fast path": if the donor's browser is still around right
-// after paying, this records the donation immediately. The paystack-webhook
-// function is the backstop that guarantees recording even if this call never
-// happens (closed tab, crashed browser, network drop).
+// anything. Sponsorship-relevant fields (donor_id, is_sponsorship, child_id,
+// monthly_amount) are STILL only ever trusted from Paystack's verified
+// metadata, never from the client body below — those affect who gets
+// enrolled as a sponsor, so they can't be spoofed by editing the request.
+//
+// donor_name / location / phone are display-only, not security-relevant, so
+// as a reliability fallback this endpoint also accepts them directly from
+// the browser (the same values the donor just typed into the form) and uses
+// them if Paystack's metadata came back empty for any reason. This also
+// covers the case where paystack-webhook won the race and inserted the row
+// first with blanks — this call will patch them in afterwards.
+//
+// The paystack-webhook function is still the reliability backstop for
+// recording the donation at all (closed tab, crashed browser, network
+// drop) — it just won't have a client fallback to draw on, since Paystack
+// calls it server-to-server with no access to the browser's form state.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders } from "../_shared/cors.ts";
+
+type ClientFallback = {
+  donor_name?: string | null;
+  location?: string | null;
+  phone?: string | null;
+};
 
 async function verifyWithPaystack(reference: string, secret: string) {
   const res = await fetch(
@@ -24,9 +40,19 @@ async function verifyWithPaystack(reference: string, secret: string) {
   return json.data;
 }
 
-export async function recordVerifiedTransaction(txn: any, supabase: ReturnType<typeof createClient>) {
+export async function recordVerifiedTransaction(
+  txn: any,
+  supabase: ReturnType<typeof createClient>,
+  clientFallback: ClientFallback = {}
+) {
   const amountKES = txn.amount / 100; // Paystack returns subunits
   const meta = txn.metadata || {};
+
+  // Prefer Paystack's verified metadata; fall back to what the browser sent
+  // directly if metadata came back empty for these display-only fields.
+  const donorName = meta.donor_name || clientFallback.donor_name || null;
+  const location = meta.location || clientFallback.location || null;
+  const phone = meta.phone || clientFallback.phone || null;
 
   // Conflict-safe insert: relies on the UNIQUE constraint on
   // donations.payment_reference (see migration) so a race between this
@@ -34,7 +60,7 @@ export async function recordVerifiedTransaction(txn: any, supabase: ReturnType<t
   const { data: donation, error: donationError } = await supabase
     .from("donations")
     .insert({
-      donor_name: meta.donor_name || null,
+      donor_name: donorName,
       donor_email: txn.customer?.email || null,
       donor_id: meta.donor_id || null,
       amount: meta.usd_equivalent ?? amountKES,
@@ -43,17 +69,34 @@ export async function recordVerifiedTransaction(txn: any, supabase: ReturnType<t
       frequency: meta.frequency || "one-time",
       status: "completed",
       payment_reference: txn.reference,
-      location: meta.location || null,
-      phone: meta.phone || null,
+      location,
+      phone,
     })
     .select()
     .single();
 
   // 23505 = unique_violation — another caller (webhook or a duplicate
-  // client call) already recorded this reference. Not an error condition.
-  if (donationError && donationError.code !== "23505") throw donationError;
-
+  // client call) already recorded this reference. Not an error condition,
+  // but if we have donor details this call's caller didn't, patch them in
+  // rather than leaving the row permanently blank.
   const alreadyRecorded = donationError?.code === "23505";
+  if (donationError && !alreadyRecorded) throw donationError;
+
+  if (alreadyRecorded) {
+    const patch: Record<string, string> = {};
+    if (donorName) patch.donor_name = donorName;
+    if (location) patch.location = location;
+    if (phone) patch.phone = phone;
+
+    if (Object.keys(patch).length > 0) {
+      const { error: patchError } = await supabase
+        .from("donations")
+        .update(patch)
+        .eq("payment_reference", txn.reference)
+        .or("donor_name.is.null,location.is.null,phone.is.null");
+      if (patchError) console.error("Backfill of donor details failed:", patchError);
+    }
+  }
 
   // Sponsorship intent comes from Paystack's own metadata, not the client
   // request body — this can't be spoofed to attach an unpaid child, since
@@ -92,7 +135,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { reference } = await req.json();
+    const body = await req.json();
+    const { reference, donor_name, location, phone } = body;
     if (!reference) {
       return new Response(JSON.stringify({ error: "Missing payment reference" }), {
         status: 400,
@@ -110,7 +154,7 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const result = await recordVerifiedTransaction(txn, supabase);
+    const result = await recordVerifiedTransaction(txn, supabase, { donor_name, location, phone });
 
     return new Response(JSON.stringify({ success: true, ...result }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
