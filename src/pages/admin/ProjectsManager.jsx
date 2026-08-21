@@ -10,7 +10,7 @@ import {
 } from "@/hooks/useProjects";
 import ProjectBuilder from "./ProjectBuilder";
 
-const CATEGORIES = ["All", "Education", "Healthcare", "Community", "Water", "Food", "Women"];
+const BASE_CATEGORIES = ["Education", "Healthcare", "Community", "Water", "Food", "Women"];
 
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -31,6 +31,14 @@ export default function ProjectsManager() {
   const [builderTarget, setBuilderTarget] = useState(null);
   const [showBuilder, setShowBuilder] = useState(false);
   const [saveError, setSaveError] = useState(null);
+  const [deletingFromBuilder, setDeletingFromBuilder] = useState(false);
+
+  // Filter chips always cover the built-in categories plus any custom ones
+  // the admin has already used (e.g. a name typed under "Other").
+  const categories = [
+    "All",
+    ...new Set([...BASE_CATEGORIES, ...projects.map((p) => p.category).filter(Boolean)]),
+  ];
 
   const filteredProjects = projects.filter((p) => {
     const matchesCategory = categoryFilter === "All" || p.category === categoryFilter;
@@ -43,7 +51,27 @@ export default function ProjectsManager() {
   };
 
   const handleDelete = (id) => {
-    deleteProject.mutate(id, { onSuccess: () => setShowDeleteConfirm(null) });
+    deleteProject.mutate(id, {
+      onSuccess: () => {
+        setShowDeleteConfirm(null);
+        setShowBuilder(false);
+      },
+      onError: (err) => {
+        setShowDeleteConfirm(null);
+        alert("Failed to delete project: " + (err.message || "unknown error"));
+      },
+    });
+  };
+
+  const handleDeleteFromBuilder = (id) => {
+    setDeletingFromBuilder(true);
+    deleteProject.mutate(id, {
+      onSuccess: () => setDeletingFromBuilder(false),
+      onError: (err) => {
+        setDeletingFromBuilder(false);
+        alert("Failed to delete project: " + (err.message || "unknown error"));
+      },
+    });
   };
 
   const openNewProject = () => {
@@ -118,7 +146,7 @@ export default function ProjectsManager() {
           />
         </div>
         <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 overflow-x-auto">
-          {CATEGORIES.map((c) => (
+          {categories.map((c) => (
             <button
               key={c}
               onClick={() => setCategoryFilter(c)}
@@ -214,6 +242,8 @@ export default function ProjectsManager() {
             project={builderTarget}
             onSave={handleSave}
             onCancel={() => { setShowBuilder(false); setSaveError(null); }}
+            onDelete={handleDeleteFromBuilder}
+            isDeleting={deletingFromBuilder || deleteProject.isPending}
             isSaving={createProject.isPending || updateProject.isPending}
             saveError={saveError}
           />

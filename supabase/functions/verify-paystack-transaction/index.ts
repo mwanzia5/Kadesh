@@ -19,7 +19,7 @@
 // drop) — it just won't have a client fallback to draw on, since Paystack
 // calls it server-to-server with no access to the browser's form state.
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 
 type ClientFallback = {
@@ -53,6 +53,10 @@ export async function recordVerifiedTransaction(
   const donorName = meta.donor_name || clientFallback.donor_name || null;
   const location = meta.location || clientFallback.location || null;
   const phone = meta.phone || clientFallback.phone || null;
+  // Lowercased so the "view own donations" RLS policy (which compares
+  // against auth.email()) matches no matter what case the donor typed
+  // into the Paystack popup.
+  const donorEmail = (txn.customer?.email || "").toLowerCase() || null;
 
   // Conflict-safe insert: relies on the UNIQUE constraint on
   // donations.payment_reference (see migration) so a race between this
@@ -61,7 +65,7 @@ export async function recordVerifiedTransaction(
     .from("donations")
     .insert({
       donor_name: donorName,
-      donor_email: txn.customer?.email || null,
+      donor_email: donorEmail,
       donor_id: meta.donor_id || null,
       amount: meta.usd_equivalent ?? amountKES,
       currency: "KES",
@@ -87,13 +91,20 @@ export async function recordVerifiedTransaction(
     if (donorName) patch.donor_name = donorName;
     if (location) patch.location = location;
     if (phone) patch.phone = phone;
+    // Also link the row to the donor's account. Without this, a donation
+    // the webhook recorded first (e.g. with blank metadata) would never
+    // appear in the donor's dashboard.
+    if (meta.donor_id) patch.donor_id = meta.donor_id;
+    if (donorEmail) patch.donor_email = donorEmail;
 
     if (Object.keys(patch).length > 0) {
       const { error: patchError } = await supabase
         .from("donations")
         .update(patch)
         .eq("payment_reference", txn.reference)
-        .or("donor_name.is.null,location.is.null,phone.is.null");
+        .or(
+          "donor_name.is.null,donor_id.is.null,donor_email.is.null,location.is.null,phone.is.null"
+        );
       if (patchError) console.error("Backfill of donor details failed:", patchError);
     }
   }

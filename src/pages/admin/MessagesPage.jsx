@@ -45,7 +45,8 @@ export default function MessagesPage() {
   const updateMessage = useUpdateMessage?.();
   const replyToMessage = useReplyToMessage?.();
 
-  const messages = (messagesData?.data ?? []).map((m) => ({
+  // getMessages() resolves to the row array itself (not { data }), so use it directly
+  const messages = (messagesData ?? []).map((m) => ({
     ...m,
     from: [m.first_name, m.last_name].filter(Boolean).join(" "),
     date: m.created_at

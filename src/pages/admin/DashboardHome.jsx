@@ -62,7 +62,7 @@ export default function DashboardHome() {
 
   const projects = projectsRes?.data ?? [];
   const gallery = galleryRes?.data ?? [];
-  const messages = messagesRes?.data ?? [];
+  const messages = messagesRes ?? [];
   const partners = partnersRes?.data ?? [];
   const news = newsRes?.data ?? [];
   const testimonials = testimonialsRes?.data ?? [];

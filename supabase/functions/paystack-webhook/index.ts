@@ -15,7 +15,7 @@
 // Settings → API Keys & Webhooks → Webhook URL:
 //   https://<project-ref>.supabase.co/functions/v1/paystack-webhook
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { createClient } from "npm:@supabase/supabase-js@2";
 import { recordVerifiedTransaction } from "../verify-paystack-transaction/index.ts";
 
 // Paystack signs the raw request body with your secret key (HMAC-SHA512) and

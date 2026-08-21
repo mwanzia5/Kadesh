@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PROJECT_ICONS, ICON_OPTIONS } from "@/lib/projectIcons";
+import { uploadAndConvert, getPublicUrl } from "@/services/upload";
 import {
   ProjectHero,
   ProjectStory,
@@ -29,7 +30,8 @@ import {
   ProjectCTA,
 } from "@/components/projects/ProjectSections";
 
-const CATEGORIES = ["Education", "Healthcare", "Community", "Water", "Food", "Women"];
+const STANDARD_CATEGORIES = ["Education", "Healthcare", "Community", "Water", "Food", "Women"];
+const CATEGORIES = [...STANDARD_CATEGORIES, "Other"];
 
 function slugify(text) {
   return text
@@ -77,10 +79,18 @@ const STEPS = [
 const inputClass =
   "w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 font-body text-sm focus:outline-none focus:ring-2 focus:ring-vibrant-blue/20 focus:border-vibrant-blue";
 
-export default function ProjectBuilder({ project, onSave, onCancel, isSaving, saveError }) {
+export default function ProjectBuilder({ project, onSave, onCancel, onDelete, isDeleting, isSaving, saveError }) {
   const [step, setStep] = useState(0);
   const [showPreview, setShowPreview] = useState(false);
   const [tagInput, setTagInput] = useState("");
+  // When the admin picks "Other", the real category is whatever name they
+  // type here — it's stored straight into form.category so it flows to the
+  // site exactly like a built-in category would.
+  const [customCategory, setCustomCategory] = useState(() =>
+    project?.category && !STANDARD_CATEGORIES.includes(project.category)
+      ? project.category
+      : ""
+  );
 
   const [form, setForm] = useState(() => {
     if (!project) {
@@ -178,6 +188,20 @@ export default function ProjectBuilder({ project, onSave, onCancel, isSaving, sa
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          {project && onDelete && (
+            <button
+              onClick={() => {
+                if (window.confirm(`Delete "${form.title || "this project"}"? This cannot be undone.`)) {
+                  onDelete(project.id);
+                }
+              }}
+              disabled={isDeleting}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg font-body text-sm text-red-600 hover:bg-red-50 transition-colors disabled:opacity-60"
+            >
+              {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+              <span className="hidden sm:inline">Delete</span>
+            </button>
+          )}
           <button
             onClick={() => setShowPreview(true)}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg font-body text-sm text-vibrant-blue hover:bg-vibrant-blue/5 transition-colors"
@@ -237,7 +261,12 @@ export default function ProjectBuilder({ project, onSave, onCancel, isSaving, sa
 
       {/* Body */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-2xl mx-auto px-6 py-10">
+        <div
+          className={cn(
+            "mx-auto px-4 sm:px-6 py-10",
+            STEPS[step].id === "review" ? "max-w-6xl" : "max-w-2xl"
+          )}
+        >
           <AnimatePresence mode="wait">
             <motion.div
               key={STEPS[step].id}
@@ -246,7 +275,14 @@ export default function ProjectBuilder({ project, onSave, onCancel, isSaving, sa
               exit={{ opacity: 0, x: -12 }}
               transition={{ duration: 0.25 }}
             >
-              {STEPS[step].id === "basics" && <BasicsStep form={form} updateField={updateField} />}
+              {STEPS[step].id === "basics" && (
+                <BasicsStep
+                  form={form}
+                  updateField={updateField}
+                  customCategory={customCategory}
+                  setCustomCategory={setCustomCategory}
+                />
+              )}
               {STEPS[step].id === "hero" && (
                 <HeroStep hero={form.content.hero} title={form.title} onChange={(v) => updateContent("hero", v)} />
               )}
@@ -268,7 +304,11 @@ export default function ProjectBuilder({ project, onSave, onCancel, isSaving, sa
                 <CTAStep cta={form.content.cta} onChange={(v) => updateContent("cta", v)} />
               )}
               {STEPS[step].id === "review" && (
-                <ReviewStep isStepComplete={isStepComplete} onPreview={() => setShowPreview(true)} />
+                <ReviewStep
+                  form={form}
+                  isStepComplete={isStepComplete}
+                  onPreview={() => setShowPreview(true)}
+                />
               )}
             </motion.div>
           </AnimatePresence>
@@ -369,36 +409,90 @@ function FieldLabel({ children, hint }) {
   );
 }
 
-function ImageField({ label, hint, value, onChange }) {
+// Uploads straight into the Supabase "images" bucket (same one the media
+// library uses) and hands back the public URL — no pasting links required.
+async function uploadProjectImage(file, folder) {
+  const ext = file.name.split(".").pop();
+  const path = `projects/${folder}-${Date.now()}-${Math.random()
+    .toString(36)
+    .slice(2, 8)}.${ext}`;
+  const { error, path: finalPath } = await uploadAndConvert(file, "images", path);
+  if (error) throw error;
+  return getPublicUrl("images", finalPath || path);
+}
+
+function ImageUploadField({ label, hint, value, onChange }) {
+  const inputRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !file.type.startsWith("image/")) return;
+    e.target.value = "";
+    setUploading(true);
+    try {
+      const url = await uploadProjectImage(file, "hero");
+      onChange(url);
+    } catch (err) {
+      alert("Image upload failed: " + err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <div>
       <FieldLabel hint={hint}>{label}</FieldLabel>
-      <div className="flex items-start gap-3">
-        <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 shrink-0">
-          {value && (
-            <img
-              src={value}
-              alt=""
-              className="w-full h-full object-cover"
-              onError={(e) => (e.target.style.display = "none")}
-            />
-          )}
+      <input ref={inputRef} type="file" accept="image/*" onChange={handleUpload} className="hidden" />
+      {value ? (
+        <div className="relative rounded-xl overflow-hidden border border-gray-200 group">
+          <img src={value} alt="" className="w-full h-44 object-cover" />
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              disabled={uploading}
+              className="px-4 py-2 bg-white text-deep-navy rounded-lg font-body text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100 disabled:opacity-50"
+            >
+              {uploading ? "Uploading..." : "Change Image"}
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={() => onChange("")}
+            className="absolute top-2 right-2 p-1.5 bg-black/50 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
-        <input
-          type="text"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="/images/your-project/hero.jpg"
-          className={cn(inputClass, "flex-1")}
-        />
-      </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+          className="w-full flex flex-col items-center justify-center gap-2 px-4 py-10 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-vibrant-blue hover:text-vibrant-blue transition-colors disabled:opacity-50"
+        >
+          {uploading ? (
+            <>
+              <Loader2 className="h-6 w-6 animate-spin" />
+              <span className="font-body text-sm">Uploading...</span>
+            </>
+          ) : (
+            <>
+              <ImageIcon className="h-6 w-6" />
+              <span className="font-body text-sm font-medium">Upload background image</span>
+              <span className="font-body text-xs text-gray-400">JPG, PNG or WebP — up to 10MB</span>
+            </>
+          )}
+        </button>
+      )}
     </div>
   );
 }
 
 /* ---------------- steps ---------------- */
 
-function BasicsStep({ form, updateField }) {
+function BasicsStep({ form, updateField, customCategory, setCustomCategory }) {
   return (
     <div className="space-y-6">
       <StepIntro
@@ -431,8 +525,15 @@ function BasicsStep({ form, updateField }) {
         <div>
           <FieldLabel>Category</FieldLabel>
           <select
-            value={form.category}
-            onChange={(e) => updateField("category", e.target.value)}
+            value={STANDARD_CATEGORIES.includes(form.category) ? form.category : "Other"}
+            onChange={(e) => {
+              if (e.target.value === "Other") {
+                setCustomCategory("");
+                updateField("category", "");
+              } else {
+                updateField("category", e.target.value);
+              }
+            }}
             className={inputClass}
           >
             {CATEGORIES.map((c) => (
@@ -462,6 +563,23 @@ function BasicsStep({ form, updateField }) {
           </label>
         </div>
       </div>
+      {!STANDARD_CATEGORIES.includes(form.category) && (
+        <div>
+          <FieldLabel hint="Type a name for your new category — it will appear on project cards and filters across the site.">
+            New Category Name
+          </FieldLabel>
+          <input
+            type="text"
+            value={customCategory}
+            onChange={(e) => {
+              setCustomCategory(e.target.value);
+              updateField("category", e.target.value);
+            }}
+            placeholder="e.g. Agriculture"
+            className={inputClass}
+          />
+        </div>
+      )}
       <div>
         <FieldLabel hint="A one or two sentence summary shown on project cards.">Short Description</FieldLabel>
         <textarea
@@ -511,9 +629,9 @@ function HeroStep({ hero, title, onChange }) {
           className={cn(inputClass, "resize-y")}
         />
       </div>
-      <ImageField
-        label="Background Image URL"
-        hint="Paste an image URL from your media library or an uploaded file's link."
+      <ImageUploadField
+        label="Background Image"
+        hint="Uploaded to your media library (images bucket) automatically."
         value={hero.image}
         onChange={(v) => set("image", v)}
       />
@@ -660,6 +778,35 @@ function StoryStep({ story, onChange, tagInput, setTagInput }) {
 }
 
 function GalleryStep({ gallery, onChange }) {
+  const fileInputRef = useRef(null);
+  const targetIndexRef = useRef(null);
+  const [uploadingIndex, setUploadingIndex] = useState(null);
+
+  const triggerUpload = (i) => {
+    targetIndexRef.current = i;
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelected = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !file.type.startsWith("image/")) return;
+    e.target.value = "";
+    const i = targetIndexRef.current;
+    if (i == null) return;
+    setUploadingIndex(i);
+    try {
+      const url = await uploadProjectImage(file, "gallery");
+      const next = [...gallery];
+      next[i] = { ...next[i], src: url };
+      onChange(next);
+    } catch (err) {
+      alert("Image upload failed: " + err.message);
+    } finally {
+      setUploadingIndex(null);
+      targetIndexRef.current = null;
+    }
+  };
+
   const addImage = () => onChange([...gallery, { src: "", alt: "" }]);
   const updateImage = (i, field, value) => {
     const next = [...gallery];
@@ -677,7 +824,9 @@ function GalleryStep({ gallery, onChange }) {
 
   return (
     <div className="space-y-6">
-      <StepIntro title="Add gallery photos" description="The first image displays larger than the rest — pick your best shot for it." />
+      <StepIntro title="Add gallery photos" description="Upload photos from your device — the first image displays larger than the rest." />
+
+      <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelected} className="hidden" />
 
       {gallery.length === 0 && (
         <div className="text-center py-10 border-2 border-dashed border-gray-200 rounded-xl">
@@ -689,13 +838,54 @@ function GalleryStep({ gallery, onChange }) {
       <div className="space-y-4">
         {gallery.map((img, i) => (
           <div key={i} className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
-            <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-200 shrink-0">
-              {img.src && (
-                <img src={img.src} alt="" className="w-full h-full object-cover" onError={(e) => (e.target.style.display = "none")} />
+            <button
+              type="button"
+              onClick={() => triggerUpload(i)}
+              disabled={uploadingIndex !== null}
+              title={img.src ? "Change photo" : "Upload photo"}
+              className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-200 shrink-0 group/thumb"
+            >
+              {img.src ? (
+                <>
+                  <img src={img.src} alt="" className="w-full h-full object-cover" />
+                  <span className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center">
+                    {uploadingIndex === i ? (
+                      <Loader2 className="h-4 w-4 text-white animate-spin" />
+                    ) : (
+                      <ImageIcon className="h-4 w-4 text-white" />
+                    )}
+                  </span>
+                </>
+              ) : uploadingIndex === i ? (
+                <Loader2 className="h-5 w-5 text-gray-400 animate-spin m-auto" />
+              ) : (
+                <ImageIcon className="h-5 w-5 text-gray-400 m-auto" />
               )}
-            </div>
+            </button>
             <div className="flex-1 space-y-2">
-              <input type="text" value={img.src} onChange={(e) => updateImage(i, "src", e.target.value)} placeholder="Image URL" className={inputClass} />
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => triggerUpload(i)}
+                  disabled={uploadingIndex !== null}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 rounded-lg font-body text-xs font-medium text-deep-navy hover:border-vibrant-blue hover:text-vibrant-blue transition-colors disabled:opacity-50"
+                >
+                  {uploadingIndex === i ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <ImageIcon className="h-3.5 w-3.5" />
+                      {img.src ? "Replace photo" : "Upload photo"}
+                    </>
+                  )}
+                </button>
+                {!img.src && uploadingIndex !== i && (
+                  <span className="font-body text-xs text-on-surface-variant">No photo yet</span>
+                )}
+              </div>
               <input
                 type="text"
                 value={img.alt}
@@ -817,12 +1007,37 @@ function CTAStep({ cta, onChange }) {
   );
 }
 
-function ReviewStep({ isStepComplete, onPreview }) {
+function ReviewStep({ form, isStepComplete, onPreview }) {
   const checklist = STEPS.filter((s) => s.id !== "review");
   return (
     <div className="space-y-6">
-      <StepIntro title="Review & publish" description="Here's everything you've built. Take one more look before it goes live." />
+      <StepIntro
+        title="Review & publish"
+        description="This is the complete page, exactly as visitors will see it. One last look before it goes live."
+      />
 
+      {/* Basics summary */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {[
+          { label: "Title", value: form.title || "—" },
+          { label: "URL Slug", value: form.slug ? `/${form.slug}` : "—" },
+          { label: "Category", value: form.category || "—" },
+          { label: "Featured", value: form.is_featured ? "Yes" : "No" },
+        ].map(({ label, value }) => (
+          <div key={label} className="px-4 py-3 bg-gray-50 rounded-lg border border-gray-200">
+            <p className="font-body text-xs text-on-surface-variant uppercase tracking-wider mb-0.5">{label}</p>
+            <p className="font-body text-sm font-medium text-deep-navy break-words">{value}</p>
+          </div>
+        ))}
+        {form.short_description && (
+          <div className="sm:col-span-2 px-4 py-3 bg-gray-50 rounded-lg border border-gray-200">
+            <p className="font-body text-xs text-on-surface-variant uppercase tracking-wider mb-0.5">Short Description</p>
+            <p className="font-body text-sm text-deep-navy">{form.short_description}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Completion checklist */}
       <div className="space-y-2">
         {checklist.map((s) => {
           const complete = isStepComplete(s.id);
@@ -843,13 +1058,28 @@ function ReviewStep({ isStepComplete, onPreview }) {
         })}
       </div>
 
-      <button
-        onClick={onPreview}
-        className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-lg font-body text-sm font-semibold text-deep-navy hover:bg-gray-50 transition-colors"
-      >
-        <Eye className="h-4 w-4" />
-        Preview the full page
-      </button>
+      {/* Full live preview — every section rendered end to end */}
+      <div className="rounded-2xl border border-gray-200 overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
+          <div className="flex items-center gap-2">
+            <Eye className="h-4 w-4 text-vibrant-blue" />
+            <p className="font-body text-xs font-semibold text-deep-navy uppercase tracking-wider">
+              Full page preview
+            </p>
+          </div>
+          <button
+            onClick={onPreview}
+            className="font-body text-xs font-medium text-vibrant-blue hover:text-vibrant-blue/80 transition-colors"
+          >
+            Open fullscreen
+          </button>
+        </div>
+        <ProjectHero title={form.title} hero={form.content.hero} />
+        <ProjectStory story={form.content.story} />
+        <ProjectGallery gallery={form.content.gallery} />
+        <ProjectImpact impact={form.content.impact} />
+        <ProjectCTA cta={form.content.cta} />
+      </div>
     </div>
   );
 }

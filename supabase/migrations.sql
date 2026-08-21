@@ -176,7 +176,20 @@ CREATE POLICY "Public can insert donations"
 
 CREATE POLICY "Public can view own donations"
   ON donations FOR SELECT
-  USING (donor_email = auth.email() OR is_admin());
+  USING (
+    donor_id = auth.uid()
+    OR LOWER(donor_email) = LOWER(auth.email())
+    OR is_admin()
+  );
+
+-- One-time backfill: link donations recorded before donor_id was populated
+-- to their accounts via donor_profiles (matched case-insensitively on email).
+-- Safe to re-run — it only touches rows where donor_id is still NULL.
+UPDATE donations d
+SET donor_id = p.id
+FROM donor_profiles p
+WHERE d.donor_id IS NULL
+  AND LOWER(d.donor_email) = LOWER(p.email);
 
 -- Children
 CREATE POLICY "Admin can manage children"

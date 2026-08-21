@@ -105,7 +105,7 @@ export default function DonorDashboard() {
   const { data: sponsorshipsData, isLoading: sponsorshipsLoading } =
     useSponsorships(user?.id);
   const { data: donationsData, isLoading: donationsLoading } =
-    useDonorDonations(user?.id);
+    useDonorDonations(user?.id, user?.email);
 
   const sponsorships = sponsorshipsData?.data ?? [];
   const donations = donationsData?.data ?? [];

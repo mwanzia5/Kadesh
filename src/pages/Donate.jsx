@@ -10,8 +10,6 @@ import { useDonorAuth } from "@/context/DonorAuthContext";
 import supabase from "@/supabase/client";
 
 const USD_AMOUNTS = [10, 25, 50, 100, 250, 500];
-const MIN_USD_AMOUNT = 1; // Paystack's practical floor — anything below this
-// (e.g. a mistyped "$0.0077") is rejected before it ever reaches Paystack.
 
 const currencies = [
   { code: "USD", symbol: "$", name: "US Dollar", rate: 1, country: "United States" },
@@ -86,7 +84,7 @@ export default function Donate() {
   }, [profile, user]);
 
   const baseAmount = isOther ? Number(customAmount) || 0 : selectedUSD;
-  const isValidAmount = baseAmount >= MIN_USD_AMOUNT;
+  const isValidAmount = baseAmount > 0;
   const convertedAmount = Math.round(baseAmount * currency.rate);
   const impactText = impactMap[baseAmount] || "Every gift makes a difference";
 
@@ -189,7 +187,9 @@ export default function Donate() {
 
     const handler = PaystackPop.setup({
       key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
-      email: donorEmail,
+      // Lowercased so the email Paystack echoes back always matches the
+      // account email exactly — the "view own donations" check depends on it.
+      email: donorEmail.trim().toLowerCase(),
       amount: amountInKESSubunit,
       currency: "KES",
       ref: `KHM-${Date.now()}`,
@@ -213,6 +213,17 @@ export default function Donate() {
           isSponsorship && frequency === "monthly" ? baseAmount : null,
       },
       onSuccess: async (transaction) => {
+        // Paystack has already confirmed the charge at this point — flip the
+        // button to success immediately instead of holding it in
+        // "Processing..." while the server verifies (mobile money prompts can
+        // make that wait feel like a hang).
+        setProcessing(false);
+        setResult({
+          type: "success",
+          message: `Thank you for your donation! Reference: ${transaction.reference}`,
+        });
+
+        // Then confirm + record server-side in the background.
         try {
           await confirmPayment(transaction.reference);
 
@@ -227,23 +238,15 @@ export default function Donate() {
           queryClient.invalidateQueries({ queryKey: ["donor-donations"] });
           queryClient.invalidateQueries({ queryKey: ["sponsorships"] });
           queryClient.invalidateQueries({ queryKey: ["children"] });
-
-          setResult({
-            type: "success",
-            message: `Thank you for your donation! Reference: ${transaction.reference}`,
-          });
         } catch (err) {
           console.error("Payment verification failed:", err);
-          // The charge went through on Paystack's side, but our backend
-          // couldn't confirm/record it — say so plainly instead of a
-          // generic success message, and keep the reference visible so
-          // support can look it up manually if needed.
+          // The charge went through on Paystack's side, so this stays a
+          // success — just note that our records may lag behind (the webhook
+          // still records it), keeping the reference visible for support.
           setResult({
-            type: "error",
-            message: `Your payment (ref: ${transaction.reference}) was received by Paystack, but we couldn't confirm it on our end. Please contact us with this reference so we can verify it manually.`,
+            type: "success",
+            message: `Thank you for your donation! Reference: ${transaction.reference}. Your payment was received — it may take a moment to appear in your history.`,
           });
-        } finally {
-          setProcessing(false);
         }
       },
       onClose: () => {
@@ -583,8 +586,8 @@ export default function Donate() {
                     <input
                       id="customAmount"
                       type="number"
-                      min={MIN_USD_AMOUNT}
-                      step="1"
+                      min="0"
+                      step="any"
                       placeholder="0"
                       value={customAmount}
                       onChange={(e) => {
@@ -600,7 +603,7 @@ export default function Donate() {
                     )}
                     {customAmount !== "" && !isValidAmount && (
                       <p className="mt-1 text-sm text-red-600 font-body">
-                        Minimum donation is ${MIN_USD_AMOUNT}.
+                        Please enter an amount greater than zero.
                       </p>
                     )}
                   </div>

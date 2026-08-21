@@ -1,8 +1,13 @@
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { corsHeaders } from "../_shared/cors.ts";
+// Self-contained: no cross-file imports, so it deploys as a single file.
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
 
 const NOTIFICATION_EMAIL = "kadeshhope.africa@gmail.com";
-const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+// The project secret was created under the name "RESEND"; accept either name.
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? Deno.env.get("RESEND");
 
 // Must be an address on a domain verified in Resend.
 // Change the local part (before the @) to whatever you prefer —
@@ -26,7 +31,7 @@ function escapeHtml(value: unknown): string {
     .replace(/'/g, "&#39;");
 }
 
-serve(async (req: Request) => {
+Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }

@@ -60,11 +60,11 @@ export function useCancelSponsorship() {
   });
 }
 
-export function useDonorDonations(donorId) {
+export function useDonorDonations(donorId, donorEmail) {
   return useQuery({
-    queryKey: ["donor-donations", donorId],
-    queryFn: () => getDonorDonations(donorId),
-    enabled: !!donorId,
+    queryKey: ["donor-donations", donorId, donorEmail],
+    queryFn: () => getDonorDonations(donorId, donorEmail),
+    enabled: !!(donorId || donorEmail),
     staleTime: 5 * 60 * 1000,
   });
 }
