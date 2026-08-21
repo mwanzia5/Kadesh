@@ -156,6 +156,15 @@ export default function Donate() {
     return data;
   };
 
+  // After a confirmed successful payment, reload shortly afterwards so every
+  // piece of the site (dashboard totals, admin lists, sponsorship status)
+  // comes back fully fresh from the server instead of relying on cache
+  // invalidation alone. Delayed just enough for the donor to read the
+  // confirmation and note their reference.
+  const scheduleReload = () => {
+    setTimeout(() => window.location.reload(), 3000);
+  };
+
   const handlePay = () => {
     setAttemptedSubmit(true);
 
@@ -224,8 +233,9 @@ export default function Donate() {
         setProcessing(false);
         setResult({
           type: "success",
-          message: `Thank you for your donation! Reference: ${transaction.reference}`,
+          message: `Thank you for your donation! Reference: ${transaction.reference}. This page will refresh automatically…`,
         });
+        scheduleReload();
 
         // Then confirm + record server-side in the background.
         try {
@@ -266,15 +276,11 @@ export default function Donate() {
         (async () => {
           try {
             await confirmPayment(reference);
-            queryClient.invalidateQueries({ queryKey: ["donations"] });
-            queryClient.invalidateQueries({ queryKey: ["donation-stats"] });
-            queryClient.invalidateQueries({ queryKey: ["donor-donations"] });
-            queryClient.invalidateQueries({ queryKey: ["sponsorships"] });
-            queryClient.invalidateQueries({ queryKey: ["children"] });
             setResult({
               type: "success",
-              message: `Thank you for your donation! Reference: ${reference}`,
+              message: `Thank you for your donation! Reference: ${reference}. This page will refresh automatically…`,
             });
+            scheduleReload();
           } catch {
             // Not verified (abandoned checkout, or the charge is still being
             // processed on the donor's phone). Never show a scary error here:
