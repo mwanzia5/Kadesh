@@ -48,4 +48,13 @@ export const donationsService = {
     if (error) throw error;
     return data;
   },
+
+  // Admin-only reconciliation: pulls recent successful transactions straight
+  // from Paystack and imports any that are missing from the table (e.g. if
+  // both the browser verify call and the webhook failed for a donation).
+  async syncFromPaystack() {
+    const { data, error } = await supabase.functions.invoke("sync-paystack-transactions");
+    if (error) throw error;
+    return data;
+  },
 };

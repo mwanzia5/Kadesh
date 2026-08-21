@@ -277,3 +277,5 @@ CREATE POLICY "Admin can delete"
 -- SELECT tablename, policyname FROM pg_policies
 -- WHERE schemaname = 'public' AND policyname LIKE 'Admin%'
 -- ORDER BY tablename;
+
+https://trzmdofcpoqhtvwsjsqq.supabase.co/functions/v1/paystack-webhook

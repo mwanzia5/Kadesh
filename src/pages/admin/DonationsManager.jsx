@@ -16,10 +16,11 @@ import {
   Filter,
   Download,
   Loader2,
+  RefreshCw,
 } from "lucide-react";
 
 import { staggerContainer, slideUp } from "@/animations/variants";
-import { useDonations, useUpdateDonationStatus } from "@/hooks/useDonations";
+import { useDonations, useUpdateDonationStatus, useSyncDonations } from "@/hooks/useDonations";
 
 const statusColors = {
   completed: "bg-emerald-50 text-emerald-700 border-emerald-200",
@@ -38,8 +39,22 @@ const statusIcons = {
 export default function DonationsManager() {
   const { data: donations = [], isLoading } = useDonations();
   const updateStatus = useUpdateDonationStatus();
+  const syncFromPaystack = useSyncDonations();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [syncMessage, setSyncMessage] = useState(null);
+
+  const handleSync = async () => {
+    setSyncMessage(null);
+    try {
+      const result = await syncFromPaystack.mutateAsync();
+      setSyncMessage(
+        `Synced: ${result.scanned} transaction(s) found on Paystack, ${result.imported} newly imported, ${result.skipped} already recorded${result.errors ? `, ${result.errors} failed` : ""}.`
+      );
+    } catch (err) {
+      setSyncMessage(`Sync failed: ${err?.message || "unknown error"}`);
+    }
+  };
 
   const filtered = donations.filter((d) => {
     const matchesSearch =
@@ -149,6 +164,18 @@ export default function DonationsManager() {
             </select>
           </div>
           <button
+            onClick={handleSync}
+            disabled={syncFromPaystack.isPending}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-soft-accent bg-white font-body text-sm text-on-surface-variant hover:bg-surface transition-colors disabled:opacity-60"
+          >
+            {syncFromPaystack.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+            Sync from Paystack
+          </button>
+          <button
             onClick={handleExport}
             className="flex items-center gap-2 px-4 py-2 rounded-lg border border-soft-accent bg-white font-body text-sm text-on-surface-variant hover:bg-surface transition-colors"
           >
@@ -157,6 +184,12 @@ export default function DonationsManager() {
           </button>
         </div>
       </div>
+
+      {syncMessage && (
+        <div className="bg-white rounded-xl border border-soft-accent p-4 mb-6">
+          <p className="font-body text-sm text-on-surface-variant">{syncMessage}</p>
+        </div>
+      )}
 
       {/* Donations Table */}
       <div className="bg-white rounded-xl border border-soft-accent overflow-hidden">

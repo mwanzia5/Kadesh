@@ -54,3 +54,16 @@ export function useUpdateDonationStatus() {
     },
   });
 }
+
+export function useSyncDonations() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: donationsService.syncFromPaystack,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["donations"] });
+      queryClient.invalidateQueries({ queryKey: ["donation-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["donor-donations"] });
+    },
+  });
+}

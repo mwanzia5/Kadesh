@@ -185,6 +185,9 @@ export default function Donate() {
       return;
     }
 
+    const reference = `KHM-${Date.now()}`;
+    let sawSuccess = false;
+
     const handler = PaystackPop.setup({
       key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
       // Lowercased so the email Paystack echoes back always matches the
@@ -192,7 +195,7 @@ export default function Donate() {
       email: donorEmail.trim().toLowerCase(),
       amount: amountInKESSubunit,
       currency: "KES",
-      ref: `KHM-${Date.now()}`,
+      ref: reference,
       metadata: {
         donor_name: donorName,
         donor_id: user?.id || null,
@@ -213,6 +216,7 @@ export default function Donate() {
           isSponsorship && frequency === "monthly" ? baseAmount : null,
       },
       onSuccess: async (transaction) => {
+        sawSuccess = true;
         // Paystack has already confirmed the charge at this point — flip the
         // button to success immediately instead of holding it in
         // "Processing..." while the server verifies (mobile money prompts can
@@ -251,6 +255,38 @@ export default function Donate() {
       },
       onClose: () => {
         setProcessing(false);
+
+        // The popup closed without Paystack's success callback — common with
+        // mobile money, where the donor approves an STK push on their phone
+        // and the popup may vanish before it polls the final status. The
+        // charge can still have succeeded, so ask our server to check the
+        // known reference directly against Paystack before giving up.
+        if (sawSuccess) return;
+
+        (async () => {
+          try {
+            await confirmPayment(reference);
+            queryClient.invalidateQueries({ queryKey: ["donations"] });
+            queryClient.invalidateQueries({ queryKey: ["donation-stats"] });
+            queryClient.invalidateQueries({ queryKey: ["donor-donations"] });
+            queryClient.invalidateQueries({ queryKey: ["sponsorships"] });
+            queryClient.invalidateQueries({ queryKey: ["children"] });
+            setResult({
+              type: "success",
+              message: `Thank you for your donation! Reference: ${reference}`,
+            });
+          } catch {
+            // Not verified (abandoned checkout, or the charge is still being
+            // processed on the donor's phone). Never show a scary error here:
+            // if money did move, the webhook / a later verification will
+            // still record it — nothing is lost.
+            setResult({
+              type: "info",
+              message:
+                "Payment window closed. If you completed the payment on your phone, it was received and will appear in your history shortly.",
+            });
+          }
+        })();
       },
     });
 
@@ -338,17 +374,25 @@ export default function Donate() {
               className={`mt-8 rounded-xl p-4 flex items-start gap-3 border ${
                 result.type === "success"
                   ? "bg-green-50 border-green-200"
-                  : "bg-red-50 border-red-200"
+                  : result.type === "info"
+                    ? "bg-vibrant-blue/5 border-soft-accent"
+                    : "bg-red-50 border-red-200"
               }`}
             >
               {result.type === "success" ? (
                 <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+              ) : result.type === "info" ? (
+                <Shield className="h-5 w-5 text-vibrant-blue shrink-0 mt-0.5" />
               ) : (
                 <XCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
               )}
               <p
                 className={`font-body text-sm ${
-                  result.type === "success" ? "text-green-800" : "text-red-800"
+                  result.type === "success"
+                    ? "text-green-800"
+                    : result.type === "info"
+                      ? "text-deep-navy"
+                      : "text-red-800"
                 }`}
               >
                 {result.message}
