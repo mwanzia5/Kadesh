@@ -167,7 +167,7 @@ export default function MessagesPage() {
       if (replyToMessage) {
         await replyToMessage.mutateAsync({
           id: replyTarget.id,
-          body: replyText,
+          reply: replyText,
         });
       } else {
         // Fallback: no backend send-mail endpoint wired up yet, open the
