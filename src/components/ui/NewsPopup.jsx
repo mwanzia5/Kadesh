@@ -24,6 +24,7 @@ export default function NewsPopup() {
         title: latest.title,
         excerpt: latest.excerpt,
         image: latest.image,
+        video_url: latest.video_url,
         category: latest.category || "General",
       });
       const timer = setTimeout(() => setVisible(true), SHOW_DELAY_MS);
@@ -49,7 +50,16 @@ export default function NewsPopup() {
           className="fixed bottom-6 left-6 z-50 w-[320px] max-w-[calc(100vw-24px)] rounded-2xl bg-white shadow-2xl border border-black/5 overflow-hidden"
         >
           <div className="relative h-32 bg-gradient-to-br from-deep-navy to-vibrant-blue flex items-center justify-center">
-            {article.image ? (
+            {article.video_url ? (
+              <video
+                src={article.video_url}
+                className="w-full h-full object-cover"
+                muted
+                autoPlay
+                loop
+                playsInline
+              />
+            ) : article.image ? (
               <img
                 src={article.image}
                 alt={article.title}
@@ -86,7 +96,7 @@ export default function NewsPopup() {
                 Maybe Later
               </button>
               <Link
-                to="/news"
+                to={`/news/${article.id}`}
                 onClick={dismiss}
                 className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium bg-vibrant-blue text-white hover:bg-blue-700 transition-colors"
               >
