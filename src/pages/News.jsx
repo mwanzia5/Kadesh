@@ -23,6 +23,7 @@ export default function News() {
   const [searchTerm, setSearchTerm] = useState("");
 
   const filtered = articles.filter((a) => {
+    if (a.display_location === "popup_only") return false;
     const matchesCategory = selectedCategory === "All" || a.category === selectedCategory;
     const matchesSearch =
       (a.title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||

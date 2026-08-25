@@ -16,7 +16,9 @@ export default function NewsPopup() {
 
     getNews().then(({ data }) => {
       if (!data || data.length === 0) return;
-      const latest = data[0];
+      const eligible = data.filter((a) => a.display_location !== "page_only");
+      if (eligible.length === 0) return;
+      const latest = eligible[0];
       setArticle({
         id: latest.id,
         title: latest.title,

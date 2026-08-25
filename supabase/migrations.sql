@@ -9,6 +9,8 @@
 -- ----------------------------------------------------
 ALTER TABLE news ADD COLUMN IF NOT EXISTS category TEXT;
 ALTER TABLE news ADD COLUMN IF NOT EXISTS author TEXT;
+ALTER TABLE news ADD COLUMN IF NOT EXISTS video_url TEXT;
+ALTER TABLE news ADD COLUMN IF NOT EXISTS display_location TEXT DEFAULT 'both';
 
 -- 2. Create admin check helper function
 --    Replaces all "auth.role() = 'authenticated'" checks
@@ -277,5 +279,3 @@ CREATE POLICY "Admin can delete"
 -- SELECT tablename, policyname FROM pg_policies
 -- WHERE schemaname = 'public' AND policyname LIKE 'Admin%'
 -- ORDER BY tablename;
-
-https://trzmdofcpoqhtvwsjsqq.supabase.co/functions/v1/paystack-webhook

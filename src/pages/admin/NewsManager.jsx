@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Plus, Edit, Trash2, X, Save, Upload, Newspaper, Calendar, Tag, Eye, Loader2, Image as ImageIcon } from "lucide-react";
+import { Plus, Edit, Trash2, X, Save, Upload, Newspaper, Calendar, Tag, Eye, Loader2, Image as ImageIcon, Video, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   useAllNews,
@@ -8,9 +8,15 @@ import {
   useUpdateArticle,
   useDeleteArticle,
 } from "@/hooks/useNews";
-import { uploadAndConvert, getPublicUrl } from "@/services/upload";
+import { uploadAndConvert, uploadImage, getPublicUrl } from "@/services/upload";
 
 const CATEGORIES = ["Education", "Health", "Food Security", "Community", "Events", "Announcement"];
+
+const DISPLAY_LOCATIONS = [
+  { value: "both", label: "News Page & Popup", description: "Show on both the news page and the popup" },
+  { value: "page_only", label: "News Page Only", description: "Only show on the /news page, not the popup" },
+  { value: "popup_only", label: "Popup Only", description: "Only show in the floating popup, not on the news page" },
+];
 
 const inputClasses =
   "w-full px-4 py-3 rounded-lg border border-gray-200 bg-white font-body text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all";
@@ -22,6 +28,8 @@ const emptyArticle = {
   category: "Community",
   author: "Kadesh Hope Mission",
   image: "",
+  video_url: "",
+  display_location: "both",
   published: true,
 };
 
@@ -48,7 +56,9 @@ export default function NewsManager() {
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
   const imageInputRef = useRef(null);
+  const videoInputRef = useRef(null);
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -76,6 +86,28 @@ export default function NewsManager() {
     }
   };
 
+  const handleVideoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !file.type.startsWith("video/")) return;
+    e.target.value = "";
+
+    setUploadingVideo(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `news/${Date.now()}.${ext}`;
+
+      const { error: uploadErr } = await uploadImage(file, "videos", path);
+      if (uploadErr) throw uploadErr;
+
+      const publicUrl = getPublicUrl("videos", path);
+      setForm((prev) => ({ ...prev, video_url: publicUrl }));
+    } catch (err) {
+      alert("Video upload failed: " + err.message);
+    } finally {
+      setUploadingVideo(false);
+    }
+  };
+
   const resetForm = () => {
     setForm(emptyArticle);
     setEditing(null);
@@ -91,6 +123,8 @@ export default function NewsManager() {
       category: article.category || "Community",
       author: article.author || "Kadesh Hope Mission",
       image: article.image || "",
+      video_url: article.video_url || "",
+      display_location: article.display_location || "both",
       published: article.is_published ?? true,
     });
     setShowForm(true);
@@ -120,8 +154,10 @@ export default function NewsManager() {
         excerpt: form.excerpt,
         content: form.content,
         image: form.image || null,
+        video_url: form.video_url || null,
         category: form.category,
         author: form.author,
+        display_location: form.display_location,
         is_published: form.published,
         published_at: form.published ? new Date().toISOString() : null,
       };
@@ -302,6 +338,78 @@ export default function NewsManager() {
               </div>
 
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Video (optional)</label>
+                <input
+                  ref={videoInputRef}
+                  type="file"
+                  accept="video/*"
+                  onChange={handleVideoUpload}
+                  className="hidden"
+                />
+                {form.video_url ? (
+                  <div className="relative rounded-lg overflow-hidden border border-gray-200 group">
+                    <video
+                      src={form.video_url}
+                      className="w-full h-48 object-cover"
+                      controls
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                      <button
+                        type="button"
+                        onClick={() => videoInputRef.current?.click()}
+                        disabled={uploadingVideo}
+                        className="px-4 py-2 bg-white text-deep-navy rounded-lg font-body text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100 disabled:opacity-50"
+                      >
+                        Change Video
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setForm((prev) => ({ ...prev, video_url: "" }))}
+                        className="absolute top-2 right-2 p-1.5 bg-black/50 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => videoInputRef.current?.click()}
+                    disabled={uploadingVideo}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-8 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-vibrant-blue hover:text-vibrant-blue transition-colors disabled:opacity-50"
+                  >
+                    {uploadingVideo ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Video className="w-5 h-5" />
+                        Upload Video (max 100MB)
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Display Location</label>
+                <select
+                  value={form.display_location}
+                  onChange={(e) => handleChange("display_location", e.target.value)}
+                  className={inputClasses}
+                >
+                  {DISPLAY_LOCATIONS.map((loc) => (
+                    <option key={loc.value} value={loc.value}>{loc.label}</option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-400 mt-1">
+                  {DISPLAY_LOCATIONS.find(l => l.value === form.display_location)?.description}
+                </p>
+              </div>
+
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Excerpt</label>
                 <textarea
                   value={form.excerpt}
@@ -395,6 +503,21 @@ export default function NewsManager() {
                         {!article.is_published && (
                           <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 font-medium">
                             Draft
+                          </span>
+                        )}
+                        {article.display_location === "popup_only" && (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-purple-50 text-purple-600 font-medium">
+                            Popup Only
+                          </span>
+                        )}
+                        {article.display_location === "page_only" && (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-600 font-medium">
+                            Page Only
+                          </span>
+                        )}
+                        {article.video_url && (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 font-medium">
+                            Has Video
                           </span>
                         )}
                       </div>

@@ -133,6 +133,17 @@ export default function NewsArticle() {
                   </p>
                 )}
 
+                {article.video_url && (
+                  <div className="mb-8">
+                    <video
+                      src={article.video_url}
+                      controls
+                      className="w-full rounded-xl"
+                      preload="metadata"
+                    />
+                  </div>
+                )}
+
                 {(article.content || "").split("\n").map((paragraph, i) => (
                   paragraph.trim() && (
                     <p key={i} className="mb-6">
