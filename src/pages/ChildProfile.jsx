@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams, Link, useSearchParams, useNavigate } from "react-router-dom";
 import {
   Heart,
@@ -6,6 +7,7 @@ import {
   ArrowLeft,
   Loader2,
   LogIn,
+  CheckCircle2,
 } from "lucide-react";
 
 import PageTransition from "@/animations/PageTransition";
@@ -15,6 +17,10 @@ import Button from "@/components/ui/Button";
 import OptimizedImage from "@/components/ui/OptimizedImage";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import { useChild } from "@/hooks/useChildren";
+import {
+  useSponsorships,
+  useSponsorWithCredit,
+} from "@/hooks/useSponsorships";
 import { useDonorAuth } from "@/context/DonorAuthContext";
 import { cn } from "@/lib/utils";
 
@@ -44,6 +50,40 @@ export default function ChildProfile() {
   const { data, isLoading, error } = useChild(id);
 
   const child = data?.data;
+
+  const { data: sponsorshipsData } = useSponsorships(user?.id);
+  const sponsorWithCredit = useSponsorWithCredit();
+  const [creditError, setCreditError] = useState(null);
+  const [creditAmount, setCreditAmount] = useState("");
+
+  const sponsorships = sponsorshipsData?.data ?? [];
+  const cancelledSponsorships = sponsorships.filter(
+    (s) => s.status === "cancelled"
+  ).length;
+  const hasCredit = cancelledSponsorships > 0;
+
+  const handleSponsorWithCredit = async () => {
+    setCreditError(null);
+    if (
+      !confirm(
+        `Sponsor ${child.first_name} using your existing sponsorship donation? No additional payment will be taken.`
+      )
+    ) {
+      return;
+    }
+    const amount = creditAmount.trim() === "" ? null : Number(creditAmount);
+    if (amount !== null && (Number.isNaN(amount) || amount <= 0)) {
+      setCreditError("Please enter a valid sponsorship amount greater than zero.");
+      return;
+    }
+    try {
+      await sponsorWithCredit.mutateAsync({ childId: child.id, amount });
+    } catch (err) {
+      setCreditError(
+        err?.message || "Could not sponsor this child. Please try again."
+      );
+    }
+  };
 
   if (isLoading) {
     return (
@@ -145,16 +185,57 @@ export default function ChildProfile() {
 
                     {child.sponsorship_status === "available" ? (
                       user ? (
-                        <Button
-                          variant="lightblue"
-                          size="lg"
-                          as={Link}
-                          to={sponsorLink}
-                          className="w-full"
-                        >
-                          Sponsor This Child
-                          <Heart className="ml-2 h-5 w-5" />
-                        </Button>
+                        hasCredit ? (
+                          <div className="space-y-3">
+                            <div>
+                              <label
+                                htmlFor="creditAmount"
+                                className="block font-body text-xs font-medium text-on-surface-variant mb-1.5"
+                              >
+                                Sponsorship amount (optional)
+                              </label>
+                              <input
+                                id="creditAmount"
+                                type="number"
+                                min="0"
+                                step="any"
+                                placeholder="e.g. 50"
+                                value={creditAmount}
+                                onChange={(e) => setCreditAmount(e.target.value)}
+                                className="w-full px-3 py-2 rounded-lg border border-soft-accent/60 bg-white font-body text-sm text-deep-navy placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-vibrant-blue/40 focus:border-vibrant-blue transition-all"
+                              />
+                            </div>
+                            <Button
+                              variant="lightblue"
+                              size="lg"
+                              onClick={handleSponsorWithCredit}
+                              disabled={sponsorWithCredit.isPending}
+                              className="w-full"
+                            >
+                              {sponsorWithCredit.isPending ? (
+                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                              ) : (
+                                <Heart className="mr-2 h-5 w-5" />
+                              )}
+                              Sponsor This Child
+                            </Button>
+                            <p className="font-body text-xs text-on-surface-variant text-center">
+                              No additional payment needed — this uses one of your
+                              cancelled sponsorships.
+                            </p>
+                          </div>
+                        ) : (
+                          <Button
+                            variant="lightblue"
+                            size="lg"
+                            as={Link}
+                            to={sponsorLink}
+                            className="w-full"
+                          >
+                            Sponsor This Child
+                            <Heart className="ml-2 h-5 w-5" />
+                          </Button>
+                        )
                       ) : (
                         <Button
                           variant="lightblue"
@@ -171,6 +252,32 @@ export default function ChildProfile() {
                         {child.sponsorship_status === "sponsored"
                           ? "This child is already sponsored"
                           : "Sponsorship pending"}
+                      </div>
+                    )}
+
+                    {creditError && (
+                      <p className="mt-3 font-body text-sm text-red-600 text-center">
+                        {creditError}
+                      </p>
+                    )}
+
+                    {sponsorWithCredit.isSuccess && (
+                      <div className="mt-3 rounded-lg bg-green-50 border border-green-200 p-3 flex items-start gap-2">
+                        <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+                        <div className="font-body text-sm text-green-800">
+                          <p className="font-semibold">Sponsored!</p>
+                          <p>
+                            {child.first_name} is now sponsored by you. View the
+                            details in{" "}
+                            <Link
+                              to="/account"
+                              className="font-medium text-vibrant-blue hover:underline"
+                            >
+                              your account
+                            </Link>
+                            .
+                          </p>
+                        </div>
                       </div>
                     )}
                   </div>

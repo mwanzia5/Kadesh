@@ -36,6 +36,7 @@ async function recordVerifiedTransaction(
       converted_amount: amountKES,
       frequency: meta.frequency || "one-time",
       status: "completed",
+      is_sponsorship: !!meta.is_sponsorship,
       payment_reference: txn.reference,
       // Preserve Paystack's original charge time — during a backfill sync
       // "now" would wrongly reflect when the sync ran, not when the donor
@@ -59,6 +60,7 @@ async function recordVerifiedTransaction(
     if (phone) patch.phone = phone;
     if (meta.donor_id) patch.donor_id = meta.donor_id;
     if (donorEmail) patch.donor_email = donorEmail;
+    if (meta.is_sponsorship) patch.is_sponsorship = "true";
 
     if (Object.keys(patch).length > 0) {
       const { error: patchError } = await supabase
@@ -66,7 +68,7 @@ async function recordVerifiedTransaction(
         .update(patch)
         .eq("payment_reference", txn.reference)
         .or(
-          "donor_name.is.null,donor_id.is.null,donor_email.is.null,location.is.null,phone.is.null"
+          "donor_name.is.null,donor_id.is.null,donor_email.is.null,location.is.null,phone.is.null,is_sponsorship.is.false"
         );
       if (patchError) console.error("Backfill of donor details failed:", patchError);
     }

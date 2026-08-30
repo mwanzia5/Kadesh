@@ -125,6 +125,7 @@ CREATE TABLE donations (
   currency TEXT DEFAULT 'USD',
   frequency TEXT DEFAULT 'one-time',
   status TEXT DEFAULT 'pending',
+  is_sponsorship BOOLEAN DEFAULT false,
   stripe_payment_id TEXT,
   payment_reference TEXT,
   location TEXT,
@@ -504,3 +505,143 @@ CREATE POLICY "Admin can delete"
 -- Migration: Add category and author columns to news table
 ALTER TABLE news ADD COLUMN IF NOT EXISTS category TEXT;
 ALTER TABLE news ADD COLUMN IF NOT EXISTS author TEXT;
+
+-- -------------------------------------------
+-- SPONSORSHIP LIFECYCLE
+-- -------------------------------------------
+
+ALTER TABLE donations ADD COLUMN IF NOT EXISTS is_sponsorship BOOLEAN DEFAULT false;
+
+CREATE UNIQUE INDEX IF NOT EXISTS donations_payment_reference_key
+  ON donations(payment_reference);
+
+-- Keep a child's sponsorship_status in sync with its sponsorship record.
+CREATE OR REPLACE FUNCTION sync_child_sponsorship_status()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+  IF NEW.status = 'active' THEN
+    UPDATE public.children
+      SET sponsorship_status = 'sponsored'
+      WHERE id = NEW.child_id;
+  ELSIF TG_OP = 'UPDATE' AND NEW.status = 'cancelled' AND OLD.status <> 'cancelled' THEN
+    UPDATE public.children
+      SET sponsorship_status = 'available'
+      WHERE id = NEW.child_id;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_sync_child_sponsorship_status ON sponsorships;
+CREATE TRIGGER trg_sync_child_sponsorship_status
+  AFTER INSERT OR UPDATE OF status ON sponsorships
+  FOR EACH ROW
+  EXECUTE FUNCTION sync_child_sponsorship_status();
+
+-- Sponsor a child using an existing (already-paid) sponsorship credit.
+-- A cancelled sponsorship is a freed slot; reuse the oldest cancelled slot.
+DROP FUNCTION IF EXISTS create_sponsorship_with_credit(uuid);
+CREATE OR REPLACE FUNCTION create_sponsorship_with_credit(p_child_id uuid, p_amount numeric DEFAULT NULL)
+RETURNS TABLE (sponsorship_id uuid, child_id uuid)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_donor_id uuid := auth.uid();
+  v_status text;
+  v_slot_id uuid;
+BEGIN
+  IF v_donor_id IS NULL THEN
+    RAISE EXCEPTION 'You must be signed in to sponsor a child';
+  END IF;
+
+  SELECT sponsorship_status INTO v_status
+    FROM public.children
+    WHERE id = p_child_id;
+
+  IF v_status IS NULL THEN
+    RAISE EXCEPTION 'Child not found';
+  END IF;
+  IF v_status <> 'available' THEN
+    RAISE EXCEPTION 'This child is no longer available for sponsorship';
+  END IF;
+
+  SELECT id INTO v_slot_id
+    FROM public.sponsorships
+    WHERE donor_id = v_donor_id
+      AND status = 'cancelled'
+    ORDER BY updated_at ASC
+    LIMIT 1;
+
+  IF v_slot_id IS NULL THEN
+    RAISE EXCEPTION 'No sponsorship credit available. Please make a sponsorship donation first.';
+  END IF;
+
+  RETURN QUERY
+    UPDATE public.sponsorships AS s
+      SET child_id = p_child_id,
+          status = 'active',
+          start_date = now(),
+          monthly_amount = COALESCE(p_amount, s.monthly_amount)
+      WHERE s.id = v_slot_id
+      RETURNING s.id, s.child_id;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION create_sponsorship_with_credit(uuid, numeric) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION create_sponsorship_with_credit(uuid, numeric) TO authenticated;
+
+-- Reactivate a cancelled sponsorship (flips the slot back to "active").
+CREATE OR REPLACE FUNCTION reactivate_sponsorship(p_sponsorship_id uuid)
+RETURNS TABLE (sponsorship_id uuid, child_id uuid)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_donor_id uuid := auth.uid();
+  v_owner uuid;
+  v_status text;
+  v_child_status text;
+BEGIN
+  IF v_donor_id IS NULL THEN
+    RAISE EXCEPTION 'You must be signed in to reactivate a sponsorship';
+  END IF;
+
+  SELECT donor_id, status INTO v_owner, v_status
+    FROM public.sponsorships
+    WHERE id = p_sponsorship_id;
+
+  IF v_owner IS NULL THEN
+    RAISE EXCEPTION 'Sponsorship not found';
+  END IF;
+  IF v_owner <> v_donor_id THEN
+    RAISE EXCEPTION 'You do not own this sponsorship';
+  END IF;
+  IF v_status <> 'cancelled' THEN
+    RAISE EXCEPTION 'This sponsorship is not cancelled';
+  END IF;
+
+  SELECT sponsorship_status INTO v_child_status
+    FROM public.children
+    WHERE id = (SELECT s2.child_id FROM public.sponsorships s2 WHERE s2.id = p_sponsorship_id);
+
+  IF v_child_status <> 'available' THEN
+    RAISE EXCEPTION 'This child is no longer available for sponsorship';
+  END IF;
+
+  RETURN QUERY
+    UPDATE public.sponsorships AS s
+      SET status = 'active'
+      WHERE s.id = p_sponsorship_id
+      RETURNING s.id, s.child_id;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION reactivate_sponsorship(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION reactivate_sponsorship(uuid) TO authenticated;

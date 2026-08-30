@@ -11,8 +11,8 @@ import {
   CreditCard,
   LogOut,
   Loader2,
-  Pause,
   XCircle,
+  RotateCcw,
   ChevronRight,
   Save,
   Check,
@@ -29,11 +29,12 @@ import { useDonorAuth } from "@/context/DonorAuthContext";
 import {
   useSponsorships,
   useCancelSponsorship,
+  useReactivateSponsorship,
   useDonorDonations,
 } from "@/hooks/useSponsorships";
 import { cn, getGravatarUrl } from "@/lib/utils";
 
-const STATUS_TABS = ["All", "Active", "Paused", "Cancelled"];
+const STATUS_TABS = ["All", "Active", "Cancelled"];
 
 function SponsorshipStatusBadge({ status }) {
   const styles = {
@@ -101,6 +102,7 @@ export default function DonorDashboard() {
     }
   }, [profile]);
   const cancelSponsorship = useCancelSponsorship();
+  const reactivateSponsorship = useReactivateSponsorship();
 
   const { data: sponsorshipsData, isLoading: sponsorshipsLoading } =
     useSponsorships(user?.id);
@@ -391,14 +393,38 @@ export default function DonorDashboard() {
                             {sponsorship.status === "active" && (
                               <button
                                 onClick={() => {
-                                  if (confirm("Pause this sponsorship?")) {
+                                  if (confirm("Cancel this sponsorship? The child will become available for others to sponsor.")) {
                                     cancelSponsorship.mutate(sponsorship.id);
                                   }
                                 }}
                                 className="inline-flex items-center gap-1 font-body text-sm font-medium text-on-surface-variant hover:text-hope-orange transition-colors"
                               >
-                                <Pause className="h-3.5 w-3.5" />
-                                Pause
+                                <XCircle className="h-3.5 w-3.5" />
+                                Cancel
+                              </button>
+                            )}
+                            {sponsorship.status === "cancelled" && (
+                              <button
+                                onClick={async () => {
+                                  if (!confirm("Reactivate this sponsorship?")) return;
+                                  try {
+                                    await reactivateSponsorship.mutateAsync(sponsorship.id);
+                                  } catch (err) {
+                                    alert(
+                                      err?.message ||
+                                        "Could not reactivate this sponsorship."
+                                    );
+                                  }
+                                }}
+                                disabled={reactivateSponsorship.isPending}
+                                className="inline-flex items-center gap-1 font-body text-sm font-medium text-vibrant-blue hover:underline disabled:opacity-50"
+                              >
+                                {reactivateSponsorship.isPending ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <RotateCcw className="h-3.5 w-3.5" />
+                                )}
+                                Reactivate
                               </button>
                             )}
                           </div>

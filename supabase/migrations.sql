@@ -268,6 +268,175 @@ CREATE POLICY "Admin can delete"
 -- ON CONFLICT (id) DO NOTHING;
 
 -- =============================================================
+-- 7. Sponsorship lifecycle changes
+-- =============================================================
+
+-- 7a. Track which donations were sponsorship payments. This powers a donor's
+--     "sponsorship credit": a cancelled sponsorship can be reassigned to
+--     another child without an additional payment (one active sponsorship per
+--     completed sponsorship donation).
+ALTER TABLE donations ADD COLUMN IF NOT EXISTS is_sponsorship BOOLEAN DEFAULT false;
+
+-- Idempotent unique index on payment_reference. The verify-paystack-transaction
+-- and paystack-webhook functions rely on this for conflict-safe inserts.
+CREATE UNIQUE INDEX IF NOT EXISTS donations_payment_reference_key
+  ON donations(payment_reference);
+
+-- 7b. Keep a child's sponsorship_status in sync with its sponsorship record.
+--     SECURITY DEFINER so it can write to children even though RLS only lets
+--     admins update that table. Runs automatically on any sponsorship insert
+--     or status change, so cancelling a sponsorship releases the child back
+--     onto the "Sponsor a Child" page with no extra client-side logic.
+CREATE OR REPLACE FUNCTION sync_child_sponsorship_status()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+  IF NEW.status = 'active' THEN
+    UPDATE public.children
+      SET sponsorship_status = 'sponsored'
+      WHERE id = NEW.child_id;
+  ELSIF TG_OP = 'UPDATE' AND NEW.status = 'cancelled' AND OLD.status <> 'cancelled' THEN
+    UPDATE public.children
+      SET sponsorship_status = 'available'
+      WHERE id = NEW.child_id;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_sync_child_sponsorship_status ON sponsorships;
+CREATE TRIGGER trg_sync_child_sponsorship_status
+  AFTER INSERT OR UPDATE OF status ON sponsorships
+  FOR EACH ROW
+  EXECUTE FUNCTION sync_child_sponsorship_status();
+
+-- 7c. RPC: sponsor a child using an existing (already-paid) sponsorship credit.
+--     A cancelled sponsorship represents a freed credit slot, so the number of
+--     children a donor can re-sponsor without a new payment equals the number
+--     of sponsorships they have cancelled. Reuses the oldest cancelled slot
+--     (reassigning it to the new child, optionally with a new amount) instead
+--     of creating a fresh row, which keeps the donor's slot count constant.
+DROP FUNCTION IF EXISTS create_sponsorship_with_credit(uuid);
+CREATE OR REPLACE FUNCTION create_sponsorship_with_credit(p_child_id uuid, p_amount numeric DEFAULT NULL)
+RETURNS TABLE (sponsorship_id uuid, child_id uuid)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_donor_id uuid := auth.uid();
+  v_status text;
+  v_slot_id uuid;
+BEGIN
+  IF v_donor_id IS NULL THEN
+    RAISE EXCEPTION 'You must be signed in to sponsor a child';
+  END IF;
+
+  SELECT sponsorship_status INTO v_status
+    FROM public.children
+    WHERE id = p_child_id;
+
+  IF v_status IS NULL THEN
+    RAISE EXCEPTION 'Child not found';
+  END IF;
+  IF v_status <> 'available' THEN
+    RAISE EXCEPTION 'This child is no longer available for sponsorship';
+  END IF;
+
+  SELECT id INTO v_slot_id
+    FROM public.sponsorships
+    WHERE donor_id = v_donor_id
+      AND status = 'cancelled'
+    ORDER BY updated_at ASC
+    LIMIT 1;
+
+  IF v_slot_id IS NULL THEN
+    RAISE EXCEPTION 'No sponsorship credit available. Please make a sponsorship donation first.';
+  END IF;
+
+  RETURN QUERY
+    UPDATE public.sponsorships AS s
+      SET child_id = p_child_id,
+          status = 'active',
+          start_date = now(),
+          monthly_amount = COALESCE(p_amount, s.monthly_amount)
+      WHERE s.id = v_slot_id
+      RETURNING s.id, s.child_id;
+END;
+$$;
+
+-- Only authenticated users may invoke the credit RPC.
+REVOKE ALL ON FUNCTION create_sponsorship_with_credit(uuid, numeric) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION create_sponsorship_with_credit(uuid, numeric) TO authenticated;
+
+-- 7d. RPC: reactivate a cancelled sponsorship (the "Reactivate" button on the
+--     account's cancelled list). Flips that slot back to "active" so the sync
+--     trigger re-marks the child "sponsored". No credit check is needed: the
+--     sponsorship itself already represents the paid-for slot.
+CREATE OR REPLACE FUNCTION reactivate_sponsorship(p_sponsorship_id uuid)
+RETURNS TABLE (sponsorship_id uuid, child_id uuid)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_donor_id uuid := auth.uid();
+  v_owner uuid;
+  v_status text;
+  v_child_status text;
+BEGIN
+  IF v_donor_id IS NULL THEN
+    RAISE EXCEPTION 'You must be signed in to reactivate a sponsorship';
+  END IF;
+
+  SELECT donor_id, status INTO v_owner, v_status
+    FROM public.sponsorships
+    WHERE id = p_sponsorship_id;
+
+  IF v_owner IS NULL THEN
+    RAISE EXCEPTION 'Sponsorship not found';
+  END IF;
+  IF v_owner <> v_donor_id THEN
+    RAISE EXCEPTION 'You do not own this sponsorship';
+  END IF;
+  IF v_status <> 'cancelled' THEN
+    RAISE EXCEPTION 'This sponsorship is not cancelled';
+  END IF;
+
+  SELECT sponsorship_status INTO v_child_status
+    FROM public.children
+    WHERE id = (SELECT s2.child_id FROM public.sponsorships s2 WHERE s2.id = p_sponsorship_id);
+
+  IF v_child_status <> 'available' THEN
+    RAISE EXCEPTION 'This child is no longer available for sponsorship';
+  END IF;
+
+  RETURN QUERY
+    UPDATE public.sponsorships AS s
+      SET status = 'active'
+      WHERE s.id = p_sponsorship_id
+      RETURNING s.id, s.child_id;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION reactivate_sponsorship(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION reactivate_sponsorship(uuid) TO authenticated;
+
+-- 7e. One-time backfill: sponsorships cancelled BEFORE the sync trigger was
+--     added left their children stuck on "sponsored". Reset any child to
+--     "available" that no longer has an active sponsorship. Safe to re-run
+--     (only touches "sponsored" children with no active sponsorship row).
+UPDATE children c
+SET sponsorship_status = 'available'
+WHERE c.sponsorship_status = 'sponsored'
+  AND NOT EXISTS (
+    SELECT 1 FROM sponsorships s WHERE s.child_id = c.id AND s.status = 'active'
+  );
+
+-- =============================================================
 -- VERIFY EVERYTHING WORKED
 -- =============================================================
 -- Run these queries to confirm:

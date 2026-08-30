@@ -72,6 +72,7 @@ export async function recordVerifiedTransaction(
       converted_amount: amountKES,
       frequency: meta.frequency || "one-time",
       status: "completed",
+      is_sponsorship: !!meta.is_sponsorship,
       payment_reference: txn.reference,
       location,
       phone,
@@ -118,6 +119,7 @@ export async function recordVerifiedTransaction(
       .select("id")
       .eq("donor_id", meta.donor_id)
       .eq("child_id", meta.child_id)
+      .eq("status", "active")
       .maybeSingle();
 
     if (!existingSponsorship) {

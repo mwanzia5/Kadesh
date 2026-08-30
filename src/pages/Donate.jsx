@@ -197,6 +197,46 @@ export default function Donate() {
     const reference = `KHM-${Date.now()}`;
     let sawSuccess = false;
 
+    // Runs once the charge is confirmed. Paystack has already taken the money
+    // at this point, so flip the button to success immediately instead of
+    // holding it in "Processing..." while the server verifies.
+    const handleSuccess = async (ref) => {
+      if (sawSuccess) return;
+      sawSuccess = true;
+      setProcessing(false);
+      setResult({
+        type: "success",
+        message: `Thank you for your donation! Reference: ${ref}. This page will refresh automatically…`,
+      });
+      scheduleReload();
+
+      // Then confirm + record server-side in the background.
+      try {
+        await confirmPayment(ref);
+
+        // The donation (and, if applicable, the sponsorship + child status
+        // flip) were just written server-side by the Edge Function, not by
+        // a React Query mutation running in this component — so nothing
+        // has invalidated the relevant caches yet. Do that manually here,
+        // otherwise the child stays "Available" and dashboard totals stay
+        // stale until the 5-minute staleTime lapses or a hard refresh.
+        queryClient.invalidateQueries({ queryKey: ["donations"] });
+        queryClient.invalidateQueries({ queryKey: ["donation-stats"] });
+        queryClient.invalidateQueries({ queryKey: ["donor-donations"] });
+        queryClient.invalidateQueries({ queryKey: ["sponsorships"] });
+        queryClient.invalidateQueries({ queryKey: ["children"] });
+      } catch (err) {
+        console.error("Payment verification failed:", err);
+        // The charge went through on Paystack's side, so this stays a
+        // success — just note that our records may lag behind (the webhook
+        // still records it), keeping the reference visible for support.
+        setResult({
+          type: "success",
+          message: `Thank you for your donation! Reference: ${ref}. Your payment was received — it may take a moment to appear in your history.`,
+        });
+      }
+    };
+
     const handler = PaystackPop.setup({
       key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
       // Lowercased so the email Paystack echoes back always matches the
@@ -224,45 +264,11 @@ export default function Donate() {
         monthly_amount:
           isSponsorship && frequency === "monthly" ? baseAmount : null,
       },
-      onSuccess: async (transaction) => {
-        sawSuccess = true;
-        // Paystack has already confirmed the charge at this point — flip the
-        // button to success immediately instead of holding it in
-        // "Processing..." while the server verifies (mobile money prompts can
-        // make that wait feel like a hang).
-        setProcessing(false);
-        setResult({
-          type: "success",
-          message: `Thank you for your donation! Reference: ${transaction.reference}. This page will refresh automatically…`,
-        });
-        scheduleReload();
-
-        // Then confirm + record server-side in the background.
-        try {
-          await confirmPayment(transaction.reference);
-
-          // The donation (and, if applicable, the sponsorship + child status
-          // flip) were just written server-side by the Edge Function, not by
-          // a React Query mutation running in this component — so nothing
-          // has invalidated the relevant caches yet. Do that manually here,
-          // otherwise the child stays "Available" and dashboard totals stay
-          // stale until the 5-minute staleTime lapses or a hard refresh.
-          queryClient.invalidateQueries({ queryKey: ["donations"] });
-          queryClient.invalidateQueries({ queryKey: ["donation-stats"] });
-          queryClient.invalidateQueries({ queryKey: ["donor-donations"] });
-          queryClient.invalidateQueries({ queryKey: ["sponsorships"] });
-          queryClient.invalidateQueries({ queryKey: ["children"] });
-        } catch (err) {
-          console.error("Payment verification failed:", err);
-          // The charge went through on Paystack's side, so this stays a
-          // success — just note that our records may lag behind (the webhook
-          // still records it), keeping the reference visible for support.
-          setResult({
-            type: "success",
-            message: `Thank you for your donation! Reference: ${transaction.reference}. Your payment was received — it may take a moment to appear in your history.`,
-          });
-        }
-      },
+      // Paystack v1/inline.js reports success via `callback`; `onSuccess` is
+      // kept as an alias for build versions that use it instead. Both funnel
+      // into handleSuccess so "Processing..." clears the instant it succeeds.
+      callback: (transaction) => handleSuccess(transaction.reference),
+      onSuccess: (transaction) => handleSuccess(transaction.reference),
       onClose: () => {
         setProcessing(false);
 
@@ -276,6 +282,8 @@ export default function Donate() {
         (async () => {
           try {
             await confirmPayment(reference);
+            if (sawSuccess) return;
+            sawSuccess = true;
             setResult({
               type: "success",
               message: `Thank you for your donation! Reference: ${reference}. This page will refresh automatically…`,
@@ -294,9 +302,26 @@ export default function Donate() {
           }
         })();
       },
+      onCancel: () => {
+        // Safety net: some inline.js builds only emit onCancel (not onClose)
+        // when the donor abandons the popup, so always clear the busy state.
+        setProcessing(false);
+      },
     });
 
-    handler.openIframe();
+    try {
+      handler.openIframe();
+    } catch (err) {
+      // Popup blocked or failed to open — never leave the button stuck on
+      // "Processing...".
+      console.error("Failed to open payment window:", err);
+      setProcessing(false);
+      setResult({
+        type: "error",
+        message:
+          "Couldn't open the payment window. Please allow pop-ups for this site and try again.",
+      });
+    }
   };
 
   // Full current URL (path + query) so a sponsorship deep link's child_id/
