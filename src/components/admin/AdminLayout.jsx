@@ -19,6 +19,7 @@ import {
   X,
   ChevronDown,
   UserPlus,
+  Handshake,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/supabase/client";
@@ -33,6 +34,7 @@ export function useAdminAuth() {
 const NAV_ITEMS = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/admin" },
   { label: "Donations", icon: Heart, path: "/admin/donations" },
+  { label: "Sponsorships", icon: Handshake, path: "/admin/sponsorships" },
   { label: "CMS", icon: FileText, path: "/admin/cms" },
   { label: "Media Library", icon: Image, path: "/admin/media" },
   { label: "Projects", icon: FolderOpen, path: "/admin/projects" },

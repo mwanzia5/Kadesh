@@ -4,7 +4,6 @@ import {
   FolderOpen,
   Image,
   Mail,
-  Users,
   Upload,
   Plus,
   MessageSquare,
@@ -18,7 +17,6 @@ import { cn } from "@/lib/utils";
 import { useProjects } from "@/hooks/useProjects";
 import { useGalleryImages } from "@/hooks/useGallery";
 import { useMessages } from "@/hooks/useContact";
-import { usePartners } from "@/hooks/usePartners";
 import { useNews } from "@/hooks/useNews";
 import { useTestimonials } from "@/hooks/useTestimonials";
 import { useChildren } from "@/hooks/useChildren";
@@ -54,7 +52,6 @@ export default function DashboardHome() {
   const { data: projectsRes } = useProjects();
   const { data: galleryRes } = useGalleryImages();
   const { data: messagesRes } = useMessages();
-  const { data: partnersRes } = usePartners();
   const { data: newsRes } = useNews();
   const { data: testimonialsRes } = useTestimonials();
   const { data: childrenRes } = useChildren();
@@ -63,7 +60,6 @@ export default function DashboardHome() {
   const projects = projectsRes?.data ?? [];
   const gallery = galleryRes?.data ?? [];
   const messages = messagesRes ?? [];
-  const partners = partnersRes?.data ?? [];
   const news = newsRes?.data ?? [];
   const testimonials = testimonialsRes?.data ?? [];
   const children = childrenRes?.data ?? [];
@@ -92,12 +88,6 @@ export default function DashboardHome() {
       icon: Mail,
       color: "bg-emerald-500/10 text-emerald-600",
       badge: unreadMessages > 0 ? `${unreadMessages} unread` : null,
-    },
-    {
-      label: "Partners",
-      value: partners.length,
-      icon: Users,
-      color: "bg-purple-500/10 text-purple-600",
     },
     {
       label: "Children Sponsored",
@@ -160,7 +150,7 @@ export default function DashboardHome() {
       </motion.h2>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
         {stats.map((stat) => (
           <motion.div
             key={stat.label}

@@ -113,29 +113,50 @@ export async function recordVerifiedTransaction(
   // Sponsorship intent comes from Paystack's own metadata, not the client
   // request body — this can't be spoofed to attach an unpaid child, since
   // it's the same metadata that was verified as part of the transaction.
-  if (!alreadyRecorded && meta.is_sponsorship && meta.child_id && meta.donor_id) {
-    const { data: existingSponsorship } = await supabase
-      .from("sponsorships")
-      .select("id")
-      .eq("donor_id", meta.donor_id)
-      .eq("child_id", meta.child_id)
-      .eq("status", "active")
-      .maybeSingle();
+  // A single payment may sponsor several children (cart checkout): each child
+  // in `metadata.children` gets its own sponsorship row linked to the same
+  // payment. Single-child flows (`metadata.child_id`) are still supported.
+  const sponsorshipChildren: {
+    child_id: string;
+    amount: number | null;
+    monthly_amount: number | null;
+  }[] = Array.isArray(meta.children) && meta.children.length > 0
+    ? meta.children
+    : meta.is_sponsorship && meta.child_id && meta.donor_id
+      ? [{
+          child_id: meta.child_id,
+          amount: meta.usd_equivalent ?? amountKES,
+          monthly_amount: meta.monthly_amount ?? null,
+        }]
+      : [];
 
-    if (!existingSponsorship) {
-      const { error: sponsorshipError } = await supabase.from("sponsorships").insert({
-        donor_id: meta.donor_id,
-        child_id: meta.child_id,
-        status: "active",
-        monthly_amount: meta.monthly_amount ?? null,
-      });
-      if (sponsorshipError) throw sponsorshipError;
+  if (!alreadyRecorded && meta.donor_id && sponsorshipChildren.length > 0) {
+    for (const item of sponsorshipChildren) {
+      const { data: existingSponsorship } = await supabase
+        .from("sponsorships")
+        .select("id")
+        .eq("donor_id", meta.donor_id)
+        .eq("child_id", item.child_id)
+        .eq("status", "active")
+        .maybeSingle();
 
-      const { error: childError } = await supabase
-        .from("children")
-        .update({ sponsorship_status: "sponsored" })
-        .eq("id", meta.child_id);
-      if (childError) throw childError;
+      if (!existingSponsorship) {
+        const { error: sponsorshipError } = await supabase.from("sponsorships").insert({
+          donor_id: meta.donor_id,
+          child_id: item.child_id,
+          status: "active",
+          monthly_amount: Number(item.monthly_amount) || null,
+          amount: Number(item.amount) || null,
+          donation_id: donation?.id ?? null,
+        });
+        if (sponsorshipError) throw sponsorshipError;
+
+        const { error: childError } = await supabase
+          .from("children")
+          .update({ sponsorship_status: "sponsored" })
+          .eq("id", item.child_id);
+        if (childError) throw childError;
+      }
     }
   }
 

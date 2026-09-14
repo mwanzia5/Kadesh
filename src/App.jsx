@@ -1,9 +1,12 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Routes, Route, useLocation, Link } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import Layout from "@/components/layout/Layout";
 import PageLoader from "@/components/ui/PageLoader";
 import { DonorAuthProvider } from "@/context/DonorAuthContext";
+import { SponsorshipCartProvider } from "@/context/SponsorshipCartContext";
+import { trackPageview } from "@/lib/analytics";
+import { Sentry } from "@/lib/monitoring";
 
 const Home = lazy(() => import("@/pages/Home"));
 const About = lazy(() => import("@/pages/About"));
@@ -29,6 +32,10 @@ const AdminLoginPage = lazy(() => import("@/pages/admin/AdminLoginPage"));
 export default function App() {
   const location = useLocation();
   const isAdmin = location.pathname.startsWith("/admin");
+
+  useEffect(() => {
+    trackPageview();
+  }, [location.pathname, location.search]);
 
   const routes = (
     <Routes location={location}>
@@ -58,20 +65,47 @@ export default function App() {
 
   if (isAdmin) {
     return (
-      <AnimatePresence mode="wait">
-        <Suspense fallback={<PageLoader />}>{routes}</Suspense>
-      </AnimatePresence>
+      <Sentry.ErrorBoundary fallback={<PageError />}>
+        <AnimatePresence mode="wait">
+          <Suspense fallback={<PageLoader />}>{routes}</Suspense>
+        </AnimatePresence>
+      </Sentry.ErrorBoundary>
     );
   }
 
   return (
     <DonorAuthProvider>
-      <Layout>
-        <AnimatePresence mode="wait">
-          <Suspense fallback={<PageLoader />}>{routes}</Suspense>
-        </AnimatePresence>
-      </Layout>
+      <SponsorshipCartProvider>
+        <Layout>
+          <Sentry.ErrorBoundary fallback={<PageError />}>
+            <AnimatePresence mode="wait">
+              <Suspense fallback={<PageLoader />}>{routes}</Suspense>
+            </AnimatePresence>
+          </Sentry.ErrorBoundary>
+        </Layout>
+      </SponsorshipCartProvider>
     </DonorAuthProvider>
+  );
+}
+
+function PageError() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-deep-navy">
+      <div className="text-center text-white px-6">
+        <h1 className="font-display text-4xl font-bold text-vibrant-blue mb-4">
+          Something went wrong
+        </h1>
+        <p className="font-body text-white/60 mb-8 max-w-md mx-auto">
+          An unexpected error occurred. Please refresh the page to try again.
+        </p>
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-vibrant-blue text-white rounded-lg font-body text-sm font-semibold hover:bg-vibrant-blue/90 transition-colors"
+        >
+          Back to Home
+        </Link>
+      </div>
+    </div>
   );
 }
 

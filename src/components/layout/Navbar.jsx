@@ -6,6 +6,7 @@ import { cn, getGravatarUrl } from "@/lib/utils";
 import Button from "@/components/ui/Button";
 import { NAV_LINKS } from "@/constants";
 import { useDonorAuth } from "@/context/DonorAuthContext";
+import SponsorshipCartMenu from "@/components/cart/SponsorshipCartMenu";
 import MobileMenu from "./MobileMenu";
 const dropdownVariants = {
   hidden: { opacity: 0, y: 8, scale: 0.98 },
@@ -235,6 +236,8 @@ export default function Navbar() {
               )
             )}
           </div>
+
+          <SponsorshipCartMenu />
 
           {/* Mobile hamburger */}
           <button

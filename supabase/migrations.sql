@@ -319,8 +319,16 @@ CREATE TRIGGER trg_sync_child_sponsorship_status
 --     of sponsorships they have cancelled. Reuses the oldest cancelled slot
 --     (reassigning it to the new child, optionally with a new amount) instead
 --     of creating a fresh row, which keeps the donor's slot count constant.
+--     p_plan: 'one-time' clears monthly_amount (no recurring billing), 'monthly'
+--     sets monthly_amount from amount or the slot's existing value, NULL
+--     preserves the slot's current plan.
 DROP FUNCTION IF EXISTS create_sponsorship_with_credit(uuid);
-CREATE OR REPLACE FUNCTION create_sponsorship_with_credit(p_child_id uuid, p_amount numeric DEFAULT NULL)
+DROP FUNCTION IF EXISTS create_sponsorship_with_credit(uuid, numeric);
+CREATE OR REPLACE FUNCTION create_sponsorship_with_credit(
+  p_child_id uuid,
+  p_amount numeric DEFAULT NULL,
+  p_plan text DEFAULT NULL
+)
 RETURNS TABLE (sponsorship_id uuid, child_id uuid)
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -333,6 +341,10 @@ DECLARE
 BEGIN
   IF v_donor_id IS NULL THEN
     RAISE EXCEPTION 'You must be signed in to sponsor a child';
+  END IF;
+
+  IF p_plan IS NOT NULL AND p_plan NOT IN ('one-time', 'monthly') THEN
+    RAISE EXCEPTION 'Invalid sponsorship plan. Choose one-time or monthly.';
   END IF;
 
   SELECT sponsorship_status INTO v_status
@@ -362,21 +374,34 @@ BEGIN
       SET child_id = p_child_id,
           status = 'active',
           start_date = now(),
-          monthly_amount = COALESCE(p_amount, s.monthly_amount)
+          monthly_amount = CASE
+            WHEN p_plan = 'one-time' THEN NULL
+            WHEN p_plan = 'monthly' THEN COALESCE(p_amount, s.monthly_amount, s.amount)
+            ELSE COALESCE(p_amount, s.monthly_amount)
+          END,
+          amount = CASE
+            WHEN p_plan = 'one-time' THEN COALESCE(p_amount, s.amount, s.monthly_amount)
+            WHEN p_plan = 'monthly' THEN NULL
+            ELSE COALESCE(p_amount, s.amount)
+          END
       WHERE s.id = v_slot_id
       RETURNING s.id, s.child_id;
 END;
 $$;
 
 -- Only authenticated users may invoke the credit RPC.
-REVOKE ALL ON FUNCTION create_sponsorship_with_credit(uuid, numeric) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION create_sponsorship_with_credit(uuid, numeric) TO authenticated;
+REVOKE ALL ON FUNCTION create_sponsorship_with_credit(uuid, numeric, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION create_sponsorship_with_credit(uuid, numeric, text) TO authenticated;
 
 -- 7d. RPC: reactivate a cancelled sponsorship (the "Reactivate" button on the
 --     account's cancelled list). Flips that slot back to "active" so the sync
 --     trigger re-marks the child "sponsored". No credit check is needed: the
---     sponsorship itself already represents the paid-for slot.
-CREATE OR REPLACE FUNCTION reactivate_sponsorship(p_sponsorship_id uuid)
+--     sponsorship itself already represents the paid-for slot. p_plan
+--     optionally switches the plan: 'one-time' clears monthly_amount (no
+--     recurring billing), 'monthly' sets monthly_amount (recurring), NULL
+--     keeps the slot's current plan.
+DROP FUNCTION IF EXISTS reactivate_sponsorship(uuid);
+CREATE OR REPLACE FUNCTION reactivate_sponsorship(p_sponsorship_id uuid, p_plan text DEFAULT NULL)
 RETURNS TABLE (sponsorship_id uuid, child_id uuid)
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -390,6 +415,10 @@ DECLARE
 BEGIN
   IF v_donor_id IS NULL THEN
     RAISE EXCEPTION 'You must be signed in to reactivate a sponsorship';
+  END IF;
+
+  IF p_plan IS NOT NULL AND p_plan NOT IN ('one-time', 'monthly') THEN
+    RAISE EXCEPTION 'Invalid sponsorship plan. Choose one-time or monthly.';
   END IF;
 
   SELECT donor_id, status INTO v_owner, v_status
@@ -416,14 +445,24 @@ BEGIN
 
   RETURN QUERY
     UPDATE public.sponsorships AS s
-      SET status = 'active'
+      SET status = 'active',
+          monthly_amount = CASE
+            WHEN p_plan = 'one-time' THEN NULL
+            WHEN p_plan = 'monthly' THEN COALESCE(s.monthly_amount, s.amount)
+            ELSE s.monthly_amount
+          END,
+          amount = CASE
+            WHEN p_plan = 'one-time' THEN COALESCE(s.amount, s.monthly_amount)
+            WHEN p_plan = 'monthly' THEN NULL
+            ELSE s.amount
+          END
       WHERE s.id = p_sponsorship_id
       RETURNING s.id, s.child_id;
 END;
 $$;
 
-REVOKE ALL ON FUNCTION reactivate_sponsorship(uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION reactivate_sponsorship(uuid) TO authenticated;
+REVOKE ALL ON FUNCTION reactivate_sponsorship(uuid, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION reactivate_sponsorship(uuid, text) TO authenticated;
 
 -- 7e. One-time backfill: sponsorships cancelled BEFORE the sync trigger was
 --     added left their children stuck on "sponsored". Reset any child to
@@ -435,6 +474,161 @@ WHERE c.sponsorship_status = 'sponsored'
   AND NOT EXISTS (
     SELECT 1 FROM sponsorships s WHERE s.child_id = c.id AND s.status = 'active'
   );
+
+-- 7f. Drop the obsolete "paused" status from the sponsorships CHECK constraint
+--     (the pause option was removed; a sponsorship is now active or cancelled).
+ALTER TABLE sponsorships DROP CONSTRAINT IF EXISTS sponsorships_status_check;
+ALTER TABLE sponsorships ADD CONSTRAINT sponsorships_status_check
+  CHECK (status IN ('active', 'cancelled'));
+
+-- =============================================================
+-- 8. Sponsorship tracking: amount paid, cancellation + re-sponsoring
+-- =============================================================
+-- These columns let a donor see exactly how much they sponsored a child
+-- with, and let admins monitor cancellations + how donated sponsorship
+-- credit gets reused to re-sponsor other children.
+
+-- 8a. New columns on sponsorships:
+--     amount             – the amount the donor sponsored the child with
+--                          (mirrors the linked donation's `amount`).
+--     donation_id        – the completed donation that created this
+--                          sponsorship (one sponsorship per sponsorship
+--                          donation).
+--     cancelled_at       – timestamp of cancellation (NULL while active).
+--     previous_child_id  – the child this slot was reassigned AWAY from when
+--                          the donor reused their credit to re-sponsor
+--                          someone else. NULL on the first sponsorship.
+--     reassigned_at      – when that credit reuse ("re-sponsoring") happened.
+ALTER TABLE sponsorships ADD COLUMN IF NOT EXISTS amount DECIMAL(10,2);
+ALTER TABLE sponsorships ADD COLUMN IF NOT EXISTS donation_id UUID REFERENCES donations(id) ON DELETE SET NULL;
+ALTER TABLE sponsorships ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMPTZ;
+ALTER TABLE sponsorships ADD COLUMN IF NOT EXISTS previous_child_id UUID;
+ALTER TABLE sponsorships ADD COLUMN IF NOT EXISTS reassigned_at TIMESTAMPTZ;
+
+CREATE INDEX IF NOT EXISTS idx_sponsorships_created_at ON sponsorships(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_sponsorships_cancelled_at ON sponsorships(cancelled_at);
+
+-- 8b. Upgrade the sync trigger to ALSO record sponsorship lifecycle facts
+--     (cancelled_at, previous_child_id, reassigned_at) instead of only
+--     flipping the child's sponsorship_status. Runs BEFORE the write so it
+--     can stamp the new row.
+CREATE OR REPLACE FUNCTION sync_child_sponsorship_status()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+  IF NEW.status = 'active' THEN
+    NEW.cancelled_at := NULL;
+    UPDATE public.children
+      SET sponsorship_status = 'sponsored'
+      WHERE id = NEW.child_id;
+  ELSIF NEW.status = 'cancelled' THEN
+    IF NEW.cancelled_at IS NULL THEN
+      NEW.cancelled_at := now();
+    END IF;
+    IF TG_OP = 'INSERT' OR OLD.status <> 'cancelled' THEN
+      UPDATE public.children
+        SET sponsorship_status = 'available'
+        WHERE id = NEW.child_id;
+    END IF;
+  END IF;
+
+  -- A slot reused with credit to sponsor a different child = a re-sponsorship.
+  -- Keep the chain (previous child + when) so admins can audit it.
+  IF TG_OP = 'UPDATE' AND OLD.child_id IS DISTINCT FROM NEW.child_id THEN
+    NEW.previous_child_id := OLD.child_id;
+    NEW.reassigned_at := now();
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_sync_child_sponsorship_status ON sponsorships;
+CREATE TRIGGER trg_sync_child_sponsorship_status
+  BEFORE INSERT OR UPDATE ON sponsorships
+  FOR EACH ROW
+  EXECUTE FUNCTION sync_child_sponsorship_status();
+
+-- 8c. When credit is reused, keep the paid amount on the slot instead of only
+--     updating monthly_amount, so the card and admin views always show what
+--     the donor actually sponsored the child with. Also lets the donor choose
+--     to re-sponsor as one-time or monthly (p_plan).
+CREATE OR REPLACE FUNCTION create_sponsorship_with_credit(
+  p_child_id uuid,
+  p_amount numeric DEFAULT NULL,
+  p_plan text DEFAULT NULL
+)
+RETURNS TABLE (sponsorship_id uuid, child_id uuid)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_donor_id uuid := auth.uid();
+  v_status text;
+  v_slot_id uuid;
+BEGIN
+  IF v_donor_id IS NULL THEN
+    RAISE EXCEPTION 'You must be signed in to sponsor a child';
+  END IF;
+
+  IF p_plan IS NOT NULL AND p_plan NOT IN ('one-time', 'monthly') THEN
+    RAISE EXCEPTION 'Invalid sponsorship plan. Choose one-time or monthly.';
+  END IF;
+
+  SELECT sponsorship_status INTO v_status
+    FROM public.children
+    WHERE id = p_child_id;
+
+  IF v_status IS NULL THEN
+    RAISE EXCEPTION 'Child not found';
+  END IF;
+  IF v_status <> 'available' THEN
+    RAISE EXCEPTION 'This child is no longer available for sponsorship';
+  END IF;
+
+  SELECT id INTO v_slot_id
+    FROM public.sponsorships
+    WHERE donor_id = v_donor_id
+      AND status = 'cancelled'
+    ORDER BY updated_at ASC
+    LIMIT 1;
+
+  IF v_slot_id IS NULL THEN
+    RAISE EXCEPTION 'No sponsorship credit available. Please make a sponsorship donation first.';
+  END IF;
+
+  RETURN QUERY
+    UPDATE public.sponsorships AS s
+      SET child_id = p_child_id,
+          status = 'active',
+          start_date = now(),
+          monthly_amount = CASE
+            WHEN p_plan = 'one-time' THEN NULL
+            WHEN p_plan = 'monthly' THEN COALESCE(p_amount, s.monthly_amount, s.amount)
+            ELSE COALESCE(p_amount, s.monthly_amount)
+          END,
+          amount = CASE
+            WHEN p_plan = 'one-time' THEN COALESCE(p_amount, s.amount, s.monthly_amount)
+            WHEN p_plan = 'monthly' THEN NULL
+            ELSE COALESCE(p_amount, s.amount)
+          END
+      WHERE s.id = v_slot_id
+      RETURNING s.id, s.child_id;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION create_sponsorship_with_credit(uuid, numeric, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION create_sponsorship_with_credit(uuid, numeric, text) TO authenticated;
+
+-- 8d. Backfill: sponsorship rows cancelled before cancelled_at existed keep
+--     only their original update time — use it as the cancellation timestamp.
+UPDATE sponsorships
+  SET cancelled_at = updated_at
+  WHERE status = 'cancelled' AND cancelled_at IS NULL;
 
 -- =============================================================
 -- VERIFY EVERYTHING WORKED

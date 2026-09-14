@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import supabase from "@/supabase/client";
+import { identifyDonor } from "@/lib/analytics";
 
 const DonorAuthContext = createContext(null);
 
@@ -20,6 +21,7 @@ export function DonorAuthProvider({ children }) {
       .single();
     if (data) {
       setProfile(data);
+      identifyDonor(data.id, data.email, `${data.first_name} ${data.last_name}`.trim());
     } else {
       const { data: userData } = await supabase.auth.getUser();
       const meta = userData?.user?.user_metadata || {};
@@ -36,6 +38,9 @@ export function DonorAuthProvider({ children }) {
         .select("*")
         .single();
       setProfile(created || null);
+      if (created) {
+        identifyDonor(created.id, created.email, `${created.first_name} ${created.last_name}`.trim());
+      }
     }
   }, []);
 

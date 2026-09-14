@@ -22,6 +22,7 @@ import {
   useSponsorWithCredit,
 } from "@/hooks/useSponsorships";
 import { useDonorAuth } from "@/context/DonorAuthContext";
+import { useSponsorshipCart } from "@/context/SponsorshipCartContext";
 import { cn } from "@/lib/utils";
 
 function StatusBadge({ status }) {
@@ -47,6 +48,7 @@ export default function ChildProfile() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useDonorAuth();
+  const { addToCart, openCart } = useSponsorshipCart();
   const { data, isLoading, error } = useChild(id);
 
   const child = data?.data;
@@ -55,6 +57,7 @@ export default function ChildProfile() {
   const sponsorWithCredit = useSponsorWithCredit();
   const [creditError, setCreditError] = useState(null);
   const [creditAmount, setCreditAmount] = useState("");
+  const [creditPlan, setCreditPlan] = useState("one-time");
 
   const sponsorships = sponsorshipsData?.data ?? [];
   const cancelledSponsorships = sponsorships.filter(
@@ -64,9 +67,16 @@ export default function ChildProfile() {
 
   const handleSponsorWithCredit = async () => {
     setCreditError(null);
+    const isMonthly = creditPlan === "monthly";
     if (
       !confirm(
-        `Sponsor ${child.first_name} using your existing sponsorship donation? No additional payment will be taken.`
+        `Sponsor ${child.first_name} ${
+          isMonthly ? "monthly" : "one-time"
+        } using your existing sponsorship donation? ${
+          isMonthly
+            ? "Your credit covers the first month, then recurring monthly support begins."
+            : "No additional payment will be taken."
+        }`
       )
     ) {
       return;
@@ -77,7 +87,11 @@ export default function ChildProfile() {
       return;
     }
     try {
-      await sponsorWithCredit.mutateAsync({ childId: child.id, amount });
+      await sponsorWithCredit.mutateAsync({
+        childId: child.id,
+        amount,
+        plan: creditPlan,
+      });
     } catch (err) {
       setCreditError(
         err?.message || "Could not sponsor this child. Please try again."
@@ -110,8 +124,6 @@ export default function ChildProfile() {
       </PageTransition>
     );
   }
-
-  const sponsorLink = `/donate?child_id=${child.id}&child_name=${encodeURIComponent(child.first_name)}&purpose=sponsorship`;
 
   return (
     <PageTransition>
@@ -188,6 +200,44 @@ export default function ChildProfile() {
                         hasCredit ? (
                           <div className="space-y-3">
                             <div>
+                              <span className="block font-body text-xs font-medium text-on-surface-variant mb-1.5">
+                                Sponsorship plan
+                              </span>
+                              <div className="grid grid-cols-2 gap-2">
+                                {[
+                                  {
+                                    value: "one-time",
+                                    label: "One-time",
+                                    hint: "No recurring payment",
+                                  },
+                                  {
+                                    value: "monthly",
+                                    label: "Monthly",
+                                    hint: "Recurring support",
+                                  },
+                                ].map((option) => (
+                                  <button
+                                    key={option.value}
+                                    type="button"
+                                    onClick={() => setCreditPlan(option.value)}
+                                    aria-pressed={creditPlan === option.value}
+                                    className={`px-3 py-2 rounded-lg border-2 text-left transition-all duration-200 ${
+                                      creditPlan === option.value
+                                        ? "border-vibrant-blue bg-vibrant-blue/5"
+                                        : "border-soft-accent/60 bg-white hover:border-vibrant-blue/40"
+                                    }`}
+                                  >
+                                    <span className="block font-body text-sm font-semibold text-deep-navy">
+                                      {option.label}
+                                    </span>
+                                    <span className="block font-body text-xs text-on-surface-variant">
+                                      {option.hint}
+                                    </span>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <div>
                               <label
                                 htmlFor="creditAmount"
                                 className="block font-body text-xs font-medium text-on-surface-variant mb-1.5"
@@ -217,24 +267,38 @@ export default function ChildProfile() {
                               ) : (
                                 <Heart className="mr-2 h-5 w-5" />
                               )}
-                              Sponsor This Child
+                              {creditPlan === "monthly"
+                                ? "Sponsor Monthly with Credit"
+                                : "Sponsor This Child"}
                             </Button>
                             <p className="font-body text-xs text-on-surface-variant text-center">
                               No additional payment needed — this uses one of your
-                              cancelled sponsorships.
+                              cancelled sponsorships
+                              {creditPlan === "monthly"
+                                ? " for the first month, then recurring monthly support begins."
+                                : "."}
                             </p>
                           </div>
                         ) : (
-                          <Button
-                            variant="lightblue"
-                            size="lg"
-                            as={Link}
-                            to={sponsorLink}
-                            className="w-full"
-                          >
-                            Sponsor This Child
-                            <Heart className="ml-2 h-5 w-5" />
-                          </Button>
+                          <div className="space-y-3">
+                            <Button
+                              variant="lightblue"
+                              size="lg"
+                              className="w-full"
+                              onClick={() => {
+                                addToCart(child);
+                                openCart();
+                              }}
+                            >
+                              Sponsor This Child
+                              <Heart className="ml-2 h-5 w-5" />
+                            </Button>
+                            <p className="font-body text-xs text-on-surface-variant text-center">
+                              {child.first_name} will be added to your sponsorship
+                              cart. Set the amount there, then checkout in one
+                              payment.
+                            </p>
+                          </div>
                         )
                       ) : (
                         <Button

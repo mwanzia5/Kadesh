@@ -74,6 +74,55 @@ async function recordVerifiedTransaction(
     }
   }
 
+  // Sponsorship intent comes from Paystack's own metadata — same as the
+  // verify function, so a backfill sync also records the sponsorship and the
+  // amount the donor sponsored the child with. A single payment may sponsor
+  // several children (cart checkout): each child in `metadata.children` gets
+  // its own sponsorship row linked to the same payment.
+  const sponsorshipChildren: {
+    child_id: string;
+    amount: number | null;
+    monthly_amount: number | null;
+  }[] = Array.isArray(meta.children) && meta.children.length > 0
+    ? meta.children
+    : meta.is_sponsorship && meta.child_id && meta.donor_id
+      ? [{
+          child_id: meta.child_id,
+          amount: meta.usd_equivalent ?? amountKES,
+          monthly_amount: meta.monthly_amount ?? null,
+        }]
+      : [];
+
+  if (!alreadyRecorded && meta.donor_id && sponsorshipChildren.length > 0) {
+    for (const item of sponsorshipChildren) {
+      const { data: existingSponsorship } = await supabase
+        .from("sponsorships")
+        .select("id")
+        .eq("donor_id", meta.donor_id)
+        .eq("child_id", item.child_id)
+        .eq("status", "active")
+        .maybeSingle();
+
+      if (!existingSponsorship) {
+        const { error: sponsorshipError } = await supabase.from("sponsorships").insert({
+          donor_id: meta.donor_id,
+          child_id: item.child_id,
+          status: "active",
+          monthly_amount: Number(item.monthly_amount) || null,
+          amount: Number(item.amount) || null,
+          donation_id: donation?.id ?? null,
+        });
+        if (sponsorshipError) throw sponsorshipError;
+
+        const { error: childError } = await supabase
+          .from("children")
+          .update({ sponsorship_status: "sponsored" })
+          .eq("id", item.child_id);
+        if (childError) throw childError;
+      }
+    }
+  }
+
   return { donation, alreadyRecorded };
 }
 

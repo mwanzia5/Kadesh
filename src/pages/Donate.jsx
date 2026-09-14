@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useLocation, useNavigate, Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { Shield, Heart, Globe, ChevronDown, CheckCircle2, XCircle, UserPlus, Loader2 } from "lucide-react";
+import { Shield, Heart, Globe, ChevronDown, CheckCircle2, XCircle, UserPlus, Loader2, X } from "lucide-react";
 import PageTransition from "@/animations/PageTransition";
 import Section from "@/components/ui/Section";
 import SectionHeading from "@/components/ui/SectionHeading";
 import Button from "@/components/ui/Button";
 import { useDonorAuth } from "@/context/DonorAuthContext";
+import { useSponsorshipCart } from "@/context/SponsorshipCartContext";
+import SponsorshipAmountInput from "@/components/cart/SponsorshipAmountInput";
 import supabase from "@/supabase/client";
 
 const USD_AMOUNTS = [10, 25, 50, 100, 250, 500];
@@ -38,6 +40,9 @@ const impactMap = {
 const inputClasses =
   "w-full px-4 py-3 rounded-lg border border-soft-accent bg-white font-body text-on-background placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-vibrant-blue/50 focus:border-vibrant-blue transition-all";
 
+// key for the repeated-donor autofill (last donor details on this device)
+const AUTO_KEY = "khm_donor_autofill";
+
 function formatCurrency(amount, currency) {
   return `${currency.symbol}${Math.round(amount).toLocaleString()}`;
 }
@@ -52,6 +57,19 @@ export default function Donate() {
   const sponsorshipChildId = searchParams.get("child_id");
   const sponsorshipChildName = searchParams.get("child_name");
   const isSponsorship = searchParams.get("purpose") === "sponsorship";
+
+  const {
+    cartItems,
+    cartCount,
+    subtotal,
+    setItemAmount,
+    removeFromCart,
+    clearCart,
+  } = useSponsorshipCart();
+  // Cart checkout: the donor queued one or more children and is paying for all
+  // of them in this single transaction.
+  const isCartCheckout =
+    isSponsorship && searchParams.get("cart") === "1" && cartItems.length > 0;
 
   const [frequency, setFrequency] = useState("one-time");
   const [selectedUSD, setSelectedUSD] = useState(50);
@@ -83,7 +101,52 @@ export default function Donate() {
     }
   }, [profile, user]);
 
-  const baseAmount = isOther ? Number(customAmount) || 0 : selectedUSD;
+  // Autofill for repeat visitors — remember the last donor details on this
+  // device so the form isn't typed from scratch every time. Signed-in donors
+  // always get their account profile (see effect above) instead.
+  useEffect(() => {
+    if (profile) return;
+    let saved = null;
+    try {
+      saved = JSON.parse(localStorage.getItem(AUTO_KEY) || "null");
+    } catch {
+      saved = null;
+    }
+    if (saved && typeof saved === "object") {
+      setDonorName((v) => v || saved.donor_name || "");
+      setDonorEmail((v) => v || saved.donor_email || "");
+      setDonorLocation((v) => v || saved.donor_location || "");
+      setDonorPhone((v) => v || saved.donor_phone || "");
+    }
+    // Just once on mount; the profile effect is the source of truth for
+    // signed-in donors, which may resolve slightly later.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      try {
+        localStorage.setItem(
+          AUTO_KEY,
+          JSON.stringify({
+            donor_name: donorName,
+            donor_email: donorEmail,
+            donor_location: donorLocation,
+            donor_phone: donorPhone,
+          })
+        );
+      } catch {
+        // Storage unavailable — autofill just won't persist this session.
+      }
+    }, 600);
+    return () => clearTimeout(t);
+  }, [donorName, donorEmail, donorLocation, donorPhone]);
+
+  const baseAmount = isCartCheckout
+    ? subtotal
+    : isOther
+      ? Number(customAmount) || 0
+      : selectedUSD;
   const isValidAmount = baseAmount > 0;
   const convertedAmount = Math.round(baseAmount * currency.rate);
   const impactText = impactMap[baseAmount] || "Every gift makes a difference";
@@ -225,6 +288,7 @@ export default function Donate() {
         queryClient.invalidateQueries({ queryKey: ["donor-donations"] });
         queryClient.invalidateQueries({ queryKey: ["sponsorships"] });
         queryClient.invalidateQueries({ queryKey: ["children"] });
+        if (isCartCheckout) clearCart();
       } catch (err) {
         console.error("Payment verification failed:", err);
         // The charge went through on Paystack's side, so this stays a
@@ -259,10 +323,26 @@ export default function Donate() {
         // Sponsorship intent travels with the transaction itself, so it's
         // recoverable from Paystack's own records (via verify or webhook)
         // even if the donor's browser never calls back successfully.
-        is_sponsorship: isSponsorship && !!sponsorshipChildId && !!user?.id,
-        child_id: isSponsorship ? sponsorshipChildId || null : null,
+        is_sponsorship: isSponsorship && !!user?.id,
+        child_id: isSponsorship
+          ? isCartCheckout
+            ? cartItems[0]?.child_id || null
+            : sponsorshipChildId || null
+          : null,
         monthly_amount:
-          isSponsorship && frequency === "monthly" ? baseAmount : null,
+          isSponsorship && !isCartCheckout && frequency === "monthly"
+            ? baseAmount
+            : null,
+        // Cart checkout: one payment covers several children. Each child gets
+        // its own sponsorship row (with its amount) linked to this donation.
+        children: isCartCheckout
+          ? cartItems.map((i) => ({
+              child_id: i.child_id,
+              amount: Number(i.amount) || 0,
+              monthly_amount:
+                frequency === "monthly" ? Number(i.amount) || 0 : null,
+            }))
+          : null,
       },
       // Paystack v1/inline.js reports success via `callback`; `onSuccess` is
       // kept as an alias for build versions that use it instead. Both funnel
@@ -289,6 +369,7 @@ export default function Donate() {
               message: `Thank you for your donation! Reference: ${reference}. This page will refresh automatically…`,
             });
             scheduleReload();
+            if (isCartCheckout) clearCart();
           } catch {
             // Not verified (abandoned checkout, or the charge is still being
             // processed on the donor's phone). Never show a scary error here:
@@ -621,7 +702,81 @@ export default function Donate() {
               </div>
 
               {/* Amount Selection */}
-              <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-6">
+              {isCartCheckout ? (
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-on-background mb-3">
+                    Children you're sponsoring ({cartCount})
+                  </label>
+                  <div className="rounded-xl border border-soft-accent bg-white overflow-hidden divide-y divide-soft-accent/60">
+                    {cartItems.map((item) => (
+                      <div
+                        key={item.child_id}
+                        className="flex items-center gap-3 px-4 py-3"
+                      >
+                        <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-gradient-to-br from-vibrant-blue/15 to-hope-orange/15 flex items-center justify-center">
+                          {item.photo_url ? (
+                            <img
+                              src={item.photo_url}
+                              alt={item.first_name}
+                              loading="lazy"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className="font-display text-lg font-bold text-vibrant-blue/40">
+                              {(item.first_name || "?").charAt(0)}
+                            </span>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-body text-sm font-semibold text-deep-navy truncate">
+                            {item.first_name}
+                          </p>
+                          {item.location && (
+                            <p className="font-body text-xs text-on-surface-variant truncate">
+                              {item.location}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-body text-sm text-on-surface-variant">
+                            $
+                          </span>
+                          <SponsorshipAmountInput
+                            value={item.amount}
+                            onCommit={(v) => setItemAmount(item.child_id, v)}
+                            min={0}
+                            aria-label={`Sponsorship amount for ${item.first_name}`}
+                            className="w-24 px-3 py-1.5 rounded-lg border border-soft-accent bg-white font-body text-sm text-deep-navy text-right focus:outline-none focus:ring-2 focus:ring-vibrant-blue/50 focus:border-vibrant-blue transition-all"
+                          />
+                        </div>
+                        <button
+                          onClick={() => removeFromCart(item.child_id)}
+                          aria-label={`Remove ${item.first_name}`}
+                          className="text-on-surface-variant hover:text-hope-orange transition-colors"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+
+                    <div className="flex items-center justify-between px-4 py-3 bg-cream/60">
+                      <span className="font-body text-sm font-medium text-on-background">
+                        Total{frequency === "monthly" ? "/month" : ""}
+                      </span>
+                      <span className="font-body text-base font-bold text-deep-navy">
+                        ${subtotal.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="mt-2 font-body text-xs text-on-surface-variant">
+                    {frequency === "monthly"
+                      ? "One monthly payment covers every child above — each gets their own sponsorship, billed at this total."
+                      : "One payment covers every child above — each gets their own sponsorship, funded by this single gift."}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-6">
                 {USD_AMOUNTS.map((amount) => (
                   <button
                     key={amount}
@@ -684,6 +839,8 @@ export default function Donate() {
                   </div>
                 </div>
               )}
+                </>
+              )}
 
               {/* Impact Description */}
               <div className="bg-cream rounded-xl p-6 mb-8">
@@ -691,7 +848,20 @@ export default function Donate() {
                   <Heart className="w-5 h-5 text-vibrant-blue mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="font-body text-on-background">
-                      {baseAmount > 0 ? (
+                      {isCartCheckout ? (
+                        <>
+                          <span className="font-semibold">
+                            {formatCurrency(convertedAmount, currency)}
+                          </span>{" "}
+                          {frequency === "monthly"
+                            ? `covers sponsorship for ${cartCount} ${
+                                cartCount === 1 ? "child" : "children"
+                              } every month.`
+                            : `covers sponsorship for ${cartCount} ${
+                                cartCount === 1 ? "child" : "children"
+                              }.`}
+                        </>
+                      ) : baseAmount > 0 ? (
                         <>
                           <span className="font-semibold">{formatCurrency(convertedAmount, currency)}</span> {impactText}
                         </>
@@ -746,7 +916,9 @@ export default function Donate() {
                     Payment Successful
                   </span>
                 ) : isSponsorship ? (
-                  `Sponsor ${formatCurrency(convertedAmount, currency)}`
+                  isCartCheckout
+                    ? `Sponsor ${cartCount} ${cartCount === 1 ? "Child" : "Children"} · ${formatCurrency(convertedAmount, currency)}`
+                    : `Sponsor ${formatCurrency(convertedAmount, currency)}`
                 ) : (
                   `Donate ${formatCurrency(convertedAmount, currency)}`
                 )}

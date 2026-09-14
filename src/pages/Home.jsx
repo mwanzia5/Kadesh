@@ -16,6 +16,7 @@ import {
 import PageTransition from "@/animations/PageTransition";
 import SEO from "@/components/ui/SEO";
 import { getCMSContent, useCMSReady } from "@/hooks/useCMS";
+import { useTestimonials } from "@/hooks/useTestimonials";
 import {
   staggerContainer,
   slideUp,
@@ -449,49 +450,73 @@ function GallerySection() {
   );
 }
 function TestimonialsSection() {
+  const { data: testimonialsData, isLoading } = useTestimonials();
+
+  const dbTestimonials = testimonialsData?.data ?? [];
+  const testimonials = dbTestimonials.length ? dbTestimonials : TESTIMONIALS;
+
+  const renderTestimonial = (testimonial) => (
+    <div className="glass-card rounded-2xl p-7 h-[280px] w-[320px] flex flex-col relative">
+      <Quote className="absolute top-6 right-6 h-9 w-9 text-vibrant-blue/10" />
+
+      <p className="font-body text-body-md text-on-surface leading-relaxed flex-1 mb-6 italic line-clamp-4">
+        &ldquo;{testimonial.content}&rdquo;
+      </p>
+
+      <div className="flex items-center gap-4 shrink-0">
+        {testimonial.avatar ? (
+          <img
+            src={testimonial.avatar}
+            alt={testimonial.name}
+            className="w-12 h-12 rounded-full object-cover"
+            loading="lazy"
+            decoding="async"
+          />
+        ) : (
+          <div className="w-12 h-12 rounded-full bg-vibrant-blue/10 flex items-center justify-center">
+            <span className="font-display text-body-lg font-semibold text-vibrant-blue">
+              {(testimonial.name || "?").charAt(0)}
+            </span>
+          </div>
+        )}
+        <div className="min-w-0">
+          <p className="font-body text-label-bold text-deep-navy">{testimonial.name}</p>
+          {testimonial.role && (
+            <p className="font-body text-caption text-on-surface-variant">{testimonial.role}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
-    <Section background="white" className="section-padding">
+    <Section background="white" className="section-padding overflow-hidden">
       <Container>
         <SectionHeading
           title={getCMSContent("home", "testimonialsTitle", "Voices of Hope")}
           subtitle={getCMSContent("home", "testimonialsSub", "Hear from the people whose lives have been transformed")}
         />
 
-        <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-          className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8"
-        >
-          {TESTIMONIALS.map((testimonial, index) => (
-            <motion.div key={index} variants={slideUp}>
-              <div className="glass-card rounded-2xl p-8 h-full flex flex-col relative">
-                <Quote className="absolute top-6 right-6 h-10 w-10 text-vibrant-blue/10" />
-
-                <p className="font-body text-body-lg text-on-surface leading-relaxed flex-1 mb-6 italic">
-                  &ldquo;{testimonial.content}&rdquo;
-                </p>
-
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-vibrant-blue/10 flex items-center justify-center">
-                    <span className="font-display text-body-lg font-semibold text-vibrant-blue">
-                      {testimonial.name.charAt(0)}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="font-body text-label-bold text-deep-navy">
-                      {testimonial.name}
-                    </p>
-                    <p className="font-body text-caption text-on-surface-variant">
-                      {testimonial.role}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
+        <div className="mt-16">
+          {isLoading ? (
+            <div className="flex justify-center py-16">
+              <div className="w-10 h-10 border-4 border-vibrant-blue border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : (
+            <LogoLoop
+              logos={testimonials}
+              speed={60}
+              direction="left"
+              logoHeight={0}
+              gap={32}
+              pauseOnHover
+              fadeOut
+              fadeOutColor="#ffffff"
+              ariaLabel="Testimonials"
+              renderItem={renderTestimonial}
+            />
+          )}
+        </div>
       </Container>
     </Section>
   );

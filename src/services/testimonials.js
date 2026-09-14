@@ -14,6 +14,19 @@ export async function getTestimonials() {
   }
 }
 
+export async function getAllTestimonials() {
+  try {
+    const { data, error } = await supabase
+      .from("testimonials")
+      .select("*")
+      .order("sort_order", { ascending: true });
+
+    return { data, error };
+  } catch (err) {
+    return { data: null, error: err };
+  }
+}
+
 export async function createTestimonial(testimonialData) {
   try {
     const { data, error } = await supabase

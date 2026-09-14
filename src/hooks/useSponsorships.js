@@ -7,6 +7,7 @@ import {
   cancelSponsorship,
   getDonorDonations,
   getAllSponsorships,
+  getSponsorshipOverview,
   sponsorWithCredit,
   reactivateSponsorship,
 } from "@/services/sponsorships";
@@ -79,7 +80,7 @@ export function useReactivateSponsorship() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: reactivateSponsorship,
+    mutationFn: ({ id, plan }) => reactivateSponsorship(id, plan),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sponsorships"] });
       queryClient.invalidateQueries({ queryKey: ["children"] });
@@ -100,6 +101,14 @@ export function useAllSponsorships() {
   return useQuery({
     queryKey: ["all-sponsorships"],
     queryFn: getAllSponsorships,
+    staleTime: 2 * 60 * 1000,
+  });
+}
+
+export function useSponsorshipOverview() {
+  return useQuery({
+    queryKey: ["sponsorship-overview"],
+    queryFn: getSponsorshipOverview,
     staleTime: 2 * 60 * 1000,
   });
 }

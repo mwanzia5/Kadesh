@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getTestimonials,
+  getAllTestimonials,
   createTestimonial,
   updateTestimonial,
   deleteTestimonial,
@@ -10,6 +11,14 @@ export function useTestimonials() {
   return useQuery({
     queryKey: ["testimonials"],
     queryFn: getTestimonials,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useAdminTestimonials() {
+  return useQuery({
+    queryKey: ["testimonials", "all"],
+    queryFn: getAllTestimonials,
     staleTime: 5 * 60 * 1000,
   });
 }

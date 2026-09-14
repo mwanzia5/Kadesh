@@ -11,6 +11,8 @@ import SettingsPage from "./SettingsPage";
 import VideosManager from "./VideosManager";
 import NewsManager from "./NewsManager";
 import UsersPage from "./UsersPage";
+import SponsorshipsManager from "./SponsorshipsManager";
+import TestimonialsManager from "./TestimonialsManager";
 
 export default function Dashboard() {
   return (
@@ -18,6 +20,7 @@ export default function Dashboard() {
       <Routes>
         <Route index element={<DashboardHome />} />
         <Route path="donations" element={<DonationsManager />} />
+        <Route path="sponsorships" element={<SponsorshipsManager />} />
         <Route path="cms" element={<CMSPage />} />
         <Route path="media" element={<MediaLibrary />} />
         <Route path="projects" element={<ProjectsManager />} />
@@ -26,7 +29,7 @@ export default function Dashboard() {
         <Route path="news" element={<NewsManager />} />
         <Route path="messages" element={<MessagesPage />} />
         <Route path="settings" element={<SettingsPage />} />
-        <Route path="testimonials" element={<PlaceholderPage title="Testimonials" />} />
+        <Route path="testimonials" element={<TestimonialsManager />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>

@@ -22,6 +22,7 @@ import Button from "@/components/ui/Button";
 import OptimizedImage from "@/components/ui/OptimizedImage";
 import GlareHover from "@/components/ui/GlareHover";
 import ScrollReveal from "@/components/ui/ScrollReveal";
+import { useSponsorshipCart } from "@/context/SponsorshipCartContext";
 import { useChildren } from "@/hooks/useChildren";
 import { cn } from "@/lib/utils";
 
@@ -105,6 +106,11 @@ class ChildCardBoundary extends Component {
 }
 
 function ChildCard({ child }) {
+  const { addToCart, openCart } = useSponsorshipCart();
+  const handleSponsor = () => {
+    addToCart(child);
+    openCart();
+  };
   return (
     <div className="group flex flex-col h-full rounded-xl overflow-hidden bg-white border border-soft-accent/50 shadow-card hover:shadow-card-hover transition-shadow duration-300">
       <div className="relative overflow-hidden">
@@ -151,12 +157,24 @@ function ChildCard({ child }) {
             </p>
           )}
         </div>
-        <Link to={`/sponsor-a-child/${child.id}`} className="mt-auto">
-          <Button variant="lightblue" size="sm" className="w-full">
+        <div className="mt-auto space-y-2">
+          <Button
+            variant="lightblue"
+            size="sm"
+            className="w-full"
+            disabled={child.sponsorship_status !== "available"}
+            onClick={handleSponsor}
+          >
             Sponsor
             <Heart className="ml-2 h-4 w-4" />
           </Button>
-        </Link>
+          <Link
+            to={`/sponsor-a-child/${child.id}`}
+            className="block text-center font-body text-xs font-medium text-on-surface-variant hover:text-vibrant-blue transition-colors"
+          >
+            View Profile
+          </Link>
+        </div>
       </div>
     </div>
   );
@@ -561,6 +579,10 @@ export default function SponsorAChild() {
             <p className="font-body text-sm text-on-surface-variant">
               Showing <span className="font-semibold text-deep-navy">{filteredChildren.length}</span>{" "}
               of <span className="font-semibold text-deep-navy">{children.length}</span> children
+            </p>
+
+            <p className="font-body text-xs text-on-surface-variant/80">
+              Tip: add several children to your cart and pay for all of them in one checkout.
             </p>
           </div>
 

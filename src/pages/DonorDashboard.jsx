@@ -9,6 +9,7 @@ import {
   Calendar,
   Heart,
   CreditCard,
+  Coins,
   LogOut,
   Loader2,
   XCircle,
@@ -39,7 +40,6 @@ const STATUS_TABS = ["All", "Active", "Cancelled"];
 function SponsorshipStatusBadge({ status }) {
   const styles = {
     active: "bg-green-100 text-green-700",
-    paused: "bg-hope-orange/10 text-hope-orange",
     cancelled: "bg-gray-100 text-gray-500",
   };
   return (
@@ -85,6 +85,9 @@ export default function DonorDashboard() {
   const { user, profile, loading: authLoading, signOut, updateProfile } = useDonorAuth();
   const [activeTab, setActiveTab] = useState("sponsorships");
   const [statusFilter, setStatusFilter] = useState("All");
+  // Per-sponsorship plan choice shown on cancelled cards, so a donor can
+  // reactivate as one-time or monthly. Defaults to the slot's original plan.
+  const [reactivatePlans, setReactivatePlans] = useState({});
 
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ first_name: "", last_name: "", phone: "", location: "" });
@@ -123,6 +126,13 @@ export default function DonorDashboard() {
   const totalDonated = donations
     .filter((d) => d.status === "completed")
     .reduce((sum, d) => sum + Number(d.amount), 0);
+  // Money from cancelled sponsorships that can be reused to sponsor another
+  // child without paying again. Each cancelled sponsorship keeps the amount it
+  // was sponsored with; when the donor "re-sponsors" the slot is consumed and
+  // it returns to active, so the remaining balance drops to 0 automatically.
+  const creditRemaining = sponsorships
+    .filter((s) => s.status === "cancelled")
+    .reduce((sum, s) => sum + Number(s.amount ?? s.monthly_amount ?? 0), 0);
 
   if (authLoading) {
     return (
@@ -218,7 +228,7 @@ export default function DonorDashboard() {
         <Container>
           {/* Stats cards */}
           <ScrollReveal>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
               <div className="bg-white rounded-xl border border-soft-accent/50 shadow-card p-6 text-center">
                 <Heart className="h-8 w-8 text-hope-orange mx-auto mb-3" />
                 <p className="font-display text-3xl font-bold text-deep-navy">
@@ -235,6 +245,18 @@ export default function DonorDashboard() {
                 </p>
                 <p className="font-body text-sm text-on-surface-variant">
                   Total Donated
+                </p>
+              </div>
+              <div className="bg-white rounded-xl border border-soft-accent/50 shadow-card p-6 text-center">
+                <Coins className="h-8 w-8 text-hope-orange mx-auto mb-3" />
+                <p className="font-display text-3xl font-bold text-deep-navy">
+                  ${creditRemaining.toLocaleString()}
+                </p>
+                <p className="font-body text-sm text-on-surface-variant">
+                  Sponsorship Credit
+                </p>
+                <p className="font-body text-xs text-on-surface-variant/70 mt-0.5">
+                  Reusable after cancelling
                 </p>
               </div>
               <div className="bg-white rounded-xl border border-soft-accent/50 shadow-card p-6 text-center">
@@ -256,7 +278,7 @@ export default function DonorDashboard() {
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={cn(
-                  "flex-1 py-2.5 rounded-md font-body text-sm font-medium transition-all capitalize",
+                  "flex-1 py-2.5 rounded-md font-body text-xs sm:text-sm font-medium transition-all capitalize whitespace-nowrap",
                   activeTab === tab
                     ? "bg-white text-deep-navy shadow-sm"
                     : "text-on-surface-variant hover:text-deep-navy"
@@ -275,7 +297,7 @@ export default function DonorDashboard() {
               animate="visible"
             >
               {/* Status filter */}
-              <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 mb-6 max-w-md">
+              <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 max-w-md mb-6">
                 {STATUS_TABS.map((s) => (
                   <button
                     key={s}
@@ -341,8 +363,8 @@ export default function DonorDashboard() {
 
                         {/* Info */}
                         <div className="flex-1 p-5">
-                          <div className="flex items-start justify-between mb-2">
-                            <div>
+                          <div className="flex flex-wrap items-center gap-2 mb-2">
+                            <div className="min-w-0">
                               <h3 className="font-display text-headline-md text-deep-navy">
                                 {sponsorship.children?.first_name || "Unknown Child"}
                               </h3>
@@ -355,18 +377,35 @@ export default function DonorDashboard() {
                             <SponsorshipStatusBadge status={sponsorship.status} />
                           </div>
 
-                          <div className="flex flex-wrap items-center gap-4 mt-4 text-sm font-body text-on-surface-variant">
+                          <div className="mt-4 text-sm font-body text-on-surface-variant">
                             <span className="flex items-center gap-1.5">
                               <Calendar className="h-4 w-4" />
                               Since {formatDate(sponsorship.start_date)}
                             </span>
-                            {sponsorship.monthly_amount && (
-                              <span className="flex items-center gap-1.5">
-                                <CreditCard className="h-4 w-4" />
-                                ${sponsorship.monthly_amount}/mo
-                              </span>
-                            )}
                           </div>
+
+                          {(sponsorship.amount ?? sponsorship.monthly_amount) && (
+                            <p className="mt-1.5 flex items-center gap-1.5 font-body text-sm font-medium text-deep-navy">
+                              <CreditCard className="h-4 w-4 text-on-surface-variant" />
+                              Sponsored with{" "}
+                              <span className="font-bold text-hope-orange">
+                                $
+                                {Number(
+                                  sponsorship.amount ?? sponsorship.monthly_amount
+                                ).toLocaleString()}
+                              </span>
+                              {sponsorship.monthly_amount ? "/mo" : ""}
+                            </p>
+                          )}
+
+                          {sponsorship.reassigned_at && sponsorship.previous_child && (
+                            <p className="mt-1 font-body text-xs text-vibrant-blue">
+                              Reassigned from{" "}
+                              {sponsorship.previous_child.first_name} on{" "}
+                              {formatDate(sponsorship.reassigned_at)} (no extra
+                              payment)
+                            </p>
+                          )}
 
                           {sponsorship.monthly_amount && sponsorship.start_date && (() => {
                             const start = new Date(sponsorship.start_date);
@@ -382,7 +421,7 @@ export default function DonorDashboard() {
                             );
                           })()}
 
-                          <div className="flex items-center gap-3 mt-4">
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-4 border-t border-gray-100 pt-3">
                             <Link
                               to={`/sponsor-a-child/${sponsorship.child_id}`}
                               className="inline-flex items-center gap-1 font-body text-sm font-medium text-vibrant-blue hover:underline"
@@ -404,28 +443,75 @@ export default function DonorDashboard() {
                               </button>
                             )}
                             {sponsorship.status === "cancelled" && (
-                              <button
-                                onClick={async () => {
-                                  if (!confirm("Reactivate this sponsorship?")) return;
-                                  try {
-                                    await reactivateSponsorship.mutateAsync(sponsorship.id);
-                                  } catch (err) {
-                                    alert(
-                                      err?.message ||
-                                        "Could not reactivate this sponsorship."
+                              <div className="inline-flex items-center gap-2">
+                                <div className="inline-flex rounded-lg border border-soft-accent/60 overflow-hidden">
+                                  {["one-time", "monthly"].map((p) => {
+                                    const selected =
+                                      (reactivatePlans[sponsorship.id] ??
+                                        (sponsorship.monthly_amount
+                                          ? "monthly"
+                                          : "one-time")) === p;
+                                    return (
+                                      <button
+                                        key={p}
+                                        type="button"
+                                        onClick={() =>
+                                          setReactivatePlans((prev) => ({
+                                            ...prev,
+                                            [sponsorship.id]: p,
+                                          }))
+                                        }
+                                        aria-pressed={selected}
+                                        className={cn(
+                                          "px-2.5 py-1 font-body text-xs font-medium transition-colors",
+                                          selected
+                                            ? "bg-vibrant-blue text-white"
+                                            : "bg-white text-on-surface-variant hover:bg-vibrant-blue/5"
+                                        )}
+                                      >
+                                        {p === "one-time" ? "One-time" : "Monthly"}
+                                      </button>
                                     );
-                                  }
-                                }}
-                                disabled={reactivateSponsorship.isPending}
-                                className="inline-flex items-center gap-1 font-body text-sm font-medium text-vibrant-blue hover:underline disabled:opacity-50"
-                              >
-                                {reactivateSponsorship.isPending ? (
-                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                ) : (
-                                  <RotateCcw className="h-3.5 w-3.5" />
-                                )}
-                                Reactivate
-                              </button>
+                                  })}
+                                </div>
+                                <button
+                                  onClick={async () => {
+                                    const plan =
+                                      reactivatePlans[sponsorship.id] ??
+                                      (sponsorship.monthly_amount
+                                        ? "monthly"
+                                        : "one-time");
+                                    if (
+                                      !confirm(
+                                        `Reactivate this ${
+                                          plan === "monthly" ? "monthly" : "one-time"
+                                        } sponsorship?`
+                                      )
+                                    )
+                                      return;
+                                    try {
+                                      await reactivateSponsorship.mutateAsync({
+                                        id: sponsorship.id,
+                                        plan,
+                                      });
+                                    } catch (err) {
+                                      alert(
+                                        err?.message ||
+                                          "Could not reactivate this sponsorship."
+                                      );
+                                    }
+                                  }}
+                                  disabled={reactivateSponsorship.isPending}
+                                  className="inline-flex items-center gap-1 font-body text-sm font-medium text-vibrant-blue hover:underline disabled:opacity-50"
+                                >
+                                  {reactivateSponsorship.isPending ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  ) : (
+                                    <RotateCcw className="h-3.5 w-3.5" />
+                                  )}
+                                  Reactivate
+                                </button>
+                              </div>
                             )}
                           </div>
                         </div>
