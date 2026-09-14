@@ -20,7 +20,7 @@ const PAGES = [
       { id: "pillarsHeading", name: "Pillars Heading", content: "Our Foundation" },
       { id: "pillarsSub", name: "Pillars Subtitle", content: "Five pillars driving lasting change across Africa" },
       { id: "whoWeAreTitle", name: "Who We Are Title", content: "Who We Are" },
-      { id: "whoWeAreDesc", name: "Who We Are Description", content: "Founded in 2009, Kadesh Hope Mission began with a bold vision \u2014 a group of young people migrated from India to the Democratic Republic of Congo with a mission to uplift impoverished communities. Today, we continue transforming lives across multiple African nations through holistic development programs." },
+      { id: "whoWeAreDesc", name: "Who We Are Description", content: "Founded in 2009, Kadesh Hope Mission began when a group of young people left India for the Democratic Republic of Congo to serve families living in poverty. Today, we work across Africa through education, healthcare, and community development \u2014 restoring hope and building brighter futures." },
       { id: "whoWeCheck1", name: "Who We Are Check 1", content: "Quality education access for every child", type: "single" },
       { id: "whoWeCheck2", name: "Who We Are Check 2", content: "Healthcare for underserved communities", type: "single" },
       { id: "whoWeCheck3", name: "Who We Are Check 3", content: "Social development and economic empowerment", type: "single" },

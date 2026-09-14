@@ -274,32 +274,25 @@ function WhoWeAreSection() {
   return (
     <Section background="navy" className="section-padding overflow-hidden">
       <Container>
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
           <ScrollReveal direction="left" className="lg:col-span-7">
-            <div className="relative">
-              <div className="rounded-2xl overflow-hidden shadow-card">
+            <div>
+              <div className="rounded-2xl overflow-hidden shadow-card ring-1 ring-white/10">
                 <OptimizedImage
                   src="/images/gallery/kadesh images_04.jpg"
-                  alt="Kadesh Hope Mission classroom"
+                  alt="Children at a Kadesh Hope Mission school"
                   className="w-full h-auto"
                 />
               </div>
 
-              {/*
-                Mobile: the card sits below the image as a normal stacked
-                block (with a small negative top-margin so it still
-                "tucks" under the image edge) so it never covers the
-                photo. From md upward it switches back to an absolutely
-                positioned card floating over the bottom-right corner.
-              */}
-              <div className="relative -mt-10 mx-4 md:mt-0 md:mx-0 md:absolute md:-bottom-6 md:right-6 lg:-right-8 z-10 w-auto md:w-[75%] lg:w-auto md:max-w-sm">
-                <div className="glass-card rounded-xl p-5 md:p-6 shadow-glass">
-                  <Quote className="h-7 w-7 md:h-8 md:w-8 text-vibrant-blue mb-2 md:mb-3 opacity-60" />
-                  <p className="font-display text-body-md md:text-body-lg text-deep-navy italic leading-relaxed">
+              <div className="mt-5">
+                <div className="glass-card rounded-xl p-5 shadow-glass">
+                  <Quote className="h-6 w-6 text-vibrant-blue mb-2 opacity-60" />
+                  <p className="font-display text-body-md text-deep-navy italic leading-relaxed">
                     &ldquo;Education is the most powerful weapon which you can
                     use to change the world.&rdquo;
                   </p>
-                  <p className="font-body text-caption text-on-surface-variant mt-3">
+                  <p className="font-body text-caption text-on-surface-variant mt-2">
                     &mdash; Nelson Mandela
                   </p>
                 </div>
@@ -311,15 +304,15 @@ function WhoWeAreSection() {
             <div className="mt-8 lg:mt-0">
               <SplitText
                 text={getCMSContent("home", "whoWeAreTitle", "Who We Are")}
-                className="font-display text-display-lg-mobile lg:text-display-lg text-white block mb-6"
+                className="font-display text-display-lg-mobile lg:text-display-lg text-white block mb-5"
                 delay={0.2}
               />
 
-              <p className="font-body text-body-lg text-white/70 mb-8 leading-relaxed">
-                {getCMSContent("home", "whoWeAreDesc", "Founded in 2009, Kadesh Hope Mission began with a bold vision \u2014 a group of young people migrated from India to the Democratic Republic of Congo with a mission to uplift impoverished communities. Today, we continue transforming lives across multiple African nations through holistic development programs.")}
+              <p className="font-body text-body-lg text-white/70 mb-7 leading-relaxed">
+                {getCMSContent("home", "whoWeAreDesc", "Founded in 2009, Kadesh Hope Mission began when a group of young people left India for the Democratic Republic of Congo to serve families living in poverty. Today, we work across Africa through education, healthcare, and community development \u2014 restoring hope and building brighter futures.")}
               </p>
 
-              <div className="space-y-4 mb-10">
+              <div className="space-y-3 mb-8">
                 {[
                   getCMSContent("home", "whoWeCheck1", "Quality education access for every child"),
                   getCMSContent("home", "whoWeCheck2", "Healthcare for underserved communities"),
