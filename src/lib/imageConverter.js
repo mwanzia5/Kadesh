@@ -57,6 +57,33 @@ export function shouldConvertImage(file) {
   return CONVERTIBLE_IMAGE_TYPES.includes(file?.type);
 }
 
+// Re-encodes any common image (jpeg/png/webp) to a compressed WebP file.
+// Used by uploadImage so every image that reaches storage is compressed,
+// including ones that skip the enhancer pipeline.
+const COMPRESSIBLE_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/jpg",
+  "image/webp",
+];
+
+export async function compressImageFile(file, quality = 0.82) {
+  if (!file || !COMPRESSIBLE_IMAGE_TYPES.includes(file.type)) return file;
+
+  try {
+    const bitmap = await createImageBitmap(file);
+    const canvas = document.createElement("canvas");
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    canvas.getContext("2d").drawImage(bitmap, 0, 0);
+    bitmap.close();
+
+    return await canvasToFile(canvas, file.name, quality);
+  } catch {
+    return file;
+  }
+}
+
 export function shouldConvertVideo(file) {
   return CONVERTIBLE_VIDEO_TYPES.includes(file?.type);
 }

@@ -1,10 +1,12 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronDown } from "lucide-react";
 import { cn, getGravatarUrl } from "@/lib/utils";
 import Button from "@/components/ui/Button";
 import { NAV_LINKS } from "@/constants";
+import { useProjects } from "@/hooks/useProjects";
+import { buildProjectCategories } from "@/lib/navProjects";
 import { useDonorAuth } from "@/context/DonorAuthContext";
 
 const overlayVariants = {
@@ -68,6 +70,13 @@ export default function MobileMenu({ isOpen, onClose }) {
   function toggleSection(label) {
     setExpandedSections((prev) => ({ ...prev, [label]: !prev[label] }));
   }
+
+  // Hardcoded categories plus any projects created in the admin (DB).
+  const { data: projectsData } = useProjects();
+  const projectsCategories = useMemo(() => {
+    const projectsLink = NAV_LINKS.find((l) => l.label === "Projects");
+    return buildProjectCategories(projectsLink?.children, projectsData?.data);
+  }, [projectsData]);
 
   const isActive = (href) => pathname === href;
 
@@ -149,7 +158,7 @@ export default function MobileMenu({ isOpen, onClose }) {
                           >
                             <div className="pl-4 pb-2">
                               {link.label === "Projects"
-                                ? link.children.map((cat) => (
+                                ? projectsCategories.map((cat) => (
                                     <div key={cat.category} className="mt-2">
                                       <p className="px-4 py-1 text-label-bold text-deep-navy uppercase tracking-wider">
                                         {cat.category}

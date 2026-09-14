@@ -1,5 +1,9 @@
 import supabase from "@/supabase/client";
-import { shouldConvertImage, convertImageToWebP } from "@/lib/imageConverter";
+import {
+  shouldConvertImage,
+  convertImageToWebP,
+  compressImageFile,
+} from "@/lib/imageConverter";
 import { enhanceImageFile } from "@/lib/imageEnhancer";
 
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
@@ -15,18 +19,31 @@ export function validateFileSize(file) {
   return null;
 }
 
-export async function uploadImage(file, bucket, path) {
+// Plain storage upload for non-image files (e.g. videos). Images are
+// compressed to WebP first so anything that reaches a bucket is compressed,
+// then the (possibly rewritten) path is returned so callers can build the
+// public URL from the real object key.
+export async function uploadImage(file, bucket, path, options = {}) {
+  const { upsert = true, compress = true } = options;
+
   try {
     const sizeErr = validateFileSize(file);
-    if (sizeErr) return { data: null, error: new Error(sizeErr) };
+    if (sizeErr) return { data: null, error: new Error(sizeErr), path };
+
+    let uploadFile = file;
+    if (compress && file.type.startsWith("image/")) {
+      uploadFile = await compressImageFile(file);
+      const ext = path.split(".").pop();
+      if (ext) path = path.replace(new RegExp(`\\.${ext}$`), ".webp");
+    }
 
     const { data, error } = await supabase.storage
       .from(bucket)
-      .upload(path, file, { upsert: true });
+      .upload(path, uploadFile, { upsert, contentType: uploadFile.type });
 
-    return { data, error };
+    return { data, error, path };
   } catch (err) {
-    return { data: null, error: err };
+    return { data: null, error: err, path };
   }
 }
 

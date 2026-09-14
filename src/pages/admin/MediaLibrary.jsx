@@ -251,13 +251,19 @@ export default function MediaLibrary() {
     try {
       const ext = file.name.split(".").pop() || "jpg";
       const tempPath = `_pending/${Date.now()}.${ext}`;
-      const { error } = await uploadImage(file, "images", tempPath);
+      const { error, path: finalTempPath } = await uploadImage(
+        file,
+        "images",
+        tempPath,
+        { compress: false }
+      );
       if (error) throw error;
 
+      const storedTempPath = finalTempPath || tempPath;
       setEditTarget(null);
       setPendingFile(file);
-      setPendingTempPath(tempPath);
-      setEditorSourceUrl(getPublicUrl("images", tempPath));
+      setPendingTempPath(storedTempPath);
+      setEditorSourceUrl(getPublicUrl("images", storedTempPath));
       setShowEditor(true);
     } catch (err) {
       console.error("Failed to stage image:", err);
@@ -371,13 +377,17 @@ export default function MediaLibrary() {
       const path = extractPathFromUrl(stripQuery(image.src));
       if (!path) throw new Error("Could not determine image path");
 
-      const { error } = await uploadImage(file, "images", path, {
+      const { error, path: finalPath } = await uploadImage(file, "images", path, {
         upsert: true,
       });
       if (error) throw error;
 
-      const baseSrc = stripQuery(image.src);
-      const newSrc = `${baseSrc}?v=${Date.now()}`;
+      // Compression can change the extension (e.g. .jpg -> .webp). Remove the
+      // old object so it doesn't linger, and point the row at the new URL.
+      if (finalPath && finalPath !== path) {
+        await deleteImage("images", path).catch(() => {});
+      }
+      const newSrc = `${getPublicUrl("images", finalPath || path)}?v=${Date.now()}`;
 
       const { error: updateErr, data: updated } =
         await updateGalleryImage.mutateAsync({

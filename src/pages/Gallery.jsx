@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { Search, Camera, Loader2, Image as ImageIcon } from "lucide-react";
+import { useMemo } from "react";
+import { Camera, Loader2, Image as ImageIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import PageTransition from "@/animations/PageTransition";
@@ -9,19 +9,8 @@ import ScrollReveal from "@/components/ui/ScrollReveal";
 import SectionHeading from "@/components/ui/SectionHeading";
 import DomeGallery from "@/components/ui/DomeGallery";
 import OptimizedImage from "@/components/ui/OptimizedImage";
-import GlareHover from "@/components/ui/GlareHover";
 import useMediaQuery from "@/hooks/useMediaQuery";
 import { useGalleryImages } from "@/hooks/useGallery";
-import { cn } from "@/lib/utils";
-
-const CATEGORIES = [
-  "All",
-  "Education",
-  "Health",
-  "Food Security",
-  "Women & Youth",
-  "Community",
-];
 
 const CATEGORY_MAP = {
   education: "Education",
@@ -36,9 +25,6 @@ const CATEGORY_MAP = {
 const GRID_TO_DOME_THRESHOLD = 16;
 
 export default function Gallery() {
-  const [activeFilter, setActiveFilter] = useState("All");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [hoveredImage, setHoveredImage] = useState(null);
   const isMobile = useMediaQuery("(max-width: 768px)");
   const { data: dbImages, isLoading } = useGalleryImages();
 
@@ -55,121 +41,57 @@ export default function Gallery() {
     return [];
   }, [dbImages]);
 
-  const filteredImages = useMemo(() => {
-    return allImages.filter((img) => {
-      const imgCat = CATEGORY_MAP[img.category?.toLowerCase()] || img.category;
-      const matchesCategory =
-        activeFilter === "All" ||
-        imgCat?.toLowerCase() === activeFilter.toLowerCase();
-
-      const matchesSearch =
-        searchQuery === "" ||
-        img.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        img.category?.toLowerCase().includes(searchQuery.toLowerCase());
-
-      return matchesCategory && matchesSearch;
-    });
-  }, [allImages, activeFilter, searchQuery]);
-
   const domeImages = useMemo(
-    () => filteredImages.map((img) => ({ src: img.src, alt: img.title })),
-    [filteredImages]
+    () => allImages.map((img) => ({ src: img.src, alt: img.title })),
+    [allImages]
   );
 
   const imageCategories = useMemo(
     () =>
-      filteredImages.map((img) => {
+      allImages.map((img) => {
         const mapped = CATEGORY_MAP[img.category?.toLowerCase()];
         return mapped || img.category || "Other";
       }),
-    [filteredImages]
+    [allImages]
   );
 
-  const highlightCat = activeFilter === "All" ? null : activeFilter;
-
-  const showDome = filteredImages.length >= GRID_TO_DOME_THRESHOLD;
+  const showDome = allImages.length >= GRID_TO_DOME_THRESHOLD;
 
   return (
     <PageTransition>
       <HeroSection />
 
-      <Section background="white" className="pt-16 pb-10">
-        <Container>
-          <div className="max-w-xl mx-auto mb-10">
-            <div className="relative group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-on-surface-variant/60 group-focus-within:text-vibrant-blue transition-colors" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search photos..."
-                className="w-full pl-12 pr-10 py-3.5 rounded-2xl border-2 border-soft-accent/60 bg-white font-body text-body-md text-deep-navy placeholder:text-on-surface-variant/50 shadow-sm focus:outline-none focus:ring-2 focus:ring-vibrant-blue/30 focus:border-vibrant-blue transition-all"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="flex flex-wrap justify-center gap-2.5">
-            {CATEGORIES.map((category) => (
-              <button
-                key={category}
-                onClick={() => setActiveFilter(category)}
-                className={cn(
-                  "px-5 py-2.5 rounded-full font-body text-label-bold transition-all duration-300 border-2",
-                  activeFilter === category
-                    ? "bg-gradient-to-r from-vibrant-blue to-vibrant-blue/80 text-white border-vibrant-blue shadow-lg shadow-vibrant-blue/20 scale-105"
-                    : "bg-white text-on-surface-variant border-soft-accent/40 hover:border-vibrant-blue/30 hover:text-deep-navy hover:shadow-md hover:scale-[1.02]"
-                )}
-              >
-                {category}
-              </button>
-            ))}
-          </div>
-        </Container>
-      </Section>
-
       {/* Flat Grid Gallery (when fewer than threshold) */}
       {!showDome && !isLoading && (
-        <Section background="white" className="pb-16">
+        <Section background="white" className="pt-16 pb-16">
           <Container>
-            {filteredImages.length > 0 ? (
-              <>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {filteredImages.map((img, i) => (
-                    <motion.div
-                      key={img.id || i}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: i * 0.05 }}
-                      onMouseEnter={() => setHoveredImage(img.id)}
-                      onMouseLeave={() => setHoveredImage(null)}
-                      className="relative group aspect-[4/3] rounded-xl overflow-hidden bg-gray-100"
-                    >
-                      <OptimizedImage
-                        src={img.src}
-                        alt={img.title}
-                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-2 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                        <p className="font-body text-xs text-white font-medium truncate">
-                          {img.title}
-                        </p>
-                        <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-white/20 text-[10px] text-white font-medium">
-                          {CATEGORY_MAP[img.category?.toLowerCase()] || img.category || "Other"}
-                        </span>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </>
+            {allImages.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                {allImages.map((img, i) => (
+                  <motion.div
+                    key={img.id || i}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: i * 0.05 }}
+                    className="relative group aspect-[4/3] rounded-xl overflow-hidden bg-gray-100"
+                  >
+                    <OptimizedImage
+                      src={img.src}
+                      alt={img.title}
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-2 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                      <p className="font-body text-xs text-white font-medium truncate">
+                        {img.title}
+                      </p>
+                      <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-white/20 text-[10px] text-white font-medium">
+                        {CATEGORY_MAP[img.category?.toLowerCase()] || img.category || "Other"}
+                      </span>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
             ) : (
               <div className="text-center py-20">
                 <ImageIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
@@ -204,7 +126,7 @@ export default function Gallery() {
               <>
                 <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
                   <p className="font-body text-xs text-white/70 bg-black/30 backdrop-blur-sm px-4 py-1.5 rounded-full">
-                    {filteredImages.length} images &middot; 3D Dome Gallery
+                    {allImages.length} images &middot; 3D Dome Gallery
                   </p>
                 </div>
                 <DomeGallery
@@ -217,16 +139,13 @@ export default function Gallery() {
                   grayscale={false}
                   autoRotate
                   autoRotateSpeed={isMobile ? 0.5 : 0.7}
-                  highlightCategory={highlightCat}
                   imageCategories={imageCategories}
                 />
               </>
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center text-white/60 px-6 text-center">
                 <Camera className="h-16 w-16 mb-4 opacity-40" />
-                <p className="font-body text-body-lg">
-                  No photos found. Try a different search or filter.
-                </p>
+                <p className="font-body text-body-lg">No photos found.</p>
               </div>
             )}
           </motion.section>

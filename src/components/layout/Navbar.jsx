@@ -1,10 +1,12 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, ChevronDown, User, UserPlus } from "lucide-react";
 import { cn, getGravatarUrl } from "@/lib/utils";
 import Button from "@/components/ui/Button";
 import { NAV_LINKS } from "@/constants";
+import { useProjects } from "@/hooks/useProjects";
+import { buildProjectCategories } from "@/lib/navProjects";
 import { useDonorAuth } from "@/context/DonorAuthContext";
 import SponsorshipCartMenu from "@/components/cart/SponsorshipCartMenu";
 import MobileMenu from "./MobileMenu";
@@ -53,6 +55,13 @@ export default function Navbar() {
   const projectsLink = NAV_LINKS.find((l) => l.label === "Projects");
   const mediaLink = NAV_LINKS.find((l) => l.label === "Media");
 
+  // Hardcoded categories plus any projects created in the admin (DB).
+  const { data: projectsData } = useProjects();
+  const projectsCategories = useMemo(
+    () => buildProjectCategories(projectsLink?.children, projectsData?.data),
+    [projectsLink, projectsData]
+  );
+
   return (
     <>
       <nav
@@ -95,7 +104,7 @@ export default function Navbar() {
                           className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-[520px] bg-white rounded-xl shadow-card p-6"
                         >
                           <div className="grid grid-cols-2 gap-6">
-                            {link.children.map((cat) => (
+                            {projectsCategories.map((cat) => (
                               <div key={cat.category}>
                                 <p className="text-label-bold text-deep-navy mb-2 uppercase tracking-wider">
                                   {cat.category}
