@@ -32,7 +32,7 @@ function buildItems(pool, seg) {
   });
   const totalSlots = coords.length;
   if (pool.length === 0) {
-    return coords.map(c => ({ ...c, src: '', alt: '' }));
+    return coords.map(c => ({ ...c, src: '', alt: '', thumb: '' }));
   }
   if (pool.length > totalSlots) {
     console.warn(
@@ -41,9 +41,10 @@ function buildItems(pool, seg) {
   }
   const normalizedImages = pool.map(image => {
     if (typeof image === 'string') {
-      return { src: image, alt: '' };
+      return { src: image, alt: '', thumb: image };
     }
-    return { src: image.src || '', alt: image.alt || '' };
+    const src = image.src || '';
+    return { src, alt: image.alt || '', thumb: image.thumb || src };
   });
   const usedImages = Array.from({ length: totalSlots }, (_, i) => normalizedImages[i % normalizedImages.length]);
   for (let i = 1; i < usedImages.length; i++) {
@@ -61,7 +62,8 @@ function buildItems(pool, seg) {
   return coords.map((c, i) => ({
     ...c,
     src: usedImages[i].src,
-    alt: usedImages[i].alt
+    alt: usedImages[i].alt,
+    thumb: usedImages[i].thumb
   }));
 }
 
@@ -257,9 +259,10 @@ export default function DomeGallery({
       const blendRate = 12;
       vel.y += (targetSpeedY - vel.y) * (1 - Math.exp(-blendRate * dt));
 
-      vel.x = clamp(vel.x, -120, 120);
-      vel.y = clamp(vel.y, -120, 120);
-      vel.x *= 0.98;
+      vel.x = clamp(vel.x, -160, 160);
+      vel.y = clamp(vel.y, -160, 160);
+      // Frame-rate independent decay (0.98 per 60fps frame).
+      vel.x *= Math.pow(0.98, dt * 60);
       if (Math.abs(vel.x) < 0.02) vel.x = 0;
       if (Math.abs(vel.y - targetSpeedY) < 0.05) vel.y = targetSpeedY;
 
@@ -268,12 +271,13 @@ export default function DomeGallery({
         return;
       }
 
+      // vel is expressed in degrees/second, so integrate directly against dt.
       const nextX = clamp(
-        rotationRef.current.x - vel.x * dt / 200,
+        rotationRef.current.x - vel.x * dt,
         -maxVerticalRotationDeg,
         maxVerticalRotationDeg
       );
-      const nextY = wrapAngleSigned(rotationRef.current.y + vel.y * dt / 200);
+      const nextY = wrapAngleSigned(rotationRef.current.y + vel.y * dt);
 
       if (rotationRef.current.x !== nextX || rotationRef.current.y !== nextY) {
         rotationRef.current = { x: nextX, y: nextY };
@@ -343,9 +347,11 @@ export default function DomeGallery({
             vy = (my / dragSensitivity) * 0.02;
           }
           if (!isTap && (Math.abs(vx) > 0.005 || Math.abs(vy) > 0.005)) {
-            const scaledVX = clamp(vx, -1.4, 1.4) * 80;
-            const scaledVY = clamp(vy, -1.4, 1.4) * 80;
-            velocityRef.current = { x: scaledVX, y: scaledVY };
+            // Gesture velocity is px/ms; convert to deg/s using the same
+            // sensitivity as dragging. vel.x drives vertical rotation, vel.y
+            // drives horizontal spin (matching the onDrag mapping).
+            const toDegPerSec = v => clamp(v, -1.4, 1.4) * (1000 / dragSensitivity);
+            velocityRef.current = { x: toDegPerSec(vy), y: toDegPerSec(vx) };
             runAnimation();
           }
           startPosRef.current = null;
@@ -610,8 +616,27 @@ export default function DomeGallery({
       velocityRef.current = { x: velocityRef.current.x, y: 0 };
       return;
     }
-    runAnimation();
-    return stopAnimation;
+    const root = rootRef.current;
+    let visible = true;
+    let observer;
+    const sync = () => {
+      if (visible && !document.hidden) runAnimation();
+      else stopAnimation();
+    };
+    if (root && typeof IntersectionObserver !== 'undefined') {
+      observer = new IntersectionObserver(entries => {
+        visible = entries[0]?.isIntersecting ?? true;
+        sync();
+      });
+      observer.observe(root);
+    }
+    document.addEventListener('visibilitychange', sync);
+    sync();
+    return () => {
+      observer?.disconnect();
+      document.removeEventListener('visibilitychange', sync);
+      stopAnimation();
+    };
   }, [autoRotate, runAnimation, stopAnimation]);
 
   const cssStyles = `
@@ -668,6 +693,8 @@ export default function DomeGallery({
     .sphere-root[data-enlarging="true"] .scrim {
       opacity: 1 !important;
       pointer-events: all !important;
+      -webkit-backdrop-filter: blur(3px);
+      backdrop-filter: blur(3px);
     }
 
     @media (max-aspect-ratio: 1/1) {
@@ -700,9 +727,6 @@ export default function DomeGallery({
       -webkit-backface-visibility: hidden;
       transition: transform 300ms, box-shadow 300ms, filter 300ms, opacity 300ms;
       pointer-events: auto;
-      -webkit-transform: translateZ(0);
-      transform: translateZ(0);
-      will-change: transform;
     }
     .item__image--highlighted {
       box-shadow: 0 0 0 3px #93c5fd, 0 0 15px rgba(147, 197, 253, 0.5);
@@ -798,11 +822,16 @@ export default function DomeGallery({
                     }}
                   >
                     <img
-                      src={it.src}
+                      src={it.thumb || it.src}
                       draggable={false}
                       alt={it.alt}
-                      loading="lazy"
+                      loading="eager"
                       decoding="async"
+                      onError={e => {
+                        if (it.src && e.currentTarget.src !== it.src) {
+                          e.currentTarget.src = it.src;
+                        }
+                      }}
                       className="w-full h-full object-cover pointer-events-none"
                       style={{
                         backfaceVisibility: 'hidden',
@@ -824,8 +853,7 @@ export default function DomeGallery({
             className="absolute inset-0 m-auto z-[3] pointer-events-none"
             style={{
               WebkitMaskImage: `radial-gradient(rgba(235, 235, 235, 0) 70%, var(--overlay-blur-color, ${overlayBlurColor}) 90%)`,
-              maskImage: `radial-gradient(rgba(235, 235, 235, 0) 70%, var(--overlay-blur-color, ${overlayBlurColor}) 90%)`,
-              backdropFilter: 'blur(3px)'
+              maskImage: `radial-gradient(rgba(235, 235, 235, 0) 70%, var(--overlay-blur-color, ${overlayBlurColor}) 90%)`
             }}
           />
           <div
@@ -849,8 +877,7 @@ export default function DomeGallery({
               ref={scrimRef}
               className="scrim absolute inset-0 z-10 pointer-events-none opacity-0 transition-opacity duration-500"
               style={{
-                background: 'rgba(0, 0, 0, 0.4)',
-                backdropFilter: 'blur(3px)'
+                background: 'rgba(0, 0, 0, 0.4)'
               }}
             />
             <div

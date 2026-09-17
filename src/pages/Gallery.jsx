@@ -11,6 +11,7 @@ import DomeGallery from "@/components/ui/DomeGallery";
 import OptimizedImage from "@/components/ui/OptimizedImage";
 import useMediaQuery from "@/hooks/useMediaQuery";
 import { useGalleryImages } from "@/hooks/useGallery";
+import { buildImageKitTransformUrl } from "@/lib/imagekit";
 
 const CATEGORY_MAP = {
   education: "Education",
@@ -42,9 +43,25 @@ export default function Gallery() {
   }, [dbImages]);
 
   const domeImages = useMemo(
-    () => allImages.map((img) => ({ src: img.src, alt: img.title })),
+    () =>
+      allImages.map((img) => ({
+        src: img.src,
+        thumb: buildImageKitTransformUrl(img.src, { width: 480, height: 480 }),
+        alt: img.title,
+      })),
     [allImages]
   );
+
+  // Keep the number of rendered tiles close to the number of photos: a few
+  // repeats fill the dome, but rendering hundreds of duplicate tiles pins the
+  // mobile GPU. Previously 20 (mobile) / 34 (desktop) segments meant 100/170
+  // tiles for ~19 photos.
+  const domeSegments = useMemo(() => {
+    const count = allImages.length;
+    return isMobile
+      ? Math.min(16, Math.max(8, Math.ceil(count / 2)))
+      : Math.min(24, Math.max(10, Math.ceil(count * 0.9)));
+  }, [allImages.length, isMobile]);
 
   const imageCategories = useMemo(
     () =>
@@ -134,7 +151,7 @@ export default function Gallery() {
                   fit={0.8}
                   minRadius={isMobile ? 300 : 600}
                   maxVerticalRotationDeg={0}
-                  segments={isMobile ? 20 : 34}
+                  segments={domeSegments}
                   dragDampening={2}
                   grayscale={false}
                   autoRotate
