@@ -57,7 +57,7 @@ export default function SponsorshipCartMenu() {
         onClick={toggleCart}
         aria-label="Sponsorship cart"
         title="Sponsorship cart"
-        className="relative inline-flex items-center justify-center w-10 h-10 rounded-lg text-on-surface hover:text-vibrant-blue hover:bg-surface transition-colors"
+        className="relative inline-flex items-center justify-center w-11 h-11 rounded-xl text-on-surface hover:text-vibrant-blue hover:bg-surface transition-colors"
       >
         <UserPlus className="h-6 w-6" />
         {cartCount > 0 && (
@@ -74,7 +74,7 @@ export default function SponsorshipCartMenu() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.98 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 top-full mt-2 w-[22rem] max-w-[calc(100vw-2rem)] bg-white rounded-xl border border-soft-accent shadow-xl z-40 overflow-hidden"
+            className="absolute right-0 top-full mt-2 w-[22rem] max-w-[calc(100vw-2rem)] max-lg:fixed max-lg:inset-x-3 max-lg:top-24 max-lg:mt-0 max-lg:w-auto max-lg:max-w-none bg-white rounded-xl border border-soft-accent shadow-xl z-40 overflow-hidden"
           >
             <div className="px-4 py-3 border-b border-soft-accent/60 bg-cream/50">
               <p className="font-body text-sm font-semibold text-deep-navy">

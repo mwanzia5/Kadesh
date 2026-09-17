@@ -8,6 +8,7 @@ import { NAV_LINKS } from "@/constants";
 import { useProjects } from "@/hooks/useProjects";
 import { buildProjectCategories } from "@/lib/navProjects";
 import { useDonorAuth } from "@/context/DonorAuthContext";
+import SponsorshipCartMenu from "@/components/cart/SponsorshipCartMenu";
 
 const overlayVariants = {
   hidden: { opacity: 0 },
@@ -109,14 +110,17 @@ export default function MobileMenu({ isOpen, onClose }) {
           >
             <div className="flex items-center justify-between h-20 px-5 border-b border-soft-accent">
               <img src="/images/newlogo.png" alt="Kadesh Hope Mission" className="h-14" />
-              <button
-                ref={closeRef}
-                onClick={onClose}
-                className="p-2 rounded-lg text-on-surface hover:bg-surface transition-colors"
-                aria-label="Close menu"
-              >
-                <X className="w-6 h-6" />
-              </button>
+              <div className="flex items-center gap-1">
+                <SponsorshipCartMenu />
+                <button
+                  ref={closeRef}
+                  onClick={onClose}
+                  className="inline-flex items-center justify-center w-11 h-11 rounded-xl text-deep-navy hover:bg-surface active:bg-surface transition-colors"
+                  aria-label="Close menu"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
             </div>
 
             <nav className="flex-1 overflow-y-auto py-4 px-5 space-y-1">

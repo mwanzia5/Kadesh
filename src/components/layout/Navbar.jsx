@@ -70,7 +70,7 @@ export default function Navbar() {
           scrolled ? "bg-white/95 shadow-lg" : "bg-white/80 backdrop-blur-glass"
         )}
       >
-        <div className="mx-auto flex items-center justify-between h-20 px-5 md:px-16 max-w-[1280px]">
+        <div className="mx-auto flex items-center justify-between h-20 px-3.5 sm:px-5 md:px-16 max-w-[1280px]">
          <Link to="/" className="flex-shrink-0">
   <img src="/images/newlogo.png" alt="Kadesh Hope Mission" className="h-24" />
 </Link>
@@ -246,11 +246,14 @@ export default function Navbar() {
             )}
           </div>
 
-          <SponsorshipCartMenu />
+          {/* Sponsorship cart: desktop only — on mobile it lives in the menu */}
+          <div className="hidden lg:block">
+            <SponsorshipCartMenu />
+          </div>
 
           {/* Mobile hamburger */}
           <button
-            className="lg:hidden p-2 rounded-lg text-on-surface hover:bg-surface transition-colors"
+            className="lg:hidden flex-shrink-0 inline-flex items-center justify-center w-11 h-11 rounded-xl text-deep-navy hover:bg-surface active:bg-surface transition-colors"
             onClick={() => setMobileOpen(true)}
             aria-label="Open menu"
           >
