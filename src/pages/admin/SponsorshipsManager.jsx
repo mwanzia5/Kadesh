@@ -7,6 +7,8 @@ import {
   Calendar,
   DollarSign,
   RotateCcw,
+  Pause,
+  Play,
   XCircle,
   CheckCircle,
   Users,
@@ -14,15 +16,22 @@ import {
 } from "lucide-react";
 
 import { staggerContainer, slideUp } from "@/animations/variants";
-import { useSponsorshipOverview } from "@/hooks/useSponsorships";
+import {
+  useSponsorshipOverview,
+  useAdminPauseSponsorship,
+  useAdminResumeSponsorship,
+  useAdminCancelSponsorship,
+} from "@/hooks/useSponsorships";
 
 const statusColors = {
   active: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  paused: "bg-amber-50 text-amber-700 border-amber-200",
   cancelled: "bg-gray-50 text-gray-700 border-gray-200",
 };
 
 const statusIcons = {
   active: CheckCircle,
+  paused: Pause,
   cancelled: XCircle,
 };
 
@@ -46,12 +55,16 @@ function formatAmount(sponsorship) {
 
 export default function SponsorshipsManager() {
   const { data, isLoading } = useSponsorshipOverview();
+  const pauseMutation = useAdminPauseSponsorship();
+  const resumeMutation = useAdminResumeSponsorship();
+  const cancelMutation = useAdminCancelSponsorship();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
   const sponsorships = data?.data ?? [];
 
   const activeCount = sponsorships.filter((s) => s.status === "active").length;
+  const pausedCount = sponsorships.filter((s) => s.status === "paused").length;
   const cancelledCount = sponsorships.filter(
     (s) => s.status === "cancelled"
   ).length;
@@ -64,6 +77,7 @@ export default function SponsorshipsManager() {
   const stats = [
     { label: "Total Sponsorships", value: sponsorships.length, icon: Users, color: "text-vibrant-blue", bg: "bg-vibrant-blue/10" },
     { label: "Active", value: activeCount, icon: CheckCircle, color: "text-emerald-600", bg: "bg-emerald-50" },
+    { label: "Paused", value: pausedCount, icon: Pause, color: "text-amber-600", bg: "bg-amber-50" },
     { label: "Cancelled", value: cancelledCount, icon: XCircle, color: "text-gray-600", bg: "bg-gray-50" },
     { label: "Re-sponsorships", value: reassignedCount, icon: RotateCcw, color: "text-vibrant-blue", bg: "bg-vibrant-blue/10" },
     { label: "Total Amount", value: `$${totalAmount.toLocaleString()}`, icon: DollarSign, color: "text-hope-orange", bg: "bg-hope-orange/10" },
@@ -85,6 +99,52 @@ export default function SponsorshipsManager() {
     return matchesStatus && matchesSearch;
   });
 
+  const donorName = (s) =>
+    [s.donor?.first_name, s.donor?.last_name].filter(Boolean).join(" ") ||
+    "this donor";
+
+  const handlePause = async (sponsorship) => {
+    if (
+      !confirm(
+        `Pause ${sponsorship.children?.first_name || "this child"}'s sponsorship by ${donorName(sponsorship)}? The child stays reserved for them.`
+      )
+    )
+      return;
+    try {
+      await pauseMutation.mutateAsync(sponsorship.id);
+    } catch (err) {
+      alert(err?.message || "Could not pause this sponsorship.");
+    }
+  };
+
+  const handleResume = async (sponsorship) => {
+    if (
+      !confirm(
+        `Resume ${sponsorship.children?.first_name || "this child"}'s sponsorship by ${donorName(sponsorship)}?`
+      )
+    )
+      return;
+    try {
+      await resumeMutation.mutateAsync(sponsorship.id);
+    } catch (err) {
+      alert(err?.message || "Could not resume this sponsorship.");
+    }
+  };
+
+  const handleCancel = async (sponsorship) => {
+    if (
+      !confirm(
+        `Cancel ${sponsorship.children?.first_name || "this child"}'s sponsorship by ${donorName(sponsorship)}? The child will become available for others to sponsor.`
+      )
+    )
+      return;
+    try {
+      await cancelMutation.mutateAsync(sponsorship.id);
+    } catch (err) {
+      alert(err?.message || "Could not cancel this sponsorship.");
+    }
+  };
+
   return (
     <div>
       <div className="mb-8">
@@ -102,7 +162,7 @@ export default function SponsorshipsManager() {
         variants={staggerContainer}
         initial="hidden"
         animate="visible"
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8"
       >
         {stats.map((stat) => (
           <motion.div key={stat.label} variants={slideUp}>
@@ -139,7 +199,7 @@ export default function SponsorshipsManager() {
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
-            {["all", "active", "cancelled"].map((status) => (
+            {["all", "active", "paused", "cancelled"].map((status) => (
               <button
                 key={status}
                 onClick={() => setStatusFilter(status)}
@@ -199,6 +259,9 @@ export default function SponsorshipsManager() {
                   </th>
                   <th className="text-left px-6 py-4 font-body text-xs font-semibold text-on-surface-variant uppercase tracking-wider">
                     Re-sponsoring
+                  </th>
+                  <th className="text-right px-6 py-4 font-body text-xs font-semibold text-on-surface-variant uppercase tracking-wider">
+                    Actions
                   </th>
                 </tr>
               </thead>
@@ -276,6 +339,11 @@ export default function SponsorshipsManager() {
                             <XCircle className="h-3 w-3" />
                             {formatDate(sponsorship.cancelled_at || sponsorship.updated_at)}
                           </span>
+                        ) : sponsorship.status === "paused" ? (
+                          <span className="inline-flex items-center gap-1.5 text-xs text-amber-600">
+                            <Pause className="h-3 w-3" />
+                            {formatDate(sponsorship.paused_at || sponsorship.updated_at)}
+                          </span>
                         ) : (
                           <span className="text-xs text-on-surface-variant/50">
                             —
@@ -294,6 +362,71 @@ export default function SponsorshipsManager() {
                             —
                           </span>
                         )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-end gap-2">
+                          {sponsorship.status === "active" && (
+                            <>
+                              <button
+                                onClick={() => handlePause(sponsorship)}
+                                disabled={pauseMutation.isPending}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-body text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors disabled:opacity-50"
+                              >
+                                {pauseMutation.isPending ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <Pause className="h-3.5 w-3.5" />
+                                )}
+                                Pause
+                              </button>
+                              <button
+                                onClick={() => handleCancel(sponsorship)}
+                                disabled={cancelMutation.isPending}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-body text-xs font-medium text-red-600 bg-red-50 border border-red-200 hover:bg-red-100 transition-colors disabled:opacity-50"
+                              >
+                                {cancelMutation.isPending ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <XCircle className="h-3.5 w-3.5" />
+                                )}
+                                Cancel
+                              </button>
+                            </>
+                          )}
+                          {sponsorship.status === "paused" && (
+                            <>
+                              <button
+                                onClick={() => handleResume(sponsorship)}
+                                disabled={resumeMutation.isPending}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-body text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 transition-colors disabled:opacity-50"
+                              >
+                                {resumeMutation.isPending ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <Play className="h-3.5 w-3.5" />
+                                )}
+                                Resume
+                              </button>
+                              <button
+                                onClick={() => handleCancel(sponsorship)}
+                                disabled={cancelMutation.isPending}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-body text-xs font-medium text-red-600 bg-red-50 border border-red-200 hover:bg-red-100 transition-colors disabled:opacity-50"
+                              >
+                                {cancelMutation.isPending ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <XCircle className="h-3.5 w-3.5" />
+                                )}
+                                Cancel
+                              </button>
+                            </>
+                          )}
+                          {sponsorship.status === "cancelled" && (
+                            <span className="text-xs text-on-surface-variant/50">
+                              —
+                            </span>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );

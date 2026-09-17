@@ -5,6 +5,9 @@ import {
   createSponsorship,
   updateSponsorship,
   cancelSponsorship,
+  pauseSponsorship,
+  resumeSponsorship,
+  adminCancelSponsorship,
   getDonorDonations,
   getAllSponsorships,
   getSponsorshipOverview,
@@ -58,6 +61,48 @@ export function useCancelSponsorship() {
   return useMutation({
     mutationFn: cancelSponsorship,
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["sponsorships"] });
+      queryClient.invalidateQueries({ queryKey: ["children"] });
+    },
+  });
+}
+
+export function useAdminPauseSponsorship() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: pauseSponsorship,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["sponsorship-overview"] });
+      queryClient.invalidateQueries({ queryKey: ["all-sponsorships"] });
+      queryClient.invalidateQueries({ queryKey: ["sponsorships"] });
+      queryClient.invalidateQueries({ queryKey: ["children"] });
+    },
+  });
+}
+
+export function useAdminResumeSponsorship() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: resumeSponsorship,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["sponsorship-overview"] });
+      queryClient.invalidateQueries({ queryKey: ["all-sponsorships"] });
+      queryClient.invalidateQueries({ queryKey: ["sponsorships"] });
+      queryClient.invalidateQueries({ queryKey: ["children"] });
+    },
+  });
+}
+
+export function useAdminCancelSponsorship() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: adminCancelSponsorship,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["sponsorship-overview"] });
+      queryClient.invalidateQueries({ queryKey: ["all-sponsorships"] });
       queryClient.invalidateQueries({ queryKey: ["sponsorships"] });
       queryClient.invalidateQueries({ queryKey: ["children"] });
     },

@@ -631,6 +631,190 @@ UPDATE sponsorships
   WHERE status = 'cancelled' AND cancelled_at IS NULL;
 
 -- =============================================================
+-- 9. Admin can pause & cancel sponsorships
+-- =============================================================
+-- Admins can temporarily pause an active sponsorship (the child stays
+-- reserved for the donor) or cancel it outright. paused_at lets admins see
+-- how long each pause has been in place.
+
+-- 9a. Track when a sponsorship was paused and by whom. Only admins can pause
+--     (paused_by), while cancellations can come from the donor or an admin
+--     (cancelled_by) — the account page uses these to show "Paused by admin"
+--     vs "Cancelled" / "Cancelled by admin".
+ALTER TABLE sponsorships ADD COLUMN IF NOT EXISTS paused_at TIMESTAMPTZ;
+ALTER TABLE sponsorships ADD COLUMN IF NOT EXISTS paused_by UUID REFERENCES auth.users(id);
+ALTER TABLE sponsorships ADD COLUMN IF NOT EXISTS cancelled_by UUID REFERENCES auth.users(id);
+
+-- 9b. Reintroduce the 'paused' status to the CHECK constraint.
+ALTER TABLE sponsorships DROP CONSTRAINT IF EXISTS sponsorships_status_check;
+ALTER TABLE sponsorships ADD CONSTRAINT sponsorships_status_check
+  CHECK (status IN ('active', 'cancelled', 'paused'));
+
+-- 9c. Upgrade the sync trigger to manage paused_at and keep a paused
+--     sponsorship's child reserved (only 'cancelled' releases the child back
+--     to the pool).
+CREATE OR REPLACE FUNCTION sync_child_sponsorship_status()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+  IF NEW.status = 'active' THEN
+    NEW.cancelled_at := NULL;
+    NEW.paused_at := NULL;
+    NEW.paused_by := NULL;
+    NEW.cancelled_by := NULL;
+    UPDATE public.children
+      SET sponsorship_status = 'sponsored'
+      WHERE id = NEW.child_id;
+  ELSIF NEW.status = 'paused' THEN
+    -- Child stays "sponsored" while paused so nobody else can take the slot.
+    IF NEW.paused_at IS NULL THEN
+      NEW.paused_at := now();
+    END IF;
+    NEW.paused_by := auth.uid();
+  ELSIF NEW.status = 'cancelled' THEN
+    IF NEW.cancelled_at IS NULL THEN
+      NEW.cancelled_at := now();
+    END IF;
+    NEW.cancelled_by := auth.uid();
+    IF TG_OP = 'INSERT' OR OLD.status <> 'cancelled' THEN
+      UPDATE public.children
+        SET sponsorship_status = 'available'
+        WHERE id = NEW.child_id;
+    END IF;
+  END IF;
+
+  -- A slot reused with credit to sponsor a different child = a re-sponsorship.
+  -- Keep the chain (previous child + when) so admins can audit it.
+  IF TG_OP = 'UPDATE' AND OLD.child_id IS DISTINCT FROM NEW.child_id THEN
+    NEW.previous_child_id := OLD.child_id;
+    NEW.reassigned_at := now();
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_sync_child_sponsorship_status ON sponsorships;
+CREATE TRIGGER trg_sync_child_sponsorship_status
+  BEFORE INSERT OR UPDATE ON sponsorships
+  FOR EACH ROW
+  EXECUTE FUNCTION sync_child_sponsorship_status();
+
+-- 9d. Admin-only RPCs. SECURITY DEFINER with an is_admin() guard so only
+--     allowlisted admins can drive the lifecycle, independent of RLS (RPCs
+--     bypass row-level security).
+CREATE OR REPLACE FUNCTION admin_pause_sponsorship(p_sponsorship_id uuid)
+RETURNS TABLE (sponsorship_id uuid)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_status text;
+BEGIN
+  IF NOT public.is_admin() THEN
+    RAISE EXCEPTION 'Only admins can pause sponsorships';
+  END IF;
+
+  SELECT status INTO v_status
+    FROM public.sponsorships
+    WHERE id = p_sponsorship_id;
+
+  IF v_status IS NULL THEN
+    RAISE EXCEPTION 'Sponsorship not found';
+  END IF;
+  IF v_status <> 'active' THEN
+    RAISE EXCEPTION 'Only active sponsorships can be paused';
+  END IF;
+
+  RETURN QUERY
+    UPDATE public.sponsorships AS s
+      SET status = 'paused'
+      WHERE s.id = p_sponsorship_id
+      RETURNING s.id;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION admin_resume_sponsorship(p_sponsorship_id uuid)
+RETURNS TABLE (sponsorship_id uuid)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_status text;
+BEGIN
+  IF NOT public.is_admin() THEN
+    RAISE EXCEPTION 'Only admins can resume sponsorships';
+  END IF;
+
+  SELECT status INTO v_status
+    FROM public.sponsorships
+    WHERE id = p_sponsorship_id;
+
+  IF v_status IS NULL THEN
+    RAISE EXCEPTION 'Sponsorship not found';
+  END IF;
+  IF v_status <> 'paused' THEN
+    RAISE EXCEPTION 'Only paused sponsorships can be resumed';
+  END IF;
+
+  RETURN QUERY
+    UPDATE public.sponsorships AS s
+      SET status = 'active'
+      WHERE s.id = p_sponsorship_id
+      RETURNING s.id;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION admin_cancel_sponsorship(p_sponsorship_id uuid)
+RETURNS TABLE (sponsorship_id uuid)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_status text;
+BEGIN
+  IF NOT public.is_admin() THEN
+    RAISE EXCEPTION 'Only admins can cancel sponsorships';
+  END IF;
+
+  SELECT status INTO v_status
+    FROM public.sponsorships
+    WHERE id = p_sponsorship_id;
+
+  IF v_status IS NULL THEN
+    RAISE EXCEPTION 'Sponsorship not found';
+  END IF;
+  IF v_status NOT IN ('active', 'paused') THEN
+    RAISE EXCEPTION 'This sponsorship is already cancelled';
+  END IF;
+
+  RETURN QUERY
+    UPDATE public.sponsorships AS s
+      SET status = 'cancelled'
+      WHERE s.id = p_sponsorship_id
+      RETURNING s.id;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION admin_pause_sponsorship(uuid) FROM PUBLIC;
+REVOKE ALL ON FUNCTION admin_resume_sponsorship(uuid) FROM PUBLIC;
+REVOKE ALL ON FUNCTION admin_cancel_sponsorship(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION admin_pause_sponsorship(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION admin_resume_sponsorship(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION admin_cancel_sponsorship(uuid) TO authenticated;
+
+-- 9e. Backfill: rows already in the paused state (if any) get a timestamp.
+UPDATE sponsorships
+  SET paused_at = updated_at
+  WHERE status = 'paused' AND paused_at IS NULL;
+
+-- =============================================================
 -- VERIFY EVERYTHING WORKED
 -- =============================================================
 -- Run these queries to confirm:

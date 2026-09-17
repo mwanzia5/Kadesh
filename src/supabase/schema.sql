@@ -165,7 +165,7 @@ CREATE TABLE sponsorships (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   donor_id UUID NOT NULL REFERENCES auth.users(id),
   child_id UUID NOT NULL REFERENCES children(id),
-  status TEXT DEFAULT 'active' CHECK (status IN ('active', 'cancelled')),
+  status TEXT DEFAULT 'active' CHECK (status IN ('active', 'cancelled', 'paused')),
   monthly_amount DECIMAL(10,2),
   start_date TIMESTAMPTZ DEFAULT now(),
   notes TEXT,
@@ -685,6 +685,112 @@ $$;
 REVOKE ALL ON FUNCTION reactivate_sponsorship(uuid, text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION reactivate_sponsorship(uuid, text) TO authenticated;
 
+-- Admin-only lifecycle RPCs. SECURITY DEFINER with an is_admin() guard so only
+-- allowlisted admins can drive the lifecycle, independent of RLS (RPCs bypass
+-- row-level security).
+CREATE OR REPLACE FUNCTION admin_pause_sponsorship(p_sponsorship_id uuid)
+RETURNS TABLE (sponsorship_id uuid)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_status text;
+BEGIN
+  IF NOT public.is_admin() THEN
+    RAISE EXCEPTION 'Only admins can pause sponsorships';
+  END IF;
+
+  SELECT status INTO v_status
+    FROM public.sponsorships
+    WHERE id = p_sponsorship_id;
+
+  IF v_status IS NULL THEN
+    RAISE EXCEPTION 'Sponsorship not found';
+  END IF;
+  IF v_status <> 'active' THEN
+    RAISE EXCEPTION 'Only active sponsorships can be paused';
+  END IF;
+
+  RETURN QUERY
+    UPDATE public.sponsorships AS s
+      SET status = 'paused'
+      WHERE s.id = p_sponsorship_id
+      RETURNING s.id;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION admin_resume_sponsorship(p_sponsorship_id uuid)
+RETURNS TABLE (sponsorship_id uuid)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_status text;
+BEGIN
+  IF NOT public.is_admin() THEN
+    RAISE EXCEPTION 'Only admins can resume sponsorships';
+  END IF;
+
+  SELECT status INTO v_status
+    FROM public.sponsorships
+    WHERE id = p_sponsorship_id;
+
+  IF v_status IS NULL THEN
+    RAISE EXCEPTION 'Sponsorship not found';
+  END IF;
+  IF v_status <> 'paused' THEN
+    RAISE EXCEPTION 'Only paused sponsorships can be resumed';
+  END IF;
+
+  RETURN QUERY
+    UPDATE public.sponsorships AS s
+      SET status = 'active'
+      WHERE s.id = p_sponsorship_id
+      RETURNING s.id;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION admin_cancel_sponsorship(p_sponsorship_id uuid)
+RETURNS TABLE (sponsorship_id uuid)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_status text;
+BEGIN
+  IF NOT public.is_admin() THEN
+    RAISE EXCEPTION 'Only admins can cancel sponsorships';
+  END IF;
+
+  SELECT status INTO v_status
+    FROM public.sponsorships
+    WHERE id = p_sponsorship_id;
+
+  IF v_status IS NULL THEN
+    RAISE EXCEPTION 'Sponsorship not found';
+  END IF;
+  IF v_status NOT IN ('active', 'paused') THEN
+    RAISE EXCEPTION 'This sponsorship is already cancelled';
+  END IF;
+
+  RETURN QUERY
+    UPDATE public.sponsorships AS s
+      SET status = 'cancelled'
+      WHERE s.id = p_sponsorship_id
+      RETURNING s.id;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION admin_pause_sponsorship(uuid) FROM PUBLIC;
+REVOKE ALL ON FUNCTION admin_resume_sponsorship(uuid) FROM PUBLIC;
+REVOKE ALL ON FUNCTION admin_cancel_sponsorship(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION admin_pause_sponsorship(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION admin_resume_sponsorship(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION admin_cancel_sponsorship(uuid) TO authenticated;
+
 -- =============================================================
 -- SPONSORSHIP TRACKING: amount paid, cancellation + re-sponsoring
 -- =============================================================
@@ -695,6 +801,9 @@ GRANT EXECUTE ON FUNCTION reactivate_sponsorship(uuid, text) TO authenticated;
 ALTER TABLE sponsorships ADD COLUMN IF NOT EXISTS amount DECIMAL(10,2);
 ALTER TABLE sponsorships ADD COLUMN IF NOT EXISTS donation_id UUID REFERENCES donations(id) ON DELETE SET NULL;
 ALTER TABLE sponsorships ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMPTZ;
+ALTER TABLE sponsorships ADD COLUMN IF NOT EXISTS paused_at TIMESTAMPTZ;
+ALTER TABLE sponsorships ADD COLUMN IF NOT EXISTS paused_by UUID REFERENCES auth.users(id);
+ALTER TABLE sponsorships ADD COLUMN IF NOT EXISTS cancelled_by UUID REFERENCES auth.users(id);
 ALTER TABLE sponsorships ADD COLUMN IF NOT EXISTS previous_child_id UUID;
 ALTER TABLE sponsorships ADD COLUMN IF NOT EXISTS reassigned_at TIMESTAMPTZ;
 
@@ -710,13 +819,23 @@ AS $$
 BEGIN
   IF NEW.status = 'active' THEN
     NEW.cancelled_at := NULL;
+    NEW.paused_at := NULL;
+    NEW.paused_by := NULL;
+    NEW.cancelled_by := NULL;
     UPDATE public.children
       SET sponsorship_status = 'sponsored'
       WHERE id = NEW.child_id;
+  ELSIF NEW.status = 'paused' THEN
+    -- Child stays "sponsored" while paused so nobody else can take the slot.
+    IF NEW.paused_at IS NULL THEN
+      NEW.paused_at := now();
+    END IF;
+    NEW.paused_by := auth.uid();
   ELSIF NEW.status = 'cancelled' THEN
     IF NEW.cancelled_at IS NULL THEN
       NEW.cancelled_at := now();
     END IF;
+    NEW.cancelled_by := auth.uid();
     IF TG_OP = 'INSERT' OR OLD.status <> 'cancelled' THEN
       UPDATE public.children
         SET sponsorship_status = 'available'
@@ -813,6 +932,11 @@ GRANT EXECUTE ON FUNCTION create_sponsorship_with_credit(uuid, numeric, text) TO
 UPDATE sponsorships
   SET cancelled_at = updated_at
   WHERE status = 'cancelled' AND cancelled_at IS NULL;
+
+-- Backfill: rows already in the paused state (if any) get a timestamp.
+UPDATE sponsorships
+  SET paused_at = updated_at
+  WHERE status = 'paused' AND paused_at IS NULL;
 
 -- Backfill: link each sponsorship to the completed sponsorship donation made
 -- by the same donor closest in time (donation + sponsorship are written in the

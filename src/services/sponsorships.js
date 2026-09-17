@@ -108,6 +108,48 @@ export async function cancelSponsorship(id) {
   }
 }
 
+// Admin-only lifecycle actions. These go through dedicated SECURITY DEFINER
+// RPCs (admin_pause_sponsorship / admin_resume_sponsorship /
+// admin_cancel_sponsorship) that enforce the transition rules and restrict
+// execution to allowlisted admins. The sync trigger keeps the child reserved
+// while paused and only releases it on cancel.
+
+export async function pauseSponsorship(id) {
+  try {
+    const { data, error } = await supabase.rpc("admin_pause_sponsorship", {
+      p_sponsorship_id: id,
+    });
+
+    return { data, error };
+  } catch (err) {
+    return { data: null, error: err };
+  }
+}
+
+export async function resumeSponsorship(id) {
+  try {
+    const { data, error } = await supabase.rpc("admin_resume_sponsorship", {
+      p_sponsorship_id: id,
+    });
+
+    return { data, error };
+  } catch (err) {
+    return { data: null, error: err };
+  }
+}
+
+export async function adminCancelSponsorship(id) {
+  try {
+    const { data, error } = await supabase.rpc("admin_cancel_sponsorship", {
+      p_sponsorship_id: id,
+    });
+
+    return { data, error };
+  } catch (err) {
+    return { data: null, error: err };
+  }
+}
+
 // Sponsors a child using an existing, already-paid sponsorship credit (no new
 // payment). Reuses the donor's oldest cancelled sponsorship slot. `amount` is
 // an optional sponsorship amount to record on the slot. `plan` optionally

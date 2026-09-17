@@ -37,11 +37,20 @@ import { cn, getGravatarUrl } from "@/lib/utils";
 
 const STATUS_TABS = ["All", "Active", "Cancelled"];
 
-function SponsorshipStatusBadge({ status }) {
+function SponsorshipStatusBadge({ status, cancelledBy, currentUserId }) {
   const styles = {
     active: "bg-green-100 text-green-700",
+    paused: "bg-amber-100 text-amber-700",
     cancelled: "bg-gray-100 text-gray-500",
   };
+
+  let label = status;
+  if (status === "paused") {
+    label = "Paused by admin";
+  } else if (status === "cancelled" && cancelledBy && cancelledBy !== currentUserId) {
+    label = "Cancelled by admin";
+  }
+
   return (
     <span
       className={cn(
@@ -49,7 +58,7 @@ function SponsorshipStatusBadge({ status }) {
         styles[status] || "bg-gray-100 text-gray-500"
       )}
     >
-      {status}
+      {label}
     </span>
   );
 }
@@ -374,7 +383,11 @@ export default function DonorDashboard() {
                                 {sponsorship.children?.location}
                               </p>
                             </div>
-                            <SponsorshipStatusBadge status={sponsorship.status} />
+                            <SponsorshipStatusBadge
+                              status={sponsorship.status}
+                              cancelledBy={sponsorship.cancelled_by}
+                              currentUserId={user?.id}
+                            />
                           </div>
 
                           <div className="mt-4 text-sm font-body text-on-surface-variant">
@@ -407,7 +420,16 @@ export default function DonorDashboard() {
                             </p>
                           )}
 
-                          {sponsorship.monthly_amount && sponsorship.start_date && (() => {
+                          {sponsorship.status === "paused" && (
+                            <p className="mt-2 font-body text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                              Sponsorship paused by our team — your child stays
+                              reserved for you. Contact us to resume.
+                            </p>
+                          )}
+
+                          {sponsorship.status === "active" &&
+                            sponsorship.monthly_amount &&
+                            sponsorship.start_date && (() => {
                             const start = new Date(sponsorship.start_date);
                             const now = new Date();
                             let next = new Date(start.getFullYear(), start.getMonth(), start.getDate());
