@@ -9,6 +9,7 @@ import {
   Save,
   Loader2,
   Upload,
+  Crop,
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
@@ -19,8 +20,15 @@ import {
   useUpdateChild,
   useDeleteChild,
 } from "@/hooks/useChildren";
-import { uploadAndConvert, getPublicUrl } from "@/services/upload";
+import {
+  uploadAndConvert,
+  uploadImage,
+  deleteImage,
+  getPublicUrl,
+} from "@/services/upload";
 import ImageCropper from "@/components/admin/ImageCropper";
+import ImageKitEditor from "@/components/admin/ImageKitEditor";
+import { isImageKitConfigured } from "@/lib/imagekit";
 
 const STATUSES = ["All", "available", "sponsored", "pending"];
 const GENDERS = ["male", "female"];
@@ -115,7 +123,7 @@ function Toast({ message, type, onClose }) {
   );
 }
 
-function ChildForm({ type, data, onChange, onUpload, onUploadChange, uploading, onSubmit, onCancel, submitting }) {
+function ChildForm({ type, data, onChange, onUpload, onEditPhoto, uploading, onSubmit, onCancel, submitting }) {
   const fileRef = useRef(null);
 
   return (
@@ -240,6 +248,14 @@ function ChildForm({ type, data, onChange, onUpload, onUploadChange, uploading, 
           <div className="w-32 h-40 rounded-lg overflow-hidden border border-gray-200">
             <PhotoPreview src={data.photo_url} name={data.first_name} size="lg" />
           </div>
+          <button
+            type="button"
+            onClick={onEditPhoto}
+            className="mt-2 inline-flex items-center gap-1.5 text-vibrant-blue hover:bg-vibrant-blue/5 rounded-lg font-body text-xs font-medium px-2 py-1 transition-colors"
+          >
+            <Crop className="h-3.5 w-3.5" />
+            Edit Photo
+          </button>
         </div>
       )}
 
@@ -314,6 +330,9 @@ export default function ChildrenManager() {
   const [pendingPhotoFile, setPendingPhotoFile] = useState(null);
   const [photoTarget, setPhotoTarget] = useState(null);
   const [showCropper, setShowCropper] = useState(false);
+  const [showEditor, setShowEditor] = useState(false);
+  const [editorSourceUrl, setEditorSourceUrl] = useState(null);
+  const [pendingTempPath, setPendingTempPath] = useState(null);
 
   const [newChild, setNewChild] = useState({
     first_name: "",
@@ -356,25 +375,59 @@ export default function ChildrenManager() {
     e.target.value = "";
     setPendingPhotoFile(file);
     setPhotoTarget(isNew ? "new" : "edit");
-    setShowCropper(true);
-  };
 
-  const handleCropComplete = async (croppedFile) => {
-    setShowCropper(false);
-    setPendingPhotoFile(null);
+    // When ImageKit is configured, stage the original to a temp "_pending/"
+    // path so the editor can preview and transform it via its public URL
+    // (crop, resize presets, custom dimensions, background removal). The temp
+    // object is deleted once the editor is saved or cancelled. Without
+    // ImageKit, fall back to the legacy canvas cropper.
+    if (isImageKitConfigured()) {
+      setUploading(true);
+      try {
+        const ext = file.name.split(".").pop() || "jpg";
+        const tempPath = `_pending/${Date.now()}.${ext}`;
+        const { error, path: finalTempPath } = await uploadImage(
+          file,
+          "children",
+          tempPath,
+          { compress: false }
+        );
+        if (error) throw error;
 
-    if (!croppedFile) {
-      setPhotoTarget(null);
+        const storedTempPath = finalTempPath || tempPath;
+        setPendingTempPath(storedTempPath);
+        setEditorSourceUrl(getPublicUrl("children", storedTempPath));
+        setShowEditor(true);
+      } catch (err) {
+        console.error("Failed to stage image:", err);
+        showToast("Could not prepare image for editing: " + err.message, "error");
+        setPendingPhotoFile(null);
+        setPendingTempPath(null);
+        setEditorSourceUrl(null);
+      } finally {
+        setUploading(false);
+      }
       return;
     }
 
+    setShowCropper(true);
+  };
+
+  const savePhoto = async (croppedFile, edited = false) => {
     setUploading(true);
 
     try {
       const ext = croppedFile.name.split(".").pop();
       let path = `children/${Date.now()}.${ext}`;
 
-      const { error: uploadErr, path: finalPath } = await uploadAndConvert(croppedFile, "children", path);
+      // Editor output is already transformed — don't run the enhancer across
+      // it again. Legacy-cropper output keeps the existing enhancement path.
+      const { error: uploadErr, path: finalPath } = await uploadAndConvert(
+        croppedFile,
+        "children",
+        path,
+        edited ? { enhance: false } : {}
+      );
       path = finalPath || path;
 
       if (uploadErr) throw uploadErr;
@@ -396,10 +449,92 @@ export default function ChildrenManager() {
     }
   };
 
+  const handleCropComplete = async (croppedFile) => {
+    setShowCropper(false);
+    setPendingPhotoFile(null);
+
+    if (!croppedFile) {
+      setPhotoTarget(null);
+      return;
+    }
+
+    await savePhoto(croppedFile);
+  };
+
+  const handleEditorSave = async (editedFile) => {
+    setShowEditor(false);
+    const tempPath = pendingTempPath;
+    setPendingTempPath(null);
+    setPendingPhotoFile(null);
+    setEditorSourceUrl(null);
+
+    if (!editedFile) {
+      setPhotoTarget(null);
+      return;
+    }
+
+    await savePhoto(editedFile, true);
+
+    if (tempPath) {
+      await deleteImage("children", tempPath).catch(() => {});
+    }
+  };
+
+  const handleEditorCancel = () => {
+    setShowEditor(false);
+    const tempPath = pendingTempPath;
+    setPendingTempPath(null);
+    setPendingPhotoFile(null);
+    setEditorSourceUrl(null);
+    setPhotoTarget(null);
+    if (tempPath) {
+      deleteImage("children", tempPath).catch(() => {});
+    }
+  };
+
   const handleCropCancel = () => {
     setShowCropper(false);
     setPendingPhotoFile(null);
     setPhotoTarget(null);
+  };
+
+  // Re-opens the editor on a photo that's already been uploaded/attached to
+  // the form — the same "Edit" flow Media Library uses for existing images.
+  // When ImageKit is configured we edit the live public URL directly; without
+  // it, we fetch the image back and run it through the legacy cropper.
+  const handleEditPhoto = async () => {
+    const target = showAddForm ? "new" : "edit";
+    const photoUrl = (target === "new" ? newChild.photo_url : editData.photo_url) || "";
+
+    if (!photoUrl) {
+      showToast("No photo to edit yet", "error");
+      return;
+    }
+
+    if (isImageKitConfigured()) {
+      setPhotoTarget(target);
+      setPendingPhotoFile(null);
+      setPendingTempPath(null);
+      setEditorSourceUrl(photoUrl);
+      setShowEditor(true);
+      return;
+    }
+
+    try {
+      const resp = await fetch(photoUrl);
+      if (!resp.ok) throw new Error("Could not fetch image");
+      const blob = await resp.blob();
+      const ext = photoUrl.split(".").pop() || "jpg";
+      const file = new File([blob], `child-photo.${ext}`, {
+        type: blob.type || "image/jpeg",
+      });
+      setPhotoTarget(target);
+      setPendingPhotoFile(file);
+      setShowCropper(true);
+    } catch (err) {
+      console.error("Failed to load image for editing:", err);
+      showToast("Could not load image for editing. Try re-uploading it instead.", "error");
+    }
   };
 
   const handleEdit = (child) => {
@@ -527,6 +662,7 @@ export default function ChildrenManager() {
               data={newChild}
               onChange={setNewChild}
               onUpload={(e) => handlePhotoUpload(e, true)}
+              onEditPhoto={handleEditPhoto}
               uploading={uploading}
               onSubmit={handleAdd}
               onCancel={() => setShowAddForm(false)}
@@ -610,6 +746,7 @@ export default function ChildrenManager() {
                     data={editData}
                     onChange={setEditData}
                     onUpload={(e) => handlePhotoUpload(e)}
+                    onEditPhoto={handleEditPhoto}
                     uploading={uploading}
                     onSubmit={handleSave}
                     onCancel={() => setEditingId(null)}
@@ -747,6 +884,15 @@ export default function ChildrenManager() {
           file={pendingPhotoFile}
           onComplete={handleCropComplete}
           onCancel={handleCropCancel}
+        />
+      )}
+
+      {showEditor && editorSourceUrl && (
+        <ImageKitEditor
+          sourceUrl={editorSourceUrl}
+          fileName={pendingPhotoFile?.name || "child-photo"}
+          onComplete={handleEditorSave}
+          onCancel={handleEditorCancel}
         />
       )}
     </motion.div>
