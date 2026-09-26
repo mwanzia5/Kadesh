@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import PageTransition from "@/animations/PageTransition";
+import { cmsText, useCMSReady } from "@/hooks/useCMS";
 import {
   staggerContainer,
   slideUp,
@@ -67,6 +68,8 @@ const keyFacts = [
 ];
 
 export default function ChildEducation() {
+  useCMSReady();
+
   return (
     <PageTransition>
       <HeroSection />
@@ -101,13 +104,13 @@ function HeroSection() {
               className="mb-8"
             >
               <span className="inline-block rounded-full bg-vibrant-blue px-5 py-2 font-body text-label-bold uppercase tracking-widest text-white">
-                Child to School
+                {cmsText("childEducation", "heroBadge")}
               </span>
             </motion.div>
 
             <div className="max-w-4xl mb-8">
               <SplitText
-                text="Children Education Project"
+                text={cmsText("childEducation", "heroTitle")}
                 className="font-display text-4xl md:text-6xl lg:text-7xl font-bold leading-tight block"
                 delay={0.5}
                 duration={0.8}
@@ -121,7 +124,7 @@ function HeroSection() {
               transition={{ duration: 0.6, delay: 1.0 }}
               className="font-body text-body-lg md:text-xl max-w-2xl text-white/80 mb-10"
             >
-              Nurturing young minds by addressing their most pressing educational and developmental needs
+              {cmsText("childEducation", "heroSubtitle")}
             </motion.p>
 
             <motion.div
@@ -172,7 +175,7 @@ function StorySection() {
             </div>
 
             <h2 className="font-display text-3xl md:text-4xl lg:text-5xl text-deep-navy mb-8">
-              Children Education Projects
+              {cmsText("childEducation", "storyTitle")}
             </h2>
           </ScrollReveal>
 
@@ -219,8 +222,8 @@ function GallerySection() {
     <Section background="gray" className="section-padding">
       <Container>
         <SectionHeading
-          title="Project Gallery"
-          subtitle="Moments captured from our Child Education Project"
+          title={cmsText("childEducation", "galleryTitle")}
+          subtitle={cmsText("childEducation", "gallerySub")}
         />
 
         <div className="mt-16 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -294,10 +297,10 @@ function DonationCTA() {
         <ScrollReveal>
           <div className="text-center max-w-3xl mx-auto">
             <h2 className="font-display text-3xl md:text-5xl text-white mb-6">
-              Help a Child Stay in School
+              {cmsText("childEducation", "ctaTitle")}
             </h2>
             <p className="font-body text-body-lg text-white/70 mb-10 leading-relaxed">
-              Your donation helps provide scholarships, school supplies, and educational resources to children who need them most. Together, we can ensure every child has the opportunity to learn and grow.
+              {cmsText("childEducation", "ctaDesc")}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

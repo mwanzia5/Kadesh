@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import PageTransition from "@/animations/PageTransition";
+import { cmsText, useCMSReady } from "@/hooks/useCMS";
 import {
   staggerContainer,
   slideUp,
@@ -67,6 +68,8 @@ const keyFacts = [
 ];
 
 export default function BethlehemBread() {
+  useCMSReady();
+
   return (
     <PageTransition>
       <HeroSection />
@@ -101,13 +104,13 @@ function HeroSection() {
               className="mb-8"
             >
               <span className="inline-block rounded-full bg-hope-orange px-5 py-2 font-body text-label-bold uppercase tracking-widest text-white">
-                Food Security
+                {cmsText("bethlehemBread", "heroBadge")}
               </span>
             </motion.div>
 
             <div className="max-w-4xl mb-8">
               <SplitText
-                text="Bethlehem Bread"
+                text={cmsText("bethlehemBread", "heroTitle")}
                 className="font-display text-4xl md:text-6xl lg:text-7xl font-bold leading-tight block"
                 delay={0.5}
                 duration={0.8}
@@ -121,7 +124,7 @@ function HeroSection() {
               transition={{ duration: 0.6, delay: 1.0 }}
               className="font-body text-body-lg md:text-xl max-w-2xl text-white/80 mb-10"
             >
-              Manufacturing and distributing bread to feed people experiencing poverty and food insecurity
+              {cmsText("bethlehemBread", "heroSubtitle")}
             </motion.p>
 
             <motion.div
@@ -172,7 +175,7 @@ function StorySection() {
             </div>
 
             <h2 className="font-display text-3xl md:text-4xl lg:text-5xl text-deep-navy mb-8">
-              Bethlehem Bread
+              {cmsText("bethlehemBread", "storyTitle")}
             </h2>
           </ScrollReveal>
 
@@ -233,8 +236,8 @@ function GallerySection() {
     <Section background="gray" className="section-padding">
       <Container>
         <SectionHeading
-          title="Project Gallery"
-          subtitle="Moments from our Bethlehem Bread Project"
+          title={cmsText("bethlehemBread", "galleryTitle")}
+          subtitle={cmsText("bethlehemBread", "gallerySub")}
         />
 
         <div className="mt-16 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">

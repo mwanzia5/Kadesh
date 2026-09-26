@@ -6,7 +6,9 @@ import Container from "@/components/ui/Container";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import SectionHeading from "@/components/ui/SectionHeading";
 import { useVideos } from "@/hooks/useVideos";
+import { cmsText, useCMSReady } from "@/hooks/useCMS";
 import { cn } from "@/lib/utils";
+import { matchesQuery } from "@/lib/searchMatch";
 
 const CATEGORIES = ["All", "Education", "Health", "Food Security", "Women & Youth", "Community"];
 
@@ -27,6 +29,8 @@ function extractYouTubeId(url) {
 }
 
 export default function Videos() {
+  useCMSReady();
+
   const { data: videosData, isLoading } = useVideos();
   const videos = videosData?.data || [];
 
@@ -36,22 +40,37 @@ export default function Videos() {
 
   const filteredVideos = useMemo(() => {
     return videos.filter((video) => {
-      const matchesCategory = activeCategory === "All" || video.category === activeCategory;
-      const matchesSearch = video.title.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory =
+        activeCategory === "All" ||
+        (video.category || "").toLowerCase() === activeCategory.toLowerCase();
+      // Matches the title and the category, so typing "health" finds a video
+      // filed under Health even when the word isn't in its title.
+      const matchesSearch = matchesQuery(searchQuery, video.title, video.category);
       return matchesCategory && matchesSearch;
     });
   }, [videos, activeCategory, searchQuery]);
 
-  const current = activeVideo || filteredVideos[0];
+  // If the user picked a video and then searched or filtered it away, fall back
+  // to the first result instead of leaving a stale video in the player that is
+  // no longer in the grid.
+  const current =
+    activeVideo && filteredVideos.some((v) => v.id === activeVideo.id)
+      ? activeVideo
+      : filteredVideos[0];
 
   return (
     <PageTransition>
       <section className="pt-28 pb-20 min-h-screen bg-background">
         <Container>
           <ScrollReveal>
+            <span className="inline-block rounded-full bg-hope-orange/90 px-5 py-2 font-body text-label-bold uppercase tracking-widest text-white mb-6">
+              {cmsText("videos", "heroBadge")}
+            </span>
+          </ScrollReveal>
+          <ScrollReveal>
             <SectionHeading
-              title="Stories Worth Watching"
-              subtitle="Watch how we're transforming lives across Africa"
+              title={cmsText("videos", "heroTitle")}
+              subtitle={cmsText("videos", "heroSubtitle")}
             />
           </ScrollReveal>
 
@@ -134,7 +153,8 @@ export default function Videos() {
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60 group-focus-within:text-vibrant-blue transition-colors" />
                     <input
                       type="text"
-                      placeholder="Search videos..."
+                      placeholder={cmsText("videos", "searchPlaceholder")}
+                      aria-label="Search videos"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="w-full pl-10 pr-10 py-2.5 rounded-xl border-2 border-gray-200 bg-white text-foreground text-sm placeholder:text-muted-foreground/50 shadow-sm focus:outline-none focus:ring-2 focus:ring-vibrant-blue/30 focus:border-vibrant-blue transition-all"
@@ -200,7 +220,11 @@ export default function Videos() {
                 <ScrollReveal>
                   <div className="text-center py-16">
                     <Filter className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-                    <p className="text-muted-foreground">No videos match your search.</p>
+                    <p className="text-muted-foreground">
+                      {activeCategory === "All" && !searchQuery.trim()
+                        ? "No videos available yet."
+                        : "No videos match your search."}
+                    </p>
                   </div>
                 </ScrollReveal>
               )}

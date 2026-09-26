@@ -15,7 +15,7 @@ import {
 
 import PageTransition from "@/animations/PageTransition";
 import SEO from "@/components/ui/SEO";
-import { getCMSContent, useCMSReady } from "@/hooks/useCMS";
+import { cmsText, useCMSReady } from "@/hooks/useCMS";
 import { useTestimonials } from "@/hooks/useTestimonials";
 import {
   staggerContainer,
@@ -139,14 +139,14 @@ function HeroSection() {
             >
               <span className="h-px w-10 bg-hope-orange" />
               <span className="font-body text-label-bold uppercase tracking-[0.3em] text-white/70">
-                {getCMSContent("home", "heroBadge", "Since 2009 \u00b7 DR Congo, Uganda & Kenya")}
+                {cmsText("home", "heroBadge")}
               </span>
               <span className="h-px w-10 bg-hope-orange" />
             </motion.div>
 
             <h1>
               <SplitText
-                text={getCMSContent("home", "heroTitle", "Hope, restored.")}
+                text={cmsText("home", "heroTitle")}
                 className="font-display text-5xl md:text-7xl lg:text-8xl font-bold leading-[1.05] block"
                 delay={0.6}
                 duration={0.8}
@@ -160,7 +160,7 @@ function HeroSection() {
               transition={{ duration: 0.6, delay: 1.3 }}
               className="font-body text-body-lg md:text-xl max-w-xl text-white/70 mb-10 text-balance"
             >
-              {getCMSContent("home", "heroSubtitle", "Education, healthcare, and food security for communities across Africa.")}
+              {cmsText("home", "heroSubtitle")}
             </motion.p>
 
             <motion.div
@@ -176,14 +176,14 @@ function HeroSection() {
                 to="/donate"
                 className="shadow-[0_0_30px_-5px_rgba(91,164,230,0.6)]"
               >
-                {getCMSContent("home", "heroCta", "Donate Now")}
+                {cmsText("home", "heroCta")}
                 <Heart className="ml-2 h-5 w-5" />
               </Button>
               <Link
                 to="/about"
                 className="group inline-flex items-center gap-2 font-body text-label-bold text-white/90 hover:text-white transition-colors"
               >
-                {getCMSContent("home", "heroCta2", "Learn our story")}
+                {cmsText("home", "heroCta2")}
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Link>
             </motion.div>
@@ -218,8 +218,8 @@ function PillarsSection() {
     <Section background="white" className="section-padding">
       <Container>
         <SectionHeading
-          title={getCMSContent("home", "pillarsHeading", "Our Foundation")}
-          subtitle={getCMSContent("home", "pillarsSub", "Five pillars driving lasting change across Africa")}
+          title={cmsText("home", "pillarsHeading")}
+          subtitle={cmsText("home", "pillarsSub")}
         />
 
         <motion.div
@@ -303,20 +303,20 @@ function WhoWeAreSection() {
           <ScrollReveal direction="right" className="lg:col-span-5">
             <div className="mt-8 lg:mt-0">
               <SplitText
-                text={getCMSContent("home", "whoWeAreTitle", "Who We Are")}
+                text={cmsText("home", "whoWeAreTitle")}
                 className="font-display text-display-lg-mobile lg:text-display-lg text-white block mb-5"
                 delay={0.2}
               />
 
               <p className="font-body text-body-lg text-white/70 mb-7 leading-relaxed">
-                {getCMSContent("home", "whoWeAreDesc", "Founded in 2009, Kadesh Hope Mission began when a group of young people left India for the Democratic Republic of Congo to serve families living in poverty. Today, we work across Africa through education, healthcare, and community development \u2014 restoring hope and building brighter futures.")}
+                {cmsText("home", "whoWeAreDesc")}
               </p>
 
               <div className="space-y-3 mb-8">
                 {[
-                  getCMSContent("home", "whoWeCheck1", "Quality education access for every child"),
-                  getCMSContent("home", "whoWeCheck2", "Healthcare for underserved communities"),
-                  getCMSContent("home", "whoWeCheck3", "Social development and economic empowerment"),
+                  cmsText("home", "whoWeCheck1"),
+                  cmsText("home", "whoWeCheck2"),
+                  cmsText("home", "whoWeCheck3"),
                 ].map((item, i) => (
                   <div key={i} className="flex items-start gap-3">
                     <CheckCircle className="h-6 w-6 text-hope-orange shrink-0 mt-0.5" />
@@ -328,7 +328,7 @@ function WhoWeAreSection() {
               </div>
 
               <Button variant="primary" size="lg" as={Link} to="/about">
-                {getCMSContent("home", "whoWeAreCta", "Know More About Us")}
+                {cmsText("home", "whoWeAreCta")}
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </div>
@@ -346,9 +346,9 @@ function ProjectsSection() {
     <Section background="white" className="section-padding">
       <Container>
         <SectionHeading
-          title={getCMSContent("home", "projectsTitle", "Our Projects")}
+          title={cmsText("home", "projectsTitle")}
           highlight="Projects"
-          subtitle={getCMSContent("home", "projectsSub", "Transforming communities across Africa")}
+          subtitle={cmsText("home", "projectsSub")}
         />
 
         <motion.div
@@ -396,7 +396,7 @@ function ProjectsSection() {
 
         <ScrollReveal delay={0.3} className="mt-12 text-center">
           <Button variant="primary" size="lg" as={Link} to="/projects/bethlehem-bread">
-            {getCMSContent("home", "projectsCta", "View All Projects")}
+            {cmsText("home", "projectsCta")}
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </ScrollReveal>
@@ -409,8 +409,8 @@ function GallerySection() {
     <Section background="gray" className="section-padding">
       <Container>
         <SectionHeading
-          title={getCMSContent("home", "galleryTitle", "Moments of Impact")}
-          subtitle={getCMSContent("home", "gallerySub", "A glimpse into the work we do every day")}
+          title={cmsText("home", "galleryTitle")}
+          subtitle={cmsText("home", "gallerySub")}
         />
 
         <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -434,7 +434,7 @@ function GallerySection() {
 
         <ScrollReveal delay={0.3} className="mt-12 text-center">
           <Button variant="primary" size="lg" as={Link} to="/gallery">
-            {getCMSContent("home", "galleryCta", "View Full Gallery")}
+            {cmsText("home", "galleryCta")}
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </ScrollReveal>
@@ -486,8 +486,8 @@ function TestimonialsSection() {
     <Section background="white" className="section-padding overflow-hidden">
       <Container>
         <SectionHeading
-          title={getCMSContent("home", "testimonialsTitle", "Voices of Hope")}
-          subtitle={getCMSContent("home", "testimonialsSub", "Hear from the people whose lives have been transformed")}
+          title={cmsText("home", "testimonialsTitle")}
+          subtitle={cmsText("home", "testimonialsSub")}
         />
 
         <div className="mt-16">
@@ -528,15 +528,15 @@ function DonationCTASection() {
         <ScrollReveal>
           <div className="text-center max-w-3xl mx-auto">
             <h2 className="font-display text-3xl md:text-5xl lg:text-display-lg-mobile text-white mb-6">
-              {getCMSContent("home", "donateCtaTitle", "Make a Difference Today")}
+              {cmsText("home", "donateCtaTitle")}
             </h2>
             <p className="font-body text-body-lg text-white/70 mb-10 leading-relaxed">
-              {getCMSContent("home", "donateCtaDesc", "Every donation helps us provide education, healthcare, food security, and hope to communities across Africa. Your generosity transforms lives and builds futures.")}
+              {cmsText("home", "donateCtaDesc")}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button variant="lightblue" size="lg" as={Link} to="/donate">
-                {getCMSContent("home", "donateCtaBtn", "Donate Now")}
+                {cmsText("home", "donateCtaBtn")}
                 <Heart className="ml-2 h-5 w-5" />
               </Button>
               <Button
@@ -546,7 +546,7 @@ function DonationCTASection() {
                 to="/contact"
                 className="border-white text-white hover:bg-white/10"
               >
-                {getCMSContent("home", "donatePartnerBtn", "Become a Partner")}
+                {cmsText("home", "donatePartnerBtn")}
                 <Users className="ml-2 h-5 w-5" />
               </Button>
             </div>
@@ -562,8 +562,8 @@ function PartnersSection() {
     <Section background="white" className="section-padding">
       <Container>
         <SectionHeading
-          title={getCMSContent("home", "partnersTitle", "Trusted Partners")}
-          subtitle={getCMSContent("home", "partnersSub", "Organizations that share our vision for a better Africa")}
+          title={cmsText("home", "partnersTitle")}
+          subtitle={cmsText("home", "partnersSub")}
         />
 
         <div className="mt-12">

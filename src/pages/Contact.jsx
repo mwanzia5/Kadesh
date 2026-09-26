@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Mail, Phone, MapPin, Send, Loader2, CheckCircle2, AlertCircle, ChevronDown } from "lucide-react";
 import { FacebookIcon, TwitterIcon, YoutubeIcon, LinkedinIcon } from "@/components/ui/SocialIcons";
 import { useSendMessage } from "@/hooks/useContact";
+import { cmsText, useCMSReady } from "@/hooks/useCMS";
 import PageTransition from "@/animations/PageTransition";
 import Container from "@/components/ui/Container";
 import Section from "@/components/ui/Section";
@@ -14,9 +15,6 @@ const offices = {
     flag: "\uD83C\uDDFA\uD83C\uDDEC",
     name: "Head Office \u2014 Uganda",
     address: ["Kadesh Hope Mission of Africa", "Bulemezi Block 30, Plot No. 106,", "Nakaseta (Mpande), Kalule, Uganda."],
-    phone: "+254 733 959 383",
-    phoneHref: "tel:+254733959383",
-    email: "kadeshhope.africa@gmail.com",
     mapQuery: "Nakaseta+Mpande+Kalule+Uganda",
   },
 };
@@ -30,7 +28,16 @@ const subjects = [
   "Other",
 ];
 
+// tel:/mailto: targets have to be sanitised — an admin can type any string into
+// the CMS phone/email fields, and a broken href would silently kill the link.
+function telHref(phone) {
+  const digits = String(phone).replace(/[^\d+]/g, "");
+  return digits ? `tel:${digits}` : undefined;
+}
+
 export default function Contact() {
+  useCMSReady();
+
   const [status, setStatus] = useState("idle");
   const [activeOffice] = useState("uganda");
   const [form, setForm] = useState({
@@ -42,6 +49,9 @@ export default function Contact() {
   });
 
   const sendMessageMutation = useSendMessage();
+
+  const email = cmsText("contact", "email");
+  const phone = cmsText("contact", "phone");
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -84,13 +94,13 @@ export default function Contact() {
           <ScrollReveal>
             <div className="text-center mb-16">
               <span className="font-body text-label-bold text-vibrant-blue uppercase tracking-widest mb-4 block">
-                Contact Us
+                {cmsText("contact", "heroBadge")}
               </span>
               <h1 className="font-display text-headline-lg md:text-display-lg-mobile text-deep-navy mb-4">
-                We&#39;d love to hear from you
+                {cmsText("contact", "heroTitle")}
               </h1>
               <p className="font-body text-body-lg text-on-surface-variant max-w-2xl mx-auto">
-                Questions about sponsorship, donations, volunteering, or partnerships &mdash; reach out and our team will respond soon.
+                {cmsText("contact", "heroSubtitle")}
               </p>
             </div>
           </ScrollReveal>
@@ -99,6 +109,14 @@ export default function Contact() {
             {/* Contact Form */}
             <ScrollReveal className="lg:col-span-7">
               <div className="bg-white rounded-2xl border border-soft-accent p-8 md:p-10">
+                <div className="mb-8">
+                  <h2 className="font-display text-headline-md text-deep-navy">
+                    {cmsText("contact", "formTitle")}
+                  </h2>
+                  <p className="font-body text-body-md text-on-surface-variant mt-2">
+                    {cmsText("contact", "formSub")}
+                  </p>
+                </div>
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -201,7 +219,7 @@ export default function Contact() {
                       className="flex items-center gap-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3"
                     >
                       <CheckCircle2 className="h-4 w-4 shrink-0" />
-                      Thanks for reaching out! We will respond within 2 business days.
+                      {cmsText("contact", "successMsg")}
                     </div>
                   )}
                   {status === "error" && (
@@ -221,17 +239,19 @@ export default function Contact() {
             <ScrollReveal delay={0.2} className="lg:col-span-5 space-y-6">
               {/* Get in Touch Card */}
               <div className="bg-deep-navy text-white rounded-2xl p-8">
-                <h3 className="font-display text-headline-md mb-6">Get in Touch</h3>
+                <h3 className="font-display text-headline-md mb-6">
+                  {cmsText("contact", "infoTitle")}
+                </h3>
                 <ul className="space-y-5">
                   <li className="flex gap-4">
                     <Mail className="h-5 w-5 text-hope-orange shrink-0 mt-0.5" />
                     <div>
                       <p className="font-body text-label-bold opacity-70 mb-1">EMAIL</p>
                       <a
-                        href={`mailto:${office.email}`}
+                        href={`mailto:${email}`}
                         className="font-body text-body-md hover:text-hope-orange underline decoration-hope-orange/40 underline-offset-4 transition-colors"
                       >
-                        kadeshhope.africa@gmail.com
+                        {email}
                       </a>
                     </div>
                   </li>
@@ -239,10 +259,19 @@ export default function Contact() {
                     <Phone className="h-5 w-5 text-hope-orange shrink-0 mt-0.5" />
                     <div>
                       <p className="font-body text-label-bold opacity-70 mb-1">PHONE</p>
-                      <p className="font-body text-body-md">+254 733 959 383</p>
+                      {telHref(phone) ? (
+                        <a
+                          href={telHref(phone)}
+                          className="font-body text-body-md hover:text-hope-orange underline decoration-hope-orange/40 underline-offset-4 transition-colors"
+                        >
+                          {phone}
+                        </a>
+                      ) : (
+                        <p className="font-body text-body-md">{phone}</p>
+                      )}
                     </div>
                   </li>
-                  </ul>
+                </ul>
               </div>
 
               {/* Social Card */}
@@ -275,6 +304,9 @@ export default function Contact() {
               <h2 className="font-display text-headline-md text-deep-navy">
                 Our Office
               </h2>
+              <p className="font-body text-body-md text-on-surface-variant mt-2">
+                {cmsText("contact", "location")}
+              </p>
             </div>
 
             {/* Office details */}
@@ -294,14 +326,18 @@ export default function Contact() {
                   ))}
                   <div className="flex items-center gap-2 pt-2">
                     <Phone className="h-4 w-4 text-hope-orange" />
-                    <a href={office.phoneHref} className="hover:text-vibrant-blue transition-colors">
-                      {office.phone}
-                    </a>
+                    {telHref(phone) ? (
+                      <a href={telHref(phone)} className="hover:text-vibrant-blue transition-colors">
+                        {phone}
+                      </a>
+                    ) : (
+                      <span>{phone}</span>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <Mail className="h-4 w-4 text-hope-orange" />
-                    <a href={`mailto:${office.email}`} className="hover:text-vibrant-blue transition-colors">
-                      {office.email}
+                    <a href={`mailto:${email}`} className="hover:text-vibrant-blue transition-colors">
+                      {email}
                     </a>
                   </div>
                 </div>

@@ -31,7 +31,7 @@ import OptimizedImage from "@/components/ui/OptimizedImage";
 import GlareHover from "@/components/ui/GlareHover";
 import SplitText from "@/components/ui/SplitText";
 import SEO from "@/components/ui/SEO";
-import { getCMSContent, useCMSReady } from "@/hooks/useCMS";
+import { cmsText, cmsParagraphs, useCMSReady } from "@/hooks/useCMS";
 import AnimatedCounter from "@/components/ui/AnimatedCounter";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import SectionHeading from "@/components/ui/SectionHeading";
@@ -39,9 +39,43 @@ import SectionHeading from "@/components/ui/SectionHeading";
 const ministryIcons = { School, Heart, UtensilsCrossed, Rocket, Users };
 
 // ---------------------------------------------------------------------------
-// Static content — the standalone Impact Statistics page pulled this from a
-// CMS/localStorage layer. Folded into a single static About page, these
-// numbers now live here directly. Swap in a CMS fetch later if needed.
+// Impact stat strings are edited as plain text in the CMS ("10,000+", "95%",
+// "1,200 children") but still need to count up. Split the value into an
+// optional prefix, the number to animate, and an optional suffix so whatever an
+// admin types still renders — including values with no digits at all.
+// ---------------------------------------------------------------------------
+function splitStat(value) {
+  const match = /^(\D*)(\d[\d,]*(?:\.\d+)?)(\D*)$/.exec(String(value).trim());
+  if (!match) return null;
+  return {
+    prefix: match[1],
+    target: Number(match[2].replace(/,/g, "")),
+    suffix: match[3],
+  };
+}
+
+function CMSStat({ value, duration = 2000 }) {
+  const parts = splitStat(value);
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-100px" });
+
+  if (!parts) {
+    return <span ref={ref}>{String(value)}</span>;
+  }
+
+  return (
+    <span ref={ref}>
+      {parts.prefix}
+      {isInView && <AnimatedCounter end={parts.target} duration={duration} />}
+      {parts.suffix}
+    </span>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Static content for the Impact Statistics section.
+// These are the program cards. The CMS-owned headline metrics
+// (impactStat1..3 / impactLabel1..3) render above them in ImpactStatsSection.
 // ---------------------------------------------------------------------------
 const IMPACT_ITEMS = [
   {
@@ -181,13 +215,13 @@ function HeroSection() {
               className="mb-8"
             >
               <span className="inline-block rounded-full bg-hope-orange px-5 py-2 font-body text-label-bold uppercase tracking-widest text-white">
-                EST. 2009
+                {cmsText("about", "heroBadge")}
               </span>
             </motion.div>
 
             <h1>
               <SplitText
-                text="Wisdom guided by empathy"
+                text={cmsText("about", "heroTitle")}
                 className="font-display text-4xl md:text-6xl lg:text-7xl font-bold leading-tight block"
                 delay={0.5}
                 duration={0.8}
@@ -201,7 +235,7 @@ function HeroSection() {
               transition={{ duration: 0.6, delay: 1.2 }}
               className="font-body text-body-lg md:text-xl max-w-2xl text-white/80 mb-10"
             >
-              {getCMSContent("about", "heroSubtitle", "In 2009, a group of young people migrated from India to the Democratic Republic of Congo with a bold vision \u2014 to uplift impoverished communities through compassion, education, and holistic development. That journey marked the beginning of Kadesh Hope Mission.")}
+              {cmsText("about", "heroSubtitle")}
             </motion.p>
           </div>
         </Container>
@@ -231,11 +265,17 @@ function HeroSection() {
 function StorySection() {
   const sectionRef = useRef(null);
   const isInView = useInView(sectionRef, { once: true, margin: "-100px" });
+  const paragraphs = cmsParagraphs("about", "storyContent");
 
   return (
     <Section background="white" className="section-padding overflow-hidden">
       <Container>
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+        <SectionHeading
+          title={cmsText("about", "storyTitle")}
+          subtitle={cmsText("about", "storySubtitle")}
+        />
+
+        <div className="mt-16 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
           <div ref={sectionRef} className="lg:col-span-7">
             <ScrollReveal direction="left">
               <div className="flex flex-col sm:flex-row gap-8 mb-10">
@@ -253,20 +293,11 @@ function StorySection() {
                 </div>
               </div>
 
-              <p className="font-body text-body-lg text-on-surface leading-relaxed mb-6">
-                Kadesh Hope Mission was born from a simple yet radical idea &mdash;
-                that young people, driven by faith and empathy, could cross
-                continents to serve communities in need. In 2009, our founders
-                left India for the Democratic Republic of Congo, carrying nothing
-                but a vision for holistic transformation.
-              </p>
-              <p className="font-body text-body-lg text-on-surface leading-relaxed">
-                Today, that vision has grown into a multi-national movement
-                spanning Uganda, Kenya, and the DRC. Through education,
-                healthcare, food security, and community empowerment, we continue
-                to honor the founding spirit &mdash; meeting people where they are
-                and walking alongside them toward a brighter future.
-              </p>
+              <div className="space-y-6 font-body text-body-lg text-on-surface leading-relaxed">
+                {paragraphs.map((text, i) => (
+                  <p key={i}>{text}</p>
+                ))}
+              </div>
             </ScrollReveal>
           </div>
 
@@ -314,9 +345,11 @@ function MissionVisionSection() {
                 <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-vibrant-blue/10 text-vibrant-blue mb-6">
                   <Target className="h-7 w-7" />
                 </div>
-                <h3 className="font-display text-headline-md text-deep-navy mb-4">Mission Statement</h3>
+                <h3 className="font-display text-headline-md text-deep-navy mb-4">
+                  {cmsText("about", "missionTitle")}
+                </h3>
                 <p className="font-body text-body-lg text-on-surface-variant leading-relaxed">
-                  Our mission is to transform lives and uplift communities in Africa through holistic gospel outreach.
+                  {cmsText("about", "missionContent")}
                 </p>
               </div>
             </div>
@@ -329,11 +362,11 @@ function MissionVisionSection() {
                 <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-hope-orange/10 text-hope-orange mb-6">
                   <Eye className="h-7 w-7" />
                 </div>
-                <h3 className="font-display text-headline-md text-deep-navy mb-4">Vision Statement</h3>
+                <h3 className="font-display text-headline-md text-deep-navy mb-4">
+                  {cmsText("about", "visionTitle")}
+                </h3>
                 <p className="font-body text-body-lg text-on-surface-variant leading-relaxed">
-                  To create thriving, self-sustaining communities in Africa where
-                  every individual has access to spiritual as well as physical
-                  needs.
+                  {cmsText("about", "visionContent")}
                 </p>
               </div>
             </div>
@@ -351,7 +384,10 @@ function MinistryAreasSection() {
   return (
     <Section background="white" className="section-padding">
       <Container>
-        <SectionHeading title="How We Serve" subtitle="Our ministry areas address the most critical needs" />
+        <SectionHeading
+          title={cmsText("about", "ministryTitle")}
+          subtitle={cmsText("about", "ministrySub")}
+        />
 
         <motion.div
           variants={staggerContainer}
@@ -439,13 +475,34 @@ function ImpactProgressBar({ progress, color }) {
 function ImpactStatsSection() {
   const impactIcons = { Rocket, GraduationCap, UtensilsCrossed, Stethoscope };
 
+  // impactStat1..3 / impactLabel1..3 are headline metrics, not program names, so
+  // they get their own band above the program cards rather than overwriting the
+  // card titles. Keys are spelled out rather than looped so `npm run verify:cms`
+  // can prove every registered field is actually rendered.
+  const headlineStats = [
+    { value: cmsText("about", "impactStat1"), label: cmsText("about", "impactLabel1") },
+    { value: cmsText("about", "impactStat2"), label: cmsText("about", "impactLabel2") },
+    { value: cmsText("about", "impactStat3"), label: cmsText("about", "impactLabel3") },
+  ];
+
   return (
     <Section background="gray" className="section-padding">
       <Container>
         <SectionHeading
-          title="Our Impact"
-          subtitle="Every statistic represents a life transformed, a family strengthened, and a community empowered"
+          title={cmsText("about", "impactTitle")}
+          subtitle={cmsText("about", "impactSubtitle")}
         />
+
+        <div className="mt-14 grid grid-cols-1 sm:grid-cols-3 gap-8 text-center">
+          {headlineStats.map(({ value, label }, index) => (
+            // Labels are CMS-editable and can legitimately repeat, so key on
+            // position rather than text.
+            <div key={`impact-stat-${index}`}>
+              <CMSStat value={value} />
+              <p className="font-body text-body-md text-on-surface-variant mt-2">{label}</p>
+            </div>
+          ))}
+        </div>
 
         <motion.div
           variants={staggerContainer}
@@ -543,8 +600,8 @@ function TeamSection() {
     <Section background="white" className="section-padding">
       <Container>
         <SectionHeading
-          title="Our Team"
-          subtitle="Meet the dedicated leaders driving our mission to transform lives across Africa"
+          title={cmsText("about", "teamTitle")}
+          subtitle={cmsText("about", "teamSub")}
           highlight="Team"
         />
 
@@ -682,8 +739,8 @@ function LegacyTimelineSection() {
     <Section background="navy" className="section-padding overflow-hidden">
       <Container>
         <SectionHeading
-          title="A Legacy of Persistence"
-          subtitle="Key milestones in our journey of transformation"
+          title={cmsText("about", "timelineTitle")}
+          subtitle={cmsText("about", "timelineSub")}
           light
         />
 
@@ -889,12 +946,10 @@ function FinalCTASection() {
               </div>
 
               <h2 className="font-display text-3xl md:text-5xl text-white mb-6">
-                Ready to be part of the story?
+                {cmsText("about", "ctaTitle")}
               </h2>
               <p className="font-body text-body-lg text-white/70 mb-10 leading-relaxed">
-                Join us in transforming lives across Africa. Whether through your
-                time, skills, generosity, or partnership, every contribution
-                builds a brighter future.
+                {cmsText("about", "ctaDesc")}
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">

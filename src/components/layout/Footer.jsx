@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { MapPin } from "lucide-react";
 import { FacebookIcon, TwitterIcon, YoutubeIcon, LinkedinIcon } from "@/components/ui/SocialIcons";
 import { SITE_CONFIG } from "@/constants";
+import { cmsText, useCMSReady } from "@/hooks/useCMS";
 
 const socialIcons = [
   { icon: FacebookIcon, href: SITE_CONFIG.social.facebook, label: "Facebook" },
@@ -25,6 +26,14 @@ const orgLinks = [
 ];
 
 export default function Footer() {
+  // The footer is rendered by the shared layout on every route, so it needs
+  // its own subscription to pick up admin saves.
+  useCMSReady();
+
+  const email = SITE_CONFIG.email;
+  const phone = SITE_CONFIG.phone;
+  const telHref = `tel:${phone.replace(/\s/g, "")}`;
+
   return (
     <footer className="bg-deep-navy text-white">
       <div className="mx-auto max-w-[1280px] px-5 md:px-16 py-16">
@@ -37,7 +46,7 @@ export default function Footer() {
               className="h-16 mb-5 brightness-0 invert"
             />
             <p className="text-body-md text-white/70 mb-6 max-w-xs">
-              {SITE_CONFIG.description}
+              {cmsText("footer", "tagline")}
             </p>
             <div className="flex gap-3">
               {socialIcons.map(({ icon: Icon, href, label }) => (
@@ -58,7 +67,7 @@ export default function Footer() {
           {/* Explore */}
           <div>
             <h3 className="text-label-bold uppercase tracking-wider mb-5 text-white">
-              Explore
+              {cmsText("footer", "quickLinksTitle")}
             </h3>
             <ul className="space-y-3">
               {exploreLinks.map((link) => (
@@ -77,7 +86,7 @@ export default function Footer() {
           {/* Organization */}
           <div>
             <h3 className="text-label-bold uppercase tracking-wider mb-5 text-white">
-              Organization
+              {cmsText("footer", "programsTitle")}
             </h3>
             <ul className="space-y-3">
               {orgLinks.map((link) => (
@@ -96,23 +105,23 @@ export default function Footer() {
           {/* Connect */}
           <div>
             <h3 className="text-label-bold uppercase tracking-wider mb-5 text-white">
-              Connect
+              {cmsText("footer", "connectTitle")}
             </h3>
             <ul className="space-y-3">
               <li>
                 <a
-                  href={`mailto:${SITE_CONFIG.email}`}
+                  href={`mailto:${email}`}
                   className="text-body-md text-white/70 hover:text-white transition-colors"
                 >
-                  {SITE_CONFIG.email}
+                  {email}
                 </a>
               </li>
               <li>
                 <a
-                  href={`tel:${SITE_CONFIG.phone.replace(/\s/g, "")}`}
+                  href={telHref}
                   className="text-body-md text-white/70 hover:text-white transition-colors"
                 >
-                  {SITE_CONFIG.phone}
+                  {phone}
                 </a>
               </li>
               <li className="text-body-md text-white/70 flex items-start gap-2">
@@ -134,7 +143,7 @@ export default function Footer() {
       <div className="border-t border-white/10">
         <div className="mx-auto max-w-[1280px] px-5 md:px-16 py-6 flex flex-col md:flex-row items-center justify-between gap-3">
           <p className="text-caption text-white/50">
-            &copy; 2026 {SITE_CONFIG.name}. All rights reserved.
+            {cmsText("footer", "copyright")}
           </p>
           <p className="text-caption text-white/50">
             {SITE_CONFIG.tagline}

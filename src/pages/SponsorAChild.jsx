@@ -11,6 +11,13 @@ import {
   AlertTriangle,
   SlidersHorizontal,
   ChevronDown,
+  Handshake,
+  GraduationCap,
+  HeartPulse,
+  UtensilsCrossed,
+  Wallet,
+  ShieldCheck,
+  Sparkles,
 } from "lucide-react";
 
 import PageTransition from "@/animations/PageTransition";
@@ -24,7 +31,9 @@ import GlareHover from "@/components/ui/GlareHover";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import { useSponsorshipCart } from "@/context/SponsorshipCartContext";
 import { useChildren } from "@/hooks/useChildren";
+import { cmsText, useCMSReady } from "@/hooks/useCMS";
 import { cn } from "@/lib/utils";
+import { matchesQuery, normalizeQuery } from "@/lib/searchMatch";
 
 const STATUS_FILTERS = ["Available", "All", "Sponsored", "Pending"];
 // Default view: only children who can actually be sponsored. "All" is still
@@ -228,7 +237,60 @@ function PillGroup({ label, options, activeValue, counts, onSelect, activeClass,
   );
 }
 
+const SPONSORSHIP_STEPS = [
+  {
+    icon: Search,
+    title: "Choose a Child",
+    description:
+      "Browse the children below and use the filters to find someone by name, location, age, or gender.",
+  },
+  {
+    icon: Wallet,
+    title: "Set Your Amount",
+    description:
+      "Pick a monthly amount that works for you, or enter a custom figure. You can adjust it any time.",
+  },
+  {
+    icon: Handshake,
+    title: "Check Out Securely",
+    description:
+      "Add one or many children to your cart and pay for all of them in a single secure checkout.",
+  },
+  {
+    icon: Sparkles,
+    title: "See the Impact",
+    description:
+      "Your sponsorship funds food, schooling, and healthcare — and you follow their progress from your dashboard.",
+  },
+];
+
+const SPONSORSHIP_BENEFITS = [
+  {
+    icon: GraduationCap,
+    title: "Education",
+    description: "School fees, books, uniforms, and learning materials so they can stay in class.",
+  },
+  {
+    icon: UtensilsCrossed,
+    title: "Nutrition",
+    description: "Regular meals and food security for the child and their household.",
+  },
+  {
+    icon: HeartPulse,
+    title: "Healthcare",
+    description: "Access to medical care and health check-ups where the child is enrolled.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Safe Childhood",
+    description:
+      "A stable, supportive environment where the child can grow with dignity and confidence.",
+  },
+];
+
 export default function SponsorAChild() {
+  useCMSReady();
+
   const [statusFilter, setStatusFilter] = useState(DEFAULT_STATUS_FILTER);
   const [genderFilter, setGenderFilter] = useState("All");
   const [agePreset, setAgePreset] = useState("all");
@@ -277,19 +339,21 @@ export default function SponsorAChild() {
     setAgePreset("custom");
   };
 
+  // A whitespace-only query is not a filter: it used to count as "1 active
+  // filter" while matching nothing, so the badge and the results disagreed.
   const hasActiveFilters =
     statusFilter !== DEFAULT_STATUS_FILTER ||
     genderFilter !== "All" ||
     agePreset !== "all" ||
     ageMin !== "" ||
     ageMax !== "" ||
-    searchQuery !== "";
+    normalizeQuery(searchQuery) !== "";
 
   const activeFilterCount = [
     statusFilter !== DEFAULT_STATUS_FILTER,
     genderFilter !== "All",
     agePreset !== "all" || ageMin !== "" || ageMax !== "",
-    searchQuery !== "",
+    normalizeQuery(searchQuery) !== "",
   ].filter(Boolean).length;
 
   // Resets back to the default "Available" view, not "All" — so clearing
@@ -323,13 +387,9 @@ export default function SponsorAChild() {
       const matchesAgeMax = ageMax === "" || (ageValid && age <= Number(ageMax));
       const matchesAge = !ageFilterActive || (ageValid && matchesAgeMin && matchesAgeMax);
 
-      const name = (child.first_name || "").toLowerCase();
-      const location = (child.location || "").toLowerCase();
-      const query = searchQuery.toLowerCase();
-      const matchesSearch =
-        searchQuery === "" ||
-        name.includes(query) ||
-        location.includes(query);
+      const name = child.first_name || "";
+      const location = child.location || "";
+      const matchesSearch = matchesQuery(searchQuery, name, location);
 
       return matchesStatus && matchesGender && matchesAge && matchesSearch;
     });
@@ -353,12 +413,12 @@ export default function SponsorAChild() {
             <div className="flex flex-col items-center text-center text-white py-14 sm:py-20 md:py-24">
               <ScrollReveal>
                 <span className="inline-block rounded-full bg-hope-orange/90 px-4 sm:px-5 py-1.5 sm:py-2 font-body text-xs sm:text-label-bold uppercase tracking-widest text-white mb-6 sm:mb-8">
-                  Sponsor a Child
+                  {cmsText("sponsor", "heroBadge")}
                 </span>
               </ScrollReveal>
               <SectionHeading
-                title="Change a Child's Future"
-                subtitle="Your sponsorship provides education, nutrition, healthcare, and hope to a child in need"
+                title={cmsText("sponsor", "heroTitle")}
+                subtitle={cmsText("sponsor", "heroSubtitle")}
                 light
               />
             </div>
@@ -381,6 +441,78 @@ export default function SponsorAChild() {
         </div>
       </section>
 
+      {/* How sponsorship works + what it provides */}
+      <Section background="gray" className="pt-14 sm:pt-20 pb-4">
+        <Container>
+          <SectionHeading title={cmsText("sponsor", "howItWorksTitle")} />
+
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+          >
+            {SPONSORSHIP_STEPS.map((step, i) => {
+              const Icon = step.icon;
+              return (
+                <motion.div key={step.title} variants={slideUp}>
+                  <div className="relative h-full rounded-2xl bg-white border border-soft-accent/50 p-6">
+                    <span className="absolute top-5 right-6 font-display text-4xl font-bold text-vibrant-blue/10">
+                      {i + 1}
+                    </span>
+                    <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-vibrant-blue/10 text-vibrant-blue mb-5">
+                      <Icon className="h-6 w-6" />
+                    </div>
+                    <h3 className="font-display text-lg font-semibold text-deep-navy mb-2">
+                      {step.title}
+                    </h3>
+                    <p className="font-body text-sm text-on-surface-variant leading-relaxed">
+                      {step.description}
+                    </p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+        </Container>
+      </Section>
+
+      <Section background="gray" className="pt-4 pb-14 sm:pb-20">
+        <Container>
+          <SectionHeading title={cmsText("sponsor", "benefitsTitle")} />
+
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+          >
+            {SPONSORSHIP_BENEFITS.map((benefit) => {
+              const Icon = benefit.icon;
+              return (
+                <motion.div key={benefit.title} variants={slideUp}>
+                  <GlareHover className="h-full">
+                    <div className="flex flex-col h-full rounded-2xl bg-white border border-soft-accent/50 p-6">
+                      <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-hope-orange/10 text-hope-orange mb-5">
+                        <Icon className="h-6 w-6" />
+                      </div>
+                      <h3 className="font-display text-lg font-semibold text-deep-navy mb-2">
+                        {benefit.title}
+                      </h3>
+                      <p className="font-body text-sm text-on-surface-variant leading-relaxed">
+                        {benefit.description}
+                      </p>
+                    </div>
+                  </GlareHover>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+        </Container>
+      </Section>
+
       {/* Filters + Grid */}
       <Section background="white" className="pt-10 sm:pt-16 pb-10">
         <Container>
@@ -392,7 +524,8 @@ export default function SponsorAChild() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by name or location..."
+                placeholder={cmsText("sponsor", "searchPlaceholder")}
+                aria-label="Search children by name or location"
                 className="w-full pl-12 pr-4 py-3 rounded-xl border border-soft-accent/60 bg-surface font-body text-sm sm:text-body-md text-deep-navy placeholder:text-on-surface-variant/60 focus:outline-none focus:ring-2 focus:ring-vibrant-blue/40 focus:border-vibrant-blue transition-all"
               />
             </div>

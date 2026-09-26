@@ -11,6 +11,7 @@ import DomeGallery from "@/components/ui/DomeGallery";
 import OptimizedImage from "@/components/ui/OptimizedImage";
 import useMediaQuery from "@/hooks/useMediaQuery";
 import { useGalleryImages } from "@/hooks/useGallery";
+import { cmsText, useCMSReady } from "@/hooks/useCMS";
 import { buildImageKitTransformUrl } from "@/lib/imagekit";
 
 const CATEGORY_MAP = {
@@ -26,6 +27,8 @@ const CATEGORY_MAP = {
 const GRID_TO_DOME_THRESHOLD = 16;
 
 export default function Gallery() {
+  useCMSReady();
+
   const isMobile = useMediaQuery("(max-width: 768px)");
   const { data: dbImages, isLoading } = useGalleryImages();
 
@@ -80,7 +83,7 @@ export default function Gallery() {
 
       {/* Flat Grid Gallery (when fewer than threshold) */}
       {!showDome && !isLoading && (
-        <Section background="white" className="pt-16 pb-16">
+        <Section background="white" className="pt-10 pb-16">
           <Container>
             {allImages.length > 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -114,10 +117,10 @@ export default function Gallery() {
                 <ImageIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
                 <h3 className="font-display text-xl text-deep-navy mb-2">No images yet</h3>
                 <p className="font-body text-sm text-on-surface-variant max-w-md mx-auto">
-                  Upload images from the admin Media Library to start building
-                  your gallery. Once you reach {GRID_TO_DOME_THRESHOLD} images, the{" "}
-                  <span className="text-vibrant-blue font-semibold">3D Dome Gallery</span>{" "}
-                  will activate automatically.
+                  Upload images from the admin Media Library to start building your gallery.
+                  Once you reach {GRID_TO_DOME_THRESHOLD} images, the{" "}
+                  <span className="text-vibrant-blue font-semibold">3D Dome Gallery</span> will
+                  activate automatically.
                 </p>
               </div>
             )}
@@ -155,7 +158,12 @@ export default function Gallery() {
                   dragDampening={2}
                   grayscale={false}
                   autoRotate
-                  autoRotateSpeed={isMobile ? 0.5 : 0.7}
+                  // DomeGallery multiplies this by 60 to get deg/sec, so these
+                  // are ~11 deg/s on mobile and ~15 deg/s on desktop: a calm
+                  // drift of roughly 33s and 24s per revolution. Previously
+                  // 0.5/0.7, which spun a full turn every 8-12s and made the
+                  // photos hard to read.
+                  autoRotateSpeed={isMobile ? 0.18 : 0.25}
                   imageCategories={imageCategories}
                 />
               </>
@@ -187,12 +195,12 @@ function HeroSection() {
           <div className="flex flex-col items-center text-center text-white py-24">
             <ScrollReveal>
               <span className="inline-block rounded-full bg-hope-orange/90 px-5 py-2 font-body text-label-bold uppercase tracking-widest text-white mb-8">
-                Our Gallery
+                {cmsText("gallery", "heroBadge")}
               </span>
             </ScrollReveal>
             <SectionHeading
-              title="Moments of Impact"
-              subtitle="A visual journey through our work across Africa"
+              title={cmsText("gallery", "heroTitle")}
+              subtitle={cmsText("gallery", "heroSubtitle")}
               light
             />
           </div>
