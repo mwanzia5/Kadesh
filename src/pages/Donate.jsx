@@ -1,32 +1,30 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useLocation, useNavigate, Link } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Shield, Heart, Globe, ChevronDown, CheckCircle2, XCircle, UserPlus, Loader2, X } from "lucide-react";
 import PageTransition from "@/animations/PageTransition";
+import Container from "@/components/ui/Container";
 import Section from "@/components/ui/Section";
 import SectionHeading from "@/components/ui/SectionHeading";
+import ScrollReveal from "@/components/ui/ScrollReveal";
 import Button from "@/components/ui/Button";
+import { cmsText, useCMSReady } from "@/hooks/useCMS";
 import { useDonorAuth } from "@/context/DonorAuthContext";
 import { useSponsorshipCart } from "@/context/SponsorshipCartContext";
 import SponsorshipAmountInput from "@/components/cart/SponsorshipAmountInput";
 import supabase from "@/supabase/client";
+import {
+  CURRENCIES as currencies,
+  fetchRates,
+  rateFor,
+  formatCurrency,
+} from "@/lib/currency";
 
 const USD_AMOUNTS = [10, 25, 50, 100, 250, 500];
 
-const currencies = [
-  { code: "USD", symbol: "$", name: "US Dollar", rate: 1, country: "United States" },
-  { code: "KES", symbol: "KSh", name: "Kenyan Shilling", rate: 129, country: "Kenya" },
-  { code: "UGX", symbol: "UGX", name: "Ugandan Shilling", rate: 3750, country: "Uganda" },
-  { code: "CDF", symbol: "FC", name: "Congolese Franc", rate: 2550, country: "DR Congo" },
-  { code: "TZS", symbol: "TSh", name: "Tanzanian Shilling", rate: 2500, country: "Tanzania" },
-  { code: "INR", symbol: "₹", name: "Indian Rupee", rate: 83, country: "India" },
-];
-
-// Paystack merchant account is configured for KES only. The currency picker
-// above is display-only — whatever the donor selects there just changes what
-// they *see* (amount buttons, impact text). The actual charge sent to
-// Paystack always converts through this rate, regardless of currency.code.
-const KES_RATE = currencies.find((c) => c.code === "KES").rate;
+// Currency list and live-rate plumbing live in lib/currency. Rates are fetched
+// at runtime (cached ~6h) rather than hardcoded, because the old constants had
+// drifted far enough to quote donors the wrong amount — see lib/currency.js.
 
 const impactMap = {
   10: "Provides a meal for a child for one day",
@@ -37,17 +35,50 @@ const impactMap = {
   500: "Sponsors a child's education for one year",
 };
 
+// Paystack's merchant account settles in KES only. Whatever display currency
+// the donor picks, the charge is computed from the live USD->KES rate, and the
+// rate actually used is recorded with the payment.
+const CHARGED_CURRENCY = "KES";
+
 const inputClasses =
   "w-full px-4 py-3 rounded-lg border border-soft-accent bg-white font-body text-on-background placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-vibrant-blue/50 focus:border-vibrant-blue transition-all";
 
 // key for the repeated-donor autofill (last donor details on this device)
 const AUTO_KEY = "khm_donor_autofill";
 
-function formatCurrency(amount, currency) {
-  return `${currency.symbol}${Math.round(amount).toLocaleString()}`;
+// Compact hero for the top of the Donate page. Every other page in the site
+// opens with a badge/title/subtitle block, and the CMS exposes those three
+// fields for "donate" — this is what they drive.
+function DonateHero() {
+  return (
+    <section className="relative overflow-hidden bg-deep-navy">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -left-40 w-80 h-80 rounded-full bg-vibrant-blue/20 blur-3xl" />
+        <div className="absolute -bottom-40 -right-40 w-96 h-96 rounded-full bg-hope-orange/20 blur-3xl" />
+      </div>
+
+      <Container className="relative z-10">
+        <div className="flex flex-col items-center text-center text-white pt-32 pb-10 md:pt-40 md:pb-14">
+          <ScrollReveal>
+            <span className="inline-block rounded-full bg-hope-orange px-5 py-2 font-body text-label-bold uppercase tracking-widest text-white">
+              {cmsText("donate", "heroBadge")}
+            </span>
+          </ScrollReveal>
+          <SectionHeading
+            title={cmsText("donate", "heroTitle")}
+            subtitle={cmsText("donate", "heroSubtitle")}
+            light
+            className="mt-6"
+          />
+        </div>
+      </Container>
+    </section>
+  );
 }
 
 export default function Donate() {
+  useCMSReady();
+
   const { user, profile, loading: authLoading } = useDonorAuth();
   const [searchParams] = useSearchParams();
   const location = useLocation();
@@ -71,11 +102,39 @@ export default function Donate() {
   const isCartCheckout =
     isSponsorship && searchParams.get("cart") === "1" && cartItems.length > 0;
 
-  const [frequency, setFrequency] = useState("one-time");
+  // Renewal: the donor arrived from the red "Update sponsorship" link on an
+  // overdue monthly sponsorship. We pre-select monthly and carry the
+  // sponsorship id in the payment metadata so a successful payment advances
+  // that specific sponsorship's billing period instead of enrolling anyone new.
+  const renewSponsorshipId = searchParams.get("renew");
+  const renewChildId = searchParams.get("child");
+  const isRenewal = Boolean(renewSponsorshipId);
+  const renewalSponsor = useQuery({
+    queryKey: ["renewal-sponsorship", renewSponsorshipId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("sponsorships")
+        .select("id, child_id, monthly_amount, status, next_payment_due, children(first_name)")
+        .eq("id", renewSponsorshipId)
+        .eq("donor_id", user?.id ?? "")
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: isRenewal && !!user?.id,
+  });
+
+  const [frequency, setFrequency] = useState(isRenewal ? "monthly" : "one-time");
+  // A renewal defaults to the amount actually agreed for the month, so the
+  // donor isn't asked to re-enter a figure they already committed to.
   const [selectedUSD, setSelectedUSD] = useState(50);
   const [customAmount, setCustomAmount] = useState("");
   const [isOther, setIsOther] = useState(false);
-  const [currency, setCurrency] = useState(currencies[0]);
+  const [currencyCode, setCurrencyCode] = useState("USD");
+  // Live USD-base rates. `ratesLive` is false when the lookup failed and we're
+  // on fallback figures, which we disclose rather than silently misquote.
+  const [rates, setRates] = useState(null);
+  const [ratesLive, setRatesLive] = useState(true);
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [donorName, setDonorName] = useState("");
@@ -142,13 +201,56 @@ export default function Donate() {
     return () => clearTimeout(t);
   }, [donorName, donorEmail, donorLocation, donorPhone]);
 
+  // Live rates, fetched once per mount. Until they resolve, fall back to the
+  // bundled figures so the form still renders and totals stay consistent.
+  useEffect(() => {
+    let cancelled = false;
+    fetchRates().then(({ rates: r, live }) => {
+      if (cancelled) return;
+      setRates(r);
+      setRatesLive(live);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const currency =
+    currencies.find((c) => c.code === currencyCode) ?? currencies[0];
+  // The selected currency's rate, preferring the live value.
+  const currencyRate = rates ? rateFor(rates, currency.code) : currency.rate;
+
+  // For a renewal, the amount is the existing monthly figure unless the donor
+  // deliberately overrides it. The sponsorship row is only readable by its
+  // owner (RLS), so this can't be used to read someone else's pledge.
+  const renewalAmount = Number(renewalSponsor.data?.monthly_amount) || 0;
+
   const baseAmount = isCartCheckout
     ? subtotal
-    : isOther
-      ? Number(customAmount) || 0
-      : selectedUSD;
-  const isValidAmount = baseAmount > 0;
-  const convertedAmount = Math.round(baseAmount * currency.rate);
+    : isRenewal && renewalAmount > 0
+      ? renewalAmount
+      : isOther
+        ? Number(customAmount) || 0
+        : selectedUSD;
+  // A gift must be above zero and no larger than a million US dollars, which is
+  // the ceiling the ledger and donation columns are sized for. Catching it here
+  // means the donor is told plainly instead of Paystack quietly declining a
+  // charge that size.
+  const MAX_GIFT_USD = 1000000;
+  const amountError =
+    !(baseAmount > 0)
+      ? "Enter an amount greater than zero"
+      : baseAmount > MAX_GIFT_USD
+        ? `The maximum single gift is $${MAX_GIFT_USD.toLocaleString()}`
+        : null;
+  const isValidAmount = !amountError;
+  // The donor always thinks in USD (the preset amounts and the reporting
+  // currency); this is just that figure restated in the currency they picked,
+  // at the live rate.
+  const convertedAmount = baseAmount * currencyRate;
+  // What Paystack will actually charge: USD converted to KES at the live rate.
+  const kesRate = rates ? rateFor(rates, CHARGED_CURRENCY) : 129;
+  const amountInKES = baseAmount * kesRate;
   const impactText = impactMap[baseAmount] || "Every gift makes a difference";
 
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -223,8 +325,14 @@ export default function Donate() {
   // piece of the site (dashboard totals, admin lists, sponsorship status)
   // comes back fully fresh from the server instead of relying on cache
   // invalidation alone. Delayed just enough for the donor to read the
-  // confirmation and note their reference.
+  // confirmation and note their reference. A renewal instead returns the
+  // donor to their account, where the advanced period and cleared overdue
+  // badge are the proof the payment landed.
   const scheduleReload = () => {
+    if (isRenewal) {
+      setTimeout(() => navigate("/account"), 3000);
+      return;
+    }
     setTimeout(() => window.location.reload(), 3000);
   };
 
@@ -242,10 +350,12 @@ export default function Donate() {
     setResult(null);
     setProcessing(true);
 
-    // Always bill in KES regardless of whichever display currency the donor
-    // picked in the selector above — that picker is dummy/display-only.
-    const amountInKES = Math.round(baseAmount * KES_RATE);
-    const amountInKESSubunit = amountInKES * 100; // Paystack expects subunits
+    // Always bill in KES regardless of the display currency picked above —
+    // Paystack's account settles in KES. Paystack expects subunits, and the
+    // amount is rounded to whole KES (shillings) so the charge matches the
+    // figure shown to the donor.
+    const chargedKES = Math.round(amountInKES);
+    const amountInKESSubunit = chargedKES * 100;
 
     if (typeof PaystackPop === "undefined") {
       setProcessing(false);
@@ -269,7 +379,9 @@ export default function Donate() {
       setProcessing(false);
       setResult({
         type: "success",
-        message: `Thank you for your donation! Reference: ${ref}. This page will refresh automatically…`,
+        message: isRenewal
+          ? `Thank you! Reference: ${ref}. Your next month is now active — returning you to your account…`
+          : `Thank you for your donation! Reference: ${ref}. This page will refresh automatically…`,
       });
       scheduleReload();
 
@@ -288,6 +400,9 @@ export default function Donate() {
         queryClient.invalidateQueries({ queryKey: ["donor-donations"] });
         queryClient.invalidateQueries({ queryKey: ["sponsorships"] });
         queryClient.invalidateQueries({ queryKey: ["children"] });
+        if (isRenewal) {
+          queryClient.invalidateQueries({ queryKey: ["renewal-sponsorship"] });
+        }
         if (isCartCheckout) clearCart();
       } catch (err) {
         console.error("Payment verification failed:", err);
@@ -313,22 +428,34 @@ export default function Donate() {
         donor_name: donorName,
         donor_id: user?.id || null,
         frequency,
+        // What the donor selected, for their receipt.
         display_currency: currency.code,
-        display_amount: convertedAmount,
+        display_amount: Math.round(convertedAmount),
         usd_equivalent: baseAmount,
-        charged_currency: "KES",
-        charged_amount: amountInKES,
+        // What Paystack will charge, and the rate used to get there. The server
+        // re-derives USD from the charged amount and re-fetches a live rate, so
+        // these are informational — a tampered value can't change the books.
+        charged_currency: CHARGED_CURRENCY,
+        charged_amount: chargedKES,
+        fx_rate: Number(kesRate.toFixed(6)),
         location: donorLocation,
         phone: donorPhone,
         // Sponsorship intent travels with the transaction itself, so it's
         // recoverable from Paystack's own records (via verify or webhook)
         // even if the donor's browser never calls back successfully.
-        is_sponsorship: isSponsorship && !!user?.id,
-        child_id: isSponsorship
-          ? isCartCheckout
-            ? cartItems[0]?.child_id || null
-            : sponsorshipChildId || null
-          : null,
+        is_sponsorship: (isSponsorship || isRenewal) && !!user?.id,
+        child_id: isRenewal
+          ? renewChildId || null
+          : isSponsorship
+            ? isCartCheckout
+              ? cartItems[0]?.child_id || null
+              : sponsorshipChildId || null
+            : null,
+        // A renewal payment advances an existing monthly sponsorship's period.
+        // The id travels through Paystack's verified metadata and the RPC
+        // re-checks ownership, so it can't be edited client-side to unlock
+        // somebody else's child.
+        renew_sponsorship_id: isRenewal ? renewSponsorshipId : null,
         monthly_amount:
           isSponsorship && !isCartCheckout && frequency === "monthly"
             ? baseAmount
@@ -423,7 +550,8 @@ export default function Donate() {
   if (!user) {
     return (
       <PageTransition>
-        <Section className="pt-32 pb-20">
+        <DonateHero />
+        <Section className="pt-10 pb-20">
           <div className="max-w-lg mx-auto px-4 sm:px-6 lg:px-8 text-center">
             {isSponsorship && sponsorshipChildName && (
               <div className="bg-hope-orange/10 border border-hope-orange/30 rounded-xl p-4 mb-8 flex items-center gap-3 text-left">
@@ -464,7 +592,8 @@ export default function Donate() {
 
   return (
     <PageTransition>
-      <Section className="pt-32 pb-20">
+      <DonateHero />
+      <Section className="pt-10 pb-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {isSponsorship && sponsorshipChildName && (
             <div className="bg-hope-orange/10 border border-hope-orange/30 rounded-xl p-4 mb-8 flex items-center gap-3">
@@ -477,8 +606,16 @@ export default function Donate() {
           )}
 
           <SectionHeading
-            title={isSponsorship ? "Complete Your Sponsorship" : "Choose your impact level"}
-            subtitle={isSponsorship ? "Your generosity transforms a child's life" : "Your generosity transforms lives across Africa"}
+            title={
+              isSponsorship
+                ? "Complete Your Sponsorship"
+                : cmsText("donate", "sectionTitle")
+            }
+            subtitle={
+              isSponsorship
+                ? "Your generosity transforms a child's life"
+                : cmsText("donate", "sectionSub")
+            }
           />
 
           {result && (
@@ -671,6 +808,20 @@ export default function Donate() {
                   <ChevronDown className="w-4 h-4 ml-auto text-on-surface-variant" />
                 </button>
 
+                {/* Rate transparency: the donor can always see the rate their
+                    money is being converted at, and is told when it isn't live. */}
+                <p className="mt-2 font-body text-xs text-on-surface-variant">
+                  1 USD = {currency.symbol}
+                  {currencyRate.toLocaleString(undefined, {
+                    maximumFractionDigits: 2,
+                  })}
+                  {!ratesLive && (
+                    <span className="ml-1 text-amber-700">
+                      (indicative rate — live rates unavailable)
+                    </span>
+                  )}
+                </p>
+
                 {showCurrencyPicker && (
                   <div className="absolute z-30 mt-2 w-full sm:w-80 bg-white rounded-xl border border-soft-accent shadow-lg overflow-hidden">
                     {currencies.map((cur) => (
@@ -678,7 +829,7 @@ export default function Donate() {
                         key={cur.code}
                         onClick={(e) => {
                           e.stopPropagation();
-                          setCurrency(cur);
+                          setCurrencyCode(cur.code);
                           setShowCurrencyPicker(false);
                         }}
                         className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-cream transition-colors ${
@@ -691,7 +842,10 @@ export default function Donate() {
                         <div className="flex-1">
                           <p className="font-body font-medium text-on-background text-sm">{cur.name}</p>
                           <p className="font-body text-xs text-on-surface-variant">
-                            1 USD = {cur.symbol}{cur.rate.toLocaleString()}
+                            1 USD = {cur.symbol}
+                            {rateFor(rates, cur.code).toLocaleString(undefined, {
+                              maximumFractionDigits: 2,
+                            })}
                           </p>
                         </div>
                         <span className="text-xs text-on-surface-variant">{cur.country}</span>
@@ -773,6 +927,9 @@ export default function Donate() {
                       ? "One monthly payment covers every child above — each gets their own sponsorship, billed at this total."
                       : "One payment covers every child above — each gets their own sponsorship, funded by this single gift."}
                   </p>
+                  {amountError && (
+                    <p className="mt-2 font-body text-xs text-red-600">{amountError}</p>
+                  )}
                 </div>
               ) : (
                 <>
@@ -787,7 +944,7 @@ export default function Donate() {
                         : "bg-cream text-on-background hover:bg-soft-accent"
                     }`}
                   >
-                    {formatCurrency(amount * currency.rate, currency)}
+                    {formatCurrency(amount * currencyRate, currency)}
                   </button>
                 ))}
                 <button
@@ -809,7 +966,7 @@ export default function Donate() {
               {isOther && (
                 <div className="mb-6">
                   <label htmlFor="customAmount" className="block text-sm font-medium text-on-background mb-2">
-                    Enter amount (USD)
+                    {cmsText("donate", "customLabel")}
                   </label>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant font-body">$</span>
@@ -831,9 +988,9 @@ export default function Donate() {
                         ≈ {formatCurrency(convertedAmount, currency)}
                       </p>
                     )}
-                    {customAmount !== "" && !isValidAmount && (
+                    {customAmount !== "" && amountError && (
                       <p className="mt-1 text-sm text-red-600 font-body">
-                        Please enter an amount greater than zero.
+                        {amountError}
                       </p>
                     )}
                   </div>
@@ -887,9 +1044,14 @@ export default function Donate() {
                     Airtel Money
                   </span>
                   <span className="px-3 py-1.5 rounded-full bg-white text-xs font-body font-medium text-on-background border border-soft-accent">
-                    Bank Transfer
+                    {cmsText("donate", "bankTitle")}
                   </span>
                 </div>
+                {cmsText("donate", "bankDetails") && (
+                  <p className="mt-3 text-sm font-body text-on-surface-variant">
+                    {cmsText("donate", "bankDetails")}
+                  </p>
+                )}
               </div>
 
               {/* Security Notice */}

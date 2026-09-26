@@ -13,6 +13,7 @@ import {
   CheckCircle,
   Users,
   Loader2,
+  AlertTriangle,
 } from "lucide-react";
 
 import { staggerContainer, slideUp } from "@/animations/variants";
@@ -22,6 +23,7 @@ import {
   useAdminResumeSponsorship,
   useAdminCancelSponsorship,
 } from "@/hooks/useSponsorships";
+import { isSponsorshipOverdue } from "@/services/sponsorships";
 
 const statusColors = {
   active: "bg-emerald-50 text-emerald-700 border-emerald-200",
@@ -326,6 +328,23 @@ export default function SponsorshipsManager() {
                           <StatusIcon className="h-3 w-3" />
                           {sponsorship.status}
                         </span>
+                        {/* Monthly billing health, so an admin can see at a
+                            glance which sponsorships need chasing. Uses the
+                            same definition as the donor account page. */}
+                        {isSponsorshipOverdue(sponsorship) && (
+                          <span className="mt-1.5 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border border-red-300 bg-red-50 text-red-700">
+                            <AlertTriangle className="h-3 w-3" />
+                            Payment overdue
+                          </span>
+                        )}
+                        {!isSponsorshipOverdue(sponsorship) &&
+                          sponsorship.status === "active" &&
+                          sponsorship.monthly_amount != null &&
+                          sponsorship.next_payment_due && (
+                            <span className="mt-1.5 block font-body text-xs text-on-surface-variant">
+                              Due {formatDate(sponsorship.next_payment_due)}
+                            </span>
+                          )}
                       </td>
                       <td className="px-6 py-4">
                         <span className="flex items-center gap-1.5 text-xs text-on-surface-variant">

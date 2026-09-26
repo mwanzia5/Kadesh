@@ -21,6 +21,10 @@
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
+import { getRates, rateFor, toUSD } from "../_shared/fx.ts";
+
+const round2 = (n: number) => Math.round(n * 100) / 100;
+const round6 = (n: number) => Math.round(n * 1e6) / 1e6;
 
 type ClientFallback = {
   donor_name?: string | null;
@@ -45,8 +49,25 @@ export async function recordVerifiedTransaction(
   supabase: ReturnType<typeof createClient>,
   clientFallback: ClientFallback = {}
 ) {
-  const amountKES = txn.amount / 100; // Paystack returns subunits
+  // Paystack is the authority on what was actually charged: it reports in
+  // subunits of the account currency (KES), so this is the real money the
+  // donor parted with. Everything else is derived from it.
+  const amountKES = txn.amount / 100;
+  const chargedCurrency = (txn.currency || "KES").toUpperCase();
   const meta = txn.metadata || {};
+
+  // Convert the charged amount to USD at a live rate, and keep that rate.
+  //
+  // The donor's chosen display currency is irrelevant to the maths: they may
+  // have picked INR, but the card was charged KES, so the KES figure is what
+  // gets converted. The rate is snapshotted onto the row so a later market move
+  // never restates what this gift was worth.
+  const { rates, source: fxSource, live: fxLive } = await getRates();
+  const usdAmount = round2(toUSD(amountKES, chargedCurrency, rates));
+  const fxRate = round6(rateFor(rates, chargedCurrency));
+  // If a live lookup failed we still record the rate we applied, but flag the
+  // source so a wrong figure can be traced and corrected later.
+  const fxRateSource = fxLive ? fxSource : "static-fallback";
 
   // Prefer Paystack's verified metadata; fall back to what the browser sent
   // directly if metadata came back empty for these display-only fields.
@@ -67,12 +88,29 @@ export async function recordVerifiedTransaction(
       donor_name: donorName,
       donor_email: donorEmail,
       donor_id: meta.donor_id || null,
-      amount: meta.usd_equivalent ?? amountKES,
-      currency: "KES",
+      // Reporting currency is USD, converted live from what Paystack charged.
+      // The browser's usd_equivalent is deliberately ignored: it was computed
+      // from a possibly stale rate and trusting it is what let the old
+      // hardcoded-rate drift reach the books in the first place.
+      amount: usdAmount,
+      usd_amount: usdAmount,
+      currency: "USD",
+      // What was really charged, kept alongside the USD figure.
+      amount_original: amountKES,
+      charged_currency: chargedCurrency,
       converted_amount: amountKES,
+      fx_rate: fxRate,
+      fx_rate_source: fxRateSource,
       frequency: meta.frequency || "one-time",
       status: "completed",
-      is_sponsorship: !!meta.is_sponsorship,
+      // Intentionally NOT set from meta.is_sponsorship. The sponsorship
+      // classification is derived by the database from the
+      // sponsorship_payments links written below (migration 005), so a client
+      // claim can't mark a general donation as a child sponsorship, and a
+      // sponsorship whose insert fails can't leave the money misfiled.
+      // The trigger on donations reconciles the flag from existing links, so
+      // this insert may briefly carry false and be corrected immediately.
+      is_sponsorship: false,
       payment_reference: txn.reference,
       location,
       phone,
@@ -85,6 +123,9 @@ export async function recordVerifiedTransaction(
   // but if we have donor details this call's caller didn't, patch them in
   // rather than leaving the row permanently blank.
   const alreadyRecorded = donationError?.code === "23505";
+  // Set below when the row already existed, so a renewal can still be linked
+  // to the payment that covered it.
+  let alreadyRecordedDonationId: string | null = null;
   if (donationError && !alreadyRecorded) throw donationError;
 
   if (alreadyRecorded) {
@@ -108,6 +149,15 @@ export async function recordVerifiedTransaction(
         );
       if (patchError) console.error("Backfill of donor details failed:", patchError);
     }
+
+    // Fetch the existing row so a renewal retry can still link the sponsorship
+    // to the payment that covered it, even though this call didn't insert it.
+    const { data: existing } = await supabase
+      .from("donations")
+      .select("id")
+      .eq("payment_reference", txn.reference)
+      .maybeSingle();
+    alreadyRecordedDonationId = existing?.id ?? null;
   }
 
   // Sponsorship intent comes from Paystack's own metadata, not the client
@@ -120,17 +170,86 @@ export async function recordVerifiedTransaction(
     child_id: string;
     amount: number | null;
     monthly_amount: number | null;
+    renew: boolean;
   }[] = Array.isArray(meta.children) && meta.children.length > 0
     ? meta.children
-    : meta.is_sponsorship && meta.child_id && meta.donor_id
-      ? [{
-          child_id: meta.child_id,
-          amount: meta.usd_equivalent ?? amountKES,
-          monthly_amount: meta.monthly_amount ?? null,
-        }]
+    : meta.is_sponsorship && meta.donor_id
+      ? meta.renew_sponsorship_id
+        ? // A renewal payment: it tops up an existing monthly sponsorship
+          // rather than enrolling a new child, so it is matched by sponsorship
+          // id below instead of by child.
+          []
+        : meta.child_id
+          ? [{
+              child_id: meta.child_id,
+              amount: usdAmount,
+              monthly_amount: meta.monthly_amount ?? null,
+              renew: false,
+            }]
+          : []
       : [];
 
-  if (!alreadyRecorded && meta.donor_id && sponsorshipChildren.length > 0) {
+  // Renewal path: the donor paid to keep an existing monthly sponsorship
+  // going. Advance its billing period so it stops showing as overdue, and
+  // re-activate the child if the sponsorship had been paused.
+  //
+  // The sponsorship id comes from Paystack's verified metadata, and the RPC
+  // re-checks the payment against the sponsorship's donor, so a donor cannot
+  // renew (and thereby unlock) somebody else's child by editing the request.
+  //
+  // This runs whether or not this call was the one that inserted the row: if
+  // the webhook recorded the payment and then died before advancing the
+  // period, the donor's browser callback is the retry that repairs it. The RPC
+  // is idempotent (an already-current period is a no-op), so running it from
+  // both paths can't push the cycle out twice.
+  if (meta.renew_sponsorship_id) {
+    const { data: advanced, error: advanceError } = await supabase.rpc(
+      "advance_monthly_period",
+      {
+        p_sponsorship_id: meta.renew_sponsorship_id,
+        p_payment_reference: txn.reference,
+      }
+    );
+    if (advanceError) {
+      // Don't fail the whole verification over the period bump — the money is
+      // already recorded. Surface it so the sync can repair it later.
+      console.error("Failed to advance monthly period:", advanceError);
+    } else if (advanced?.child_id) {
+      // Keep the child marked as sponsored for the new period.
+      await supabase
+        .from("children")
+        .update({ sponsorship_status: "sponsored" })
+        .eq("id", advanced.child_id);
+    }
+
+    // Record which payment covered which period. This is a link row rather
+    // than the old sponsorships.donation_id UPDATE, which could only ever hold
+    // one payment: a second renewal overwrote the first, destroying the
+    // per-payment trail. ON CONFLICT keeps the webhook and the browser
+    // callback from double-writing the same link.
+    const renewalDonationId = donation?.id ?? alreadyRecordedDonationId;
+    if (advanced?.id && renewalDonationId) {
+      const { error: linkError } = await supabase
+        .from("sponsorship_payments")
+        .upsert(
+          {
+            sponsorship_id: advanced.id,
+            donation_id: renewalDonationId,
+            kind: "renewal",
+            amount: usdAmount,
+          },
+          { onConflict: "donation_id,sponsorship_id", ignoreDuplicates: true }
+        );
+      if (linkError) {
+        // The payment is already recorded and the period already advanced, so
+        // don't fail verification — but the classification depends on this
+        // link, so surface it loudly for the sync to repair.
+        console.error("Failed to link renewal payment:", linkError);
+      }
+    }
+  }
+
+  if (!alreadyRecorded && meta.donor_id) {
     for (const item of sponsorshipChildren) {
       const { data: existingSponsorship } = await supabase
         .from("sponsorships")
@@ -141,21 +260,78 @@ export async function recordVerifiedTransaction(
         .maybeSingle();
 
       if (!existingSponsorship) {
-        const { error: sponsorshipError } = await supabase.from("sponsorships").insert({
-          donor_id: meta.donor_id,
-          child_id: item.child_id,
-          status: "active",
-          monthly_amount: Number(item.monthly_amount) || null,
-          amount: Number(item.amount) || null,
-          donation_id: donation?.id ?? null,
-        });
+        // A brand-new monthly sponsorship is paid for the month that starts
+        // today, so its first period runs from now until one calendar month
+        // from now and the next payment falls due then.
+        const periodStart = new Date();
+        const periodEnd = new Date(periodStart);
+        periodEnd.setMonth(periodEnd.getMonth() + 1);
+
+        const { data: createdSponsorship, error: sponsorshipError } = await supabase
+          .from("sponsorships")
+          .insert({
+            donor_id: meta.donor_id,
+            child_id: item.child_id,
+            status: "active",
+            monthly_amount: Number(item.monthly_amount) || null,
+            amount: Number(item.amount) || null,
+            donation_id: donation?.id ?? null,
+            ...(Number(item.monthly_amount)
+              ? {
+                  current_period_start: periodStart.toISOString(),
+                  current_period_end: periodEnd.toISOString(),
+                  next_payment_due: periodEnd.toISOString(),
+                }
+              : {}),
+          })
+          .select("id")
+          .single();
         if (sponsorshipError) throw sponsorshipError;
+
+        // The link is what makes this payment a child sponsorship: the
+        // donations trigger derives is_sponsorship from its existence, so the
+        // books cannot say "sponsorship" without a sponsorship to point at.
+        if (createdSponsorship?.id && donation?.id) {
+          const { error: linkError } = await supabase
+            .from("sponsorship_payments")
+            .upsert(
+              {
+                sponsorship_id: createdSponsorship.id,
+                donation_id: donation.id,
+                kind: "initial",
+                amount: Number(item.amount) || usdAmount,
+              },
+              { onConflict: "donation_id,sponsorship_id", ignoreDuplicates: true }
+            );
+          if (linkError) throw linkError;
+        }
 
         const { error: childError } = await supabase
           .from("children")
           .update({ sponsorship_status: "sponsored" })
           .eq("id", item.child_id);
         if (childError) throw childError;
+      } else if (existingSponsorship?.id && donation?.id) {
+        // The donor already sponsors this child actively, so no new
+        // sponsorship row is created — but the payment still funded that
+        // sponsorship, so it must be linked. Without this, a repeat payment
+        // for an already-sponsored child would be recorded as a general
+        // donation, which is exactly the misclassification this migration
+        // exists to remove. Kind is 'renewal' because the sponsorship already
+        // existed; the period advance is handled by the renew_sponsorship_id
+        // path above.
+        const { error: topUpLinkError } = await supabase
+          .from("sponsorship_payments")
+          .upsert(
+            {
+              sponsorship_id: existingSponsorship.id,
+              donation_id: donation.id,
+              kind: "renewal",
+              amount: Number(item.amount) || usdAmount,
+            },
+            { onConflict: "donation_id,sponsorship_id", ignoreDuplicates: true }
+          );
+        if (topUpLinkError) throw topUpLinkError;
       }
     }
   }

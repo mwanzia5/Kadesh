@@ -2,8 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getSponsorships,
   getSponsorship,
-  createSponsorship,
-  updateSponsorship,
+  getSponsorshipCreditBalance,
   cancelSponsorship,
   pauseSponsorship,
   resumeSponsorship,
@@ -24,6 +23,18 @@ export function useSponsorships(donorId) {
   });
 }
 
+// Spendable sponsorship credit in money. The server owns this number (see the
+// sponsorship_credit_ledger), so every component reads the same balance rather
+// than each recomputing it from cancelled rows — which is what used to drift.
+export function useSponsorshipCreditBalance(donorId) {
+  return useQuery({
+    queryKey: ["sponsorship-credit-balance", donorId],
+    queryFn: () => getSponsorshipCreditBalance(),
+    enabled: !!donorId,
+    staleTime: 30 * 1000,
+  });
+}
+
 export function useSponsorship(id) {
   return useQuery({
     queryKey: ["sponsorships", id],
@@ -33,34 +44,33 @@ export function useSponsorship(id) {
   });
 }
 
-export function useCreateSponsorship() {
+// useCreateSponsorship / useUpdateSponsorship were removed on purpose.
+// Sponsorship rows are no longer client-writable: the "Users can insert own
+// sponsorships" and "Users can update own sponsorships" RLS policies are
+// dropped, because they let any signed-in donor fabricate credit (an
+// arbitrary cancelled row) or rewrite an amount. Writes now happen only via
+// the service role (verified Paystack payments) and the SECURITY DEFINER RPCs
+// sponsorWithCredit / reactivateSponsorship / cancelSponsorship.
+
+// Every path that moves money out of (or back into) the credit balance must
+// refresh it, or the card would keep showing the pre-spend figure.
+function useInvalidateCreditBalance() {
   const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: createSponsorship,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["sponsorships"] });
-    },
-  });
-}
-
-export function useUpdateSponsorship() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ id, data }) => updateSponsorship(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["sponsorships"] });
-    },
-  });
+  return (keys = []) =>
+    queryClient.invalidateQueries({
+      queryKey: ["sponsorship-credit-balance", ...keys],
+    });
 }
 
 export function useCancelSponsorship() {
   const queryClient = useQueryClient();
+  const invalidateCredit = useInvalidateCreditBalance();
 
   return useMutation({
     mutationFn: cancelSponsorship,
     onSuccess: () => {
+      // Cancelling credits the money back, so the balance changes.
+      invalidateCredit();
       queryClient.invalidateQueries({ queryKey: ["sponsorships"] });
       queryClient.invalidateQueries({ queryKey: ["children"] });
     },
@@ -111,10 +121,12 @@ export function useAdminCancelSponsorship() {
 
 export function useSponsorWithCredit() {
   const queryClient = useQueryClient();
+  const invalidateCredit = useInvalidateCreditBalance();
 
   return useMutation({
     mutationFn: sponsorWithCredit,
     onSuccess: () => {
+      invalidateCredit();
       queryClient.invalidateQueries({ queryKey: ["sponsorships"] });
       queryClient.invalidateQueries({ queryKey: ["children"] });
     },
@@ -123,10 +135,16 @@ export function useSponsorWithCredit() {
 
 export function useReactivateSponsorship() {
   const queryClient = useQueryClient();
+  const invalidateCredit = useInvalidateCreditBalance();
 
   return useMutation({
-    mutationFn: ({ id, plan }) => reactivateSponsorship(id, plan),
+    // `amount` is the figure charged against the donor's credit balance.
+    // `periodStart` re-anchors the monthly billing period, used when a
+    // reactivation is paid for with fresh money rather than existing credit.
+    mutationFn: ({ id, plan, amount, periodStart }) =>
+      reactivateSponsorship(id, plan, amount, periodStart),
     onSuccess: () => {
+      invalidateCredit();
       queryClient.invalidateQueries({ queryKey: ["sponsorships"] });
       queryClient.invalidateQueries({ queryKey: ["children"] });
     },

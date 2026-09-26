@@ -17,6 +17,7 @@ import {
   ChevronRight,
   Save,
   Check,
+  AlertTriangle,
 } from "lucide-react";
 
 import PageTransition from "@/animations/PageTransition";
@@ -26,13 +27,16 @@ import Section from "@/components/ui/Section";
 import Button from "@/components/ui/Button";
 import OptimizedImage from "@/components/ui/OptimizedImage";
 import ScrollReveal from "@/components/ui/ScrollReveal";
+import CreditShortfallNotice from "@/components/CreditShortfallNotice";
 import { useDonorAuth } from "@/context/DonorAuthContext";
 import {
   useSponsorships,
   useCancelSponsorship,
   useReactivateSponsorship,
   useDonorDonations,
+  useSponsorshipCreditBalance,
 } from "@/hooks/useSponsorships";
+import { isInsufficientCreditError, isSponsorshipOverdue } from "@/services/sponsorships";
 import { cn, getGravatarUrl } from "@/lib/utils";
 
 const STATUS_TABS = ["All", "Active", "Cancelled"];
@@ -61,6 +65,19 @@ function SponsorshipStatusBadge({ status, cancelledBy, currentUserId }) {
       {label}
     </span>
   );
+}
+
+// Names the child(ren) a donation funded, from the sponsorship_payments links.
+// A cart payment funds several children, so join the names rather than picking
+// the first — otherwise a donor sees one name for money that covered three.
+function sponsoredChildNames(donation) {
+  const links = donation.sponsorship_payments;
+  if (!Array.isArray(links) || links.length === 0) return "";
+  const names = links
+    .map((link) => link?.sponsorships?.children?.first_name)
+    .filter(Boolean);
+  if (names.length === 0) return "";
+  return names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} & ${names[names.length - 1]}`;
 }
 
 function DonationStatusBadge({ status }) {
@@ -97,6 +114,13 @@ export default function DonorDashboard() {
   // Per-sponsorship plan choice shown on cancelled cards, so a donor can
   // reactivate as one-time or monthly. Defaults to the slot's original plan.
   const [reactivatePlans, setReactivatePlans] = useState({});
+  // Amount the donor is agreeing to on reactivation, per sponsorship id.
+  // Switching a one-time sponsorship to monthly reuses the one-time figure as
+  // the MONTHLY figure server-side unless we send an explicit amount, so the
+  // donor types (or confirms) the number they actually intend to pay.
+  const [reactivateAmounts, setReactivateAmounts] = useState({});
+  // Per-sponsorship error text, e.g. "not enough credit" or a server message.
+  const [reactivateErrors, setReactivateErrors] = useState({});
 
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ first_name: "", last_name: "", phone: "", location: "" });
@@ -120,6 +144,9 @@ export default function DonorDashboard() {
     useSponsorships(user?.id);
   const { data: donationsData, isLoading: donationsLoading } =
     useDonorDonations(user?.id, user?.email);
+  // Spendable sponsorship credit, owned by the server. Read the same number
+  // everywhere so the card, the reactivation form and the server can't disagree.
+  const { data: creditBalance = 0 } = useSponsorshipCreditBalance(user?.id);
 
   const sponsorships = sponsorshipsData?.data ?? [];
   const donations = donationsData?.data ?? [];
@@ -132,16 +159,12 @@ export default function DonorDashboard() {
   const activeSponsorships = sponsorships.filter(
     (s) => s.status === "active"
   ).length;
-  const totalDonated = donations
-    .filter((d) => d.status === "completed")
-    .reduce((sum, d) => sum + Number(d.amount), 0);
-  // Money from cancelled sponsorships that can be reused to sponsor another
-  // child without paying again. Each cancelled sponsorship keeps the amount it
-  // was sponsored with; when the donor "re-sponsors" the slot is consumed and
-  // it returns to active, so the remaining balance drops to 0 automatically.
-  const creditRemaining = sponsorships
-    .filter((s) => s.status === "cancelled")
-    .reduce((sum, s) => sum + Number(s.amount ?? s.monthly_amount ?? 0), 0);
+  // Money from cancelled sponsorships, reusable to sponsor another child
+  // without paying again. Cancelling a sponsorship credits the money back;
+  // reactivating or sponsoring with credit draws it down. The server keeps the
+  // ledger, so this is the authoritative balance rather than a sum computed
+  // here (which used to drift when a reactivation overwrote a row's amount).
+  const creditRemaining = Number(creditBalance) || 0;
 
   if (authLoading) {
     return (
@@ -237,7 +260,7 @@ export default function DonorDashboard() {
         <Container>
           {/* Stats cards */}
           <ScrollReveal>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
               <div className="bg-white rounded-xl border border-soft-accent/50 shadow-card p-6 text-center">
                 <Heart className="h-8 w-8 text-hope-orange mx-auto mb-3" />
                 <p className="font-display text-3xl font-bold text-deep-navy">
@@ -245,15 +268,6 @@ export default function DonorDashboard() {
                 </p>
                 <p className="font-body text-sm text-on-surface-variant">
                   Active Sponsorships
-                </p>
-              </div>
-              <div className="bg-white rounded-xl border border-soft-accent/50 shadow-card p-6 text-center">
-                <CreditCard className="h-8 w-8 text-vibrant-blue mx-auto mb-3" />
-                <p className="font-display text-3xl font-bold text-deep-navy">
-                  ${totalDonated.toLocaleString()}
-                </p>
-                <p className="font-body text-sm text-on-surface-variant">
-                  Total Donated
                 </p>
               </div>
               <div className="bg-white rounded-xl border border-soft-accent/50 shadow-card p-6 text-center">
@@ -265,7 +279,7 @@ export default function DonorDashboard() {
                   Sponsorship Credit
                 </p>
                 <p className="font-body text-xs text-on-surface-variant/70 mt-0.5">
-                  Reusable after cancelling
+                  Available to cover a reactivation
                 </p>
               </div>
               <div className="bg-white rounded-xl border border-soft-accent/50 shadow-card p-6 text-center">
@@ -427,21 +441,67 @@ export default function DonorDashboard() {
                             </p>
                           )}
 
+                          {/* Monthly billing period. The due date comes from the
+                              server (next_payment_due) rather than being
+                              recalculated in the browser, so what the donor is
+                              told can never disagree with what the renewal
+                              payment will actually do. The old version looped
+                              from start_date in the browser, which drifted out
+                              of step with the stored period. */}
                           {sponsorship.status === "active" &&
-                            sponsorship.monthly_amount &&
-                            sponsorship.start_date && (() => {
-                            const start = new Date(sponsorship.start_date);
-                            const now = new Date();
-                            let next = new Date(start.getFullYear(), start.getMonth(), start.getDate());
-                            while (next <= now) {
-                              next.setMonth(next.getMonth() + 1);
-                            }
-                            return (
-                              <p className="mt-2 font-body text-xs text-vibrant-blue">
-                                Next sponsorship: {formatDate(next)}
-                              </p>
-                            );
-                          })()}
+                            sponsorship.monthly_amount != null &&
+                            (() => {
+                              const overdue = isSponsorshipOverdue(sponsorship);
+                              const due = sponsorship.next_payment_due
+                                ? new Date(sponsorship.next_payment_due)
+                                : null;
+
+                              if (!due || Number.isNaN(due.getTime())) return null;
+
+                              return (
+                                <div
+                                  role={overdue ? "alert" : undefined}
+                                  className={`mt-2 rounded-lg border px-3 py-2 ${
+                                    overdue
+                                      ? "border-red-300 bg-red-50"
+                                      : "border-vibrant-blue/20 bg-vibrant-blue/5"
+                                  }`}
+                                >
+                                  <p
+                                    className={`font-body text-xs font-medium ${
+                                      overdue ? "text-red-800" : "text-vibrant-blue"
+                                    }`}
+                                  >
+                                    {overdue ? (
+                                      <span className="inline-flex items-center gap-1">
+                                        <AlertTriangle className="h-3.5 w-3.5" />
+                                        Payment overdue — due {formatDate(due)}
+                                      </span>
+                                    ) : (
+                                      <>Next payment due {formatDate(due)}</>
+                                    )}
+                                  </p>
+                                  {overdue && (
+                                    <p className="mt-1 font-body text-xs text-red-700">
+                                      Your monthly sponsorship of ${Number(sponsorship.monthly_amount).toLocaleString()} for{" "}
+                                      {sponsorship.children?.first_name || "this child"}{" "}
+                                      isn&apos;t covered for the next period.{" "}
+                                      {/* Takes the donor to the donate page
+                                          pre-filled to renew this exact
+                                          sponsorship; paying there advances the
+                                          period and re-activates the child. */}
+                                      <Link
+                                        to={`/donate?renew=${sponsorship.id}&child=${sponsorship.child_id}`}
+                                        className="font-medium text-vibrant-blue underline underline-offset-2 hover:text-hope-orange"
+                                      >
+                                        Update sponsorship
+                                      </Link>{" "}
+                                      to keep this child supported.
+                                    </p>
+                                  )}
+                                </div>
+                              );
+                            })()}
 
                           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-4 border-t border-gray-100 pt-3">
                             <Link
@@ -464,77 +524,196 @@ export default function DonorDashboard() {
                                 Cancel
                               </button>
                             )}
-                            {sponsorship.status === "cancelled" && (
-                              <div className="inline-flex items-center gap-2">
-                                <div className="inline-flex rounded-lg border border-soft-accent/60 overflow-hidden">
-                                  {["one-time", "monthly"].map((p) => {
-                                    const selected =
-                                      (reactivatePlans[sponsorship.id] ??
-                                        (sponsorship.monthly_amount
-                                          ? "monthly"
-                                          : "one-time")) === p;
-                                    return (
-                                      <button
-                                        key={p}
-                                        type="button"
-                                        onClick={() =>
-                                          setReactivatePlans((prev) => ({
+                            {sponsorship.status === "cancelled" && (() => {
+                              const plan =
+                                reactivatePlans[sponsorship.id] ??
+                                (sponsorship.monthly_amount
+                                  ? "monthly"
+                                  : "one-time");
+                              // Default to the figure already on the slot for the
+                              // chosen plan, so an unchanged reactivation needs
+                              // no typing, but the donor can override it.
+                              const defaultAmount =
+                                plan === "monthly"
+                                  ? (sponsorship.monthly_amount ??
+                                     sponsorship.amount ??
+                                     "")
+                                  : (sponsorship.amount ??
+                                     sponsorship.monthly_amount ??
+                                     "");
+                              const amount =
+                                reactivateAmounts[sponsorship.id] ??
+                                String(defaultAmount ?? "");
+                              const requested = Number(amount);
+                              const amountInvalid =
+                                amount.trim() === "" ||
+                                Number.isNaN(requested) ||
+                                requested <= 0;
+                              // The amount is charged against the donor's credit
+                              // balance, so it can never exceed what's available.
+                              // Caught here to give immediate feedback; the server
+                              // enforces the same rule authoritatively.
+                              const exceedsCredit =
+                                !amountInvalid && requested > creditRemaining;
+                              const error = reactivateErrors[sponsorship.id];
+
+                              const setError = (text) =>
+                                setReactivateErrors((prev) => ({
+                                  ...prev,
+                                  [sponsorship.id]: text,
+                                }));
+
+                              return (
+                                <div className="w-full">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <div className="inline-flex rounded-lg border border-soft-accent/60 overflow-hidden">
+                                      {["one-time", "monthly"].map((p) => {
+                                        const selected = plan === p;
+                                        return (
+                                          <button
+                                            key={p}
+                                            type="button"
+                                            onClick={() => {
+                                              setReactivatePlans((prev) => ({
+                                                ...prev,
+                                                [sponsorship.id]: p,
+                                              }));
+                                              setError(null);
+                                            }}
+                                            aria-pressed={selected}
+                                            className={cn(
+                                              "px-2.5 py-1 font-body text-xs font-medium transition-colors",
+                                              selected
+                                                ? "bg-vibrant-blue text-white"
+                                                : "bg-white text-on-surface-variant hover:bg-vibrant-blue/5"
+                                            )}
+                                          >
+                                            {p === "one-time" ? "One-time" : "Monthly"}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+
+                                    <label className="inline-flex items-center gap-1 text-xs text-on-surface-variant">
+                                      <span className="sr-only">
+                                        Sponsorship amount per {plan}
+                                      </span>
+                                      <span aria-hidden="true">$</span>
+                                      <input
+                                        type="number"
+                                        inputMode="decimal"
+                                        min="1"
+                                        step="1"
+                                        value={amount}
+                                        onChange={(e) => {
+                                          setReactivateAmounts((prev) => ({
                                             ...prev,
-                                            [sponsorship.id]: p,
-                                          }))
-                                        }
-                                        aria-pressed={selected}
+                                            [sponsorship.id]: e.target.value,
+                                          }));
+                                          setError(null);
+                                        }}
+                                        aria-label={`Sponsorship amount${
+                                          plan === "monthly" ? " per month" : ""
+                                        }`}
+                                        aria-invalid={exceedsCredit}
                                         className={cn(
-                                          "px-2.5 py-1 font-body text-xs font-medium transition-colors",
-                                          selected
-                                            ? "bg-vibrant-blue text-white"
-                                            : "bg-white text-on-surface-variant hover:bg-vibrant-blue/5"
+                                          "w-20 rounded-lg border px-2 py-1 font-body text-xs text-deep-navy focus:outline-none",
+                                          exceedsCredit
+                                            ? "border-amber-500 focus:border-amber-600"
+                                            : "border-soft-accent/60 focus:border-vibrant-blue"
                                         )}
-                                      >
-                                        {p === "one-time" ? "One-time" : "Monthly"}
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                                <button
-                                  onClick={async () => {
-                                    const plan =
-                                      reactivatePlans[sponsorship.id] ??
-                                      (sponsorship.monthly_amount
-                                        ? "monthly"
-                                        : "one-time");
-                                    if (
-                                      !confirm(
-                                        `Reactivate this ${
-                                          plan === "monthly" ? "monthly" : "one-time"
-                                        } sponsorship?`
-                                      )
-                                    )
-                                      return;
-                                    try {
-                                      await reactivateSponsorship.mutateAsync({
-                                        id: sponsorship.id,
-                                        plan,
-                                      });
-                                    } catch (err) {
-                                      alert(
-                                        err?.message ||
-                                          "Could not reactivate this sponsorship."
-                                      );
-                                    }
-                                  }}
-                                  disabled={reactivateSponsorship.isPending}
-                                  className="inline-flex items-center gap-1 font-body text-sm font-medium text-vibrant-blue hover:underline disabled:opacity-50"
-                                >
-                                  {reactivateSponsorship.isPending ? (
-                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                  ) : (
-                                    <RotateCcw className="h-3.5 w-3.5" />
+                                      />
+                                      {plan === "monthly" ? (
+                                        <span>/mo</span>
+                                      ) : (
+                                        <span className="sr-only">one-time</span>
+                                      )}
+                                    </label>
+
+                                    <span className="text-xs text-on-surface-variant/80">
+                                      of ${creditRemaining.toLocaleString()} credit
+                                    </span>
+
+                                    <button
+                                      onClick={async () => {
+                                        if (amountInvalid) {
+                                          setError(
+                                            "Enter an amount greater than zero to reactivate."
+                                          );
+                                          return;
+                                        }
+                                        if (exceedsCredit) return; // notice is showing
+                                        const verb =
+                                          plan === "monthly"
+                                            ? "monthly"
+                                            : "one-time";
+                                        const suffix =
+                                          plan === "monthly" ? " per month" : "";
+                                        if (
+                                          !confirm(
+                                            `Reactivate this ${verb} sponsorship at $${requested.toLocaleString()}${suffix}?`
+                                          )
+                                        )
+                                          return;
+                                        try {
+                                          await reactivateSponsorship.mutateAsync({
+                                            id: sponsorship.id,
+                                            plan,
+                                            amount: requested,
+                                          });
+                                          setError(null);
+                                        } catch (err) {
+                                          setError(
+                                            err?.message ||
+                                              "Could not reactivate this sponsorship."
+                                          );
+                                        }
+                                      }}
+                                      disabled={
+                                        reactivateSponsorship.isPending ||
+                                        exceedsCredit
+                                      }
+                                      className="inline-flex items-center gap-1 font-body text-sm font-medium text-vibrant-blue hover:underline disabled:opacity-50 disabled:hover:no-underline"
+                                    >
+                                      {reactivateSponsorship.isPending ? (
+                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                      ) : (
+                                        <RotateCcw className="h-3.5 w-3.5" />
+                                      )}
+                                      Reactivate
+                                    </button>
+                                  </div>
+
+                                  {exceedsCredit && (
+                                    <CreditShortfallNotice
+                                      available={creditRemaining}
+                                      required={requested}
+                                    />
                                   )}
-                                  Reactivate
-                                </button>
-                              </div>
-                            )}
+                                  {!exceedsCredit && error && (
+                                    <p
+                                      role="alert"
+                                      className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 font-body text-xs text-red-800"
+                                    >
+                                      {error}
+                                      {isInsufficientCreditError({
+                                        message: error,
+                                      }) && (
+                                        <>
+                                          {" "}
+                                          <Link
+                                            to="/donate"
+                                            className="font-medium text-vibrant-blue underline underline-offset-2"
+                                          >
+                                            add money on the donations page
+                                          </Link>
+                                        </>
+                                      )}
+                                    </p>
+                                  )}
+                                </div>
+                              );
+                            })()}
                           </div>
                         </div>
                       </div>
@@ -598,6 +777,11 @@ export default function DonorDashboard() {
                       >
                         <div className="mb-2 sm:mb-0">
                           <p className="font-body text-sm font-medium text-deep-navy truncate">
+                            {donation.is_sponsorship
+                              ? `Child sponsorship${sponsoredChildNames(donation) ? ` — ${sponsoredChildNames(donation)}` : ""}`
+                              : "General donation"}
+                          </p>
+                          <p className="font-body text-xs text-on-surface-variant truncate">
                             {donation.payment_reference || "—"}
                           </p>
                           <p className="font-body text-xs text-on-surface-variant sm:hidden">

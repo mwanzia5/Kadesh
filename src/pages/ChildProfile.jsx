@@ -18,9 +18,11 @@ import OptimizedImage from "@/components/ui/OptimizedImage";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import { useChild } from "@/hooks/useChildren";
 import {
-  useSponsorships,
   useSponsorWithCredit,
+  useSponsorshipCreditBalance,
 } from "@/hooks/useSponsorships";
+import { isInsufficientCreditError } from "@/services/sponsorships";
+import CreditShortfallNotice from "@/components/CreditShortfallNotice";
 import { useDonorAuth } from "@/context/DonorAuthContext";
 import { useSponsorshipCart } from "@/context/SponsorshipCartContext";
 import { cn } from "@/lib/utils";
@@ -53,26 +55,42 @@ export default function ChildProfile() {
 
   const child = data?.data;
 
-  const { data: sponsorshipsData } = useSponsorships(user?.id);
   const sponsorWithCredit = useSponsorWithCredit();
   const [creditError, setCreditError] = useState(null);
+  // Amount the donor asked for when it exceeded their credit balance, so the
+  // shortfall notice can name both figures.
+  const [creditShortfall, setCreditShortfall] = useState(null);
   const [creditAmount, setCreditAmount] = useState("");
   const [creditPlan, setCreditPlan] = useState("one-time");
 
-  const sponsorships = sponsorshipsData?.data ?? [];
-  const cancelledSponsorships = sponsorships.filter(
-    (s) => s.status === "cancelled"
-  ).length;
-  const hasCredit = cancelledSponsorships > 0;
+  // Spendable sponsorship credit, owned by the server. This used to be a count
+  // of cancelled rows, which said nothing about how much money was available.
+  const { data: creditBalance = 0 } = useSponsorshipCreditBalance(user?.id);
+  const creditRemaining = Number(creditBalance) || 0;
+  const hasCredit = creditRemaining > 0;
 
   const handleSponsorWithCredit = async () => {
     setCreditError(null);
     const isMonthly = creditPlan === "monthly";
+    const amount = creditAmount.trim() === "" ? null : Number(creditAmount);
+    if (amount !== null && (Number.isNaN(amount) || amount <= 0)) {
+      setCreditError("Please enter a valid sponsorship amount greater than zero.");
+      return;
+    }
+    // Sponsoring with credit draws the amount down, so it can't exceed the
+    // balance. The server refuses anything larger; catching it here avoids a
+    // pointless round-trip and points the donor at the donations page.
+    if (amount !== null && amount > creditRemaining) {
+      setCreditError(null);
+      setCreditShortfall(amount);
+      return;
+    }
+    setCreditShortfall(null);
     if (
       !confirm(
         `Sponsor ${child.first_name} ${
           isMonthly ? "monthly" : "one-time"
-        } using your existing sponsorship donation? ${
+        } using your existing sponsorship donation of $${creditRemaining.toLocaleString()}? ${
           isMonthly
             ? "Your credit covers the first month, then recurring monthly support begins."
             : "No additional payment will be taken."
@@ -81,9 +99,13 @@ export default function ChildProfile() {
     ) {
       return;
     }
-    const amount = creditAmount.trim() === "" ? null : Number(creditAmount);
-    if (amount !== null && (Number.isNaN(amount) || amount <= 0)) {
-      setCreditError("Please enter a valid sponsorship amount greater than zero.");
+    // A one-time slot carries no monthly figure, so switching to monthly needs
+    // an amount — the RPC rejects it otherwise. Catch it here to avoid a
+    // pointless round-trip and to make the requirement obvious.
+    if (isMonthly && amount === null) {
+      setCreditError(
+        "Enter the monthly amount to reactivate as a monthly sponsorship."
+      );
       return;
     }
     try {
@@ -251,10 +273,45 @@ export default function ChildProfile() {
                                 step="any"
                                 placeholder="e.g. 50"
                                 value={creditAmount}
-                                onChange={(e) => setCreditAmount(e.target.value)}
+                                onChange={(e) => {
+                                  setCreditAmount(e.target.value);
+                                  setCreditShortfall(null);
+                                  setCreditError(null);
+                                }}
                                 className="w-full px-3 py-2 rounded-lg border border-soft-accent/60 bg-white font-body text-sm text-deep-navy placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-vibrant-blue/40 focus:border-vibrant-blue transition-all"
                               />
+                              <p className="mt-1.5 font-body text-xs text-on-surface-variant">
+                                Using ${creditRemaining.toLocaleString()} of your
+                                sponsorship credit
+                              </p>
                             </div>
+                            {creditShortfall !== null && (
+                              <CreditShortfallNotice
+                                available={creditRemaining}
+                                required={creditShortfall}
+                              />
+                            )}
+                            {creditError && (
+                              <p
+                                role="alert"
+                                className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 font-body text-xs text-red-800"
+                              >
+                                {creditError}
+                                {isInsufficientCreditError({
+                                  message: creditError,
+                                }) && (
+                                  <>
+                                    {" "}
+                                    <Link
+                                      to="/donate"
+                                      className="font-medium text-vibrant-blue underline underline-offset-2"
+                                    >
+                                      add money on the donations page
+                                    </Link>
+                                  </>
+                                )}
+                              </p>
+                            )}
                             <Button
                               variant="lightblue"
                               size="lg"
@@ -272,8 +329,8 @@ export default function ChildProfile() {
                                 : "Sponsor This Child"}
                             </Button>
                             <p className="font-body text-xs text-on-surface-variant text-center">
-                              No additional payment needed — this uses one of your
-                              cancelled sponsorships
+                              No additional payment needed — this comes out of your
+                              sponsorship credit
                               {creditPlan === "monthly"
                                 ? " for the first month, then recurring monthly support begins."
                                 : "."}
@@ -298,6 +355,11 @@ export default function ChildProfile() {
                               cart. Set the amount there, then checkout in one
                               payment.
                             </p>
+                            <p className="font-body text-xs text-on-surface-variant/80 text-center">
+                              You currently have no sponsorship credit. If you've
+                              sponsored before, cancelling returns the money to your
+                              credit balance.
+                            </p>
                           </div>
                         )
                       ) : (
@@ -317,12 +379,6 @@ export default function ChildProfile() {
                           ? "This child is already sponsored"
                           : "Sponsorship pending"}
                       </div>
-                    )}
-
-                    {creditError && (
-                      <p className="mt-3 font-body text-sm text-red-600 text-center">
-                        {creditError}
-                      </p>
                     )}
 
                     {sponsorWithCredit.isSuccess && (
