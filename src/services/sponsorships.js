@@ -64,35 +64,6 @@ export async function getSponsorship(id) {
   }
 }
 
-export async function createSponsorship(sponsorshipData) {
-  try {
-    const { data, error } = await supabase
-      .from("sponsorships")
-      .insert(sponsorshipData)
-      .select()
-      .single();
-
-    return { data, error };
-  } catch (err) {
-    return { data: null, error: err };
-  }
-}
-
-export async function updateSponsorship(id, sponsorshipData) {
-  try {
-    const { data, error } = await supabase
-      .from("sponsorships")
-      .update(sponsorshipData)
-      .eq("id", id)
-      .select()
-      .single();
-
-    return { data, error };
-  } catch (err) {
-    return { data: null, error: err };
-  }
-}
-
 export async function cancelSponsorship(id) {
   try {
     const { data, error } = await supabase
@@ -150,33 +121,97 @@ export async function adminCancelSponsorship(id) {
   }
 }
 
+// The donor's spendable sponsorship credit, in money.
+//
+// This used to be computed in the browser by summing cancelled sponsorship rows,
+// which drifted: reactivation overwrote a row's amount, so a partial spend
+// silently destroyed the remainder and the card disagreed with what the donor
+// had actually paid. The server now keeps an append-only ledger and this reads
+// the real balance.
+//
+// Returns a number (0 when there is no credit). Postgres returns numerics as
+// strings, so it is coerced here rather than at every call site.
+export async function getSponsorshipCreditBalance() {
+  const { data, error } = await supabase.rpc("sponsor_credit_balance");
+  if (error) throw error;
+  return Number(data ?? 0);
+}
+
+// True when the server refused an operation for lack of credit.
+// spend_sponsorship_credit raises with this HINT so the UI can offer "add money
+// on the donations page" instead of a generic failure. Checked on both hint and
+// message because PostgREST does not always surface hint.
+export function isInsufficientCreditError(err) {
+  if (!err) return false;
+  const hint = err.hint ?? err.HINT ?? "";
+  const message = err.message ?? "";
+  return (
+    hint === "INSUFFICIENT_SPONSORSHIP_CREDIT" ||
+    message.includes("INSUFFICIENT_SPONSORSHIP_CREDIT") ||
+    /sponsorship credit but this needs/i.test(message)
+  );
+}
+
 // Sponsors a child using an existing, already-paid sponsorship credit (no new
-// payment). Reuses the donor's oldest cancelled sponsorship slot. `amount` is
-// an optional sponsorship amount to record on the slot. `plan` optionally
-// sets it to 'one-time' or 'monthly' (default preserves the slot's plan).
-// Throws if the donor has no cancelled sponsorship to draw from.
+// payment). `amount` is charged against the credit balance, which the server
+// enforces: it refuses the whole operation if the balance is short, so a donor
+// can never put a child on the list without the money to cover them.
+// `plan` sets it to 'one-time' or 'monthly' (omit to keep the slot's plan).
 export async function sponsorWithCredit({ childId, amount, plan }) {
   const { data, error } = await supabase.rpc("create_sponsorship_with_credit", {
     p_child_id: childId,
-    p_amount: amount || null,
+    p_amount: amount != null && amount !== "" ? Number(amount) : null,
     p_plan: plan || null,
   });
   if (error) throw error;
-  return data;
+  return data?.[0] ?? data;
 }
 
-// Reactivates a cancelled sponsorship (sets it back to "active"). The trigger
-// flips the child back to "sponsored". Enforces the same one-active-per-
-// donation rule server-side. `plan` optionally switches the plan to 'one-time'
-// or 'monthly' (default keeps the slot's current plan). Throws if there is no
-// available credit.
-export async function reactivateSponsorship(sponsorshipId, plan) {
+// Reactivates a cancelled sponsorship (sets it back to "active"), charging the
+// amount against the donor's sponsorship credit. The trigger flips the child
+// back to "sponsored".
+//
+// `amount` is what the donor has agreed to pay going forward and is always sent
+// by the UI. Without it the old implementation reused the one-time amount as
+// the *monthly* figure, quietly turning a single $200 payment into $200/month.
+//
+// The server refuses the reactivation when the amount exceeds the donor's
+// credit balance, and charges it against that balance when it succeeds, so
+// repeated reactivations draw down the credit correctly.
+//
+// `plan` switches to 'one-time' or 'monthly'; when omitted the slot keeps its
+// existing plan. Throws if the slot isn't the donor's, isn't cancelled, the
+// child has been taken, or there isn't enough credit.
+export async function reactivateSponsorship(
+  sponsorshipId,
+  plan,
+  amount,
+  periodStart
+) {
   const { data, error } = await supabase.rpc("reactivate_sponsorship", {
     p_sponsorship_id: sponsorshipId,
     p_plan: plan || null,
+    p_amount: amount != null && amount !== "" ? Number(amount) : null,
+    p_period_start: periodStart || null,
   });
   if (error) throw error;
-  return data;
+  return data?.[0] ?? data;
+}
+
+// A monthly sponsorship is overdue when its due date has passed. The same
+// definition the database uses (public.sponsorship_is_overdue), reimplemented
+// here so the UI can flag a row without an extra round-trip per sponsorship.
+export function isSponsorshipOverdue(sponsorship, now = new Date()) {
+  if (!sponsorship) return false;
+  if (sponsorship.status !== "active") return false;
+  if (sponsorship.monthly_amount == null) return false;
+  if (!sponsorship.next_payment_due) return false;
+  // Compare calendar days: a donor isn't "overdue" at 00:01 on their due date.
+  const due = new Date(sponsorship.next_payment_due);
+  if (Number.isNaN(due.getTime())) return false;
+  const dueDay = Date.UTC(due.getUTCFullYear(), due.getUTCMonth(), due.getUTCDate());
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  return dueDay < today;
 }
 
 // Matches on donor_id OR donor_email (case-insensitive) so donations show
