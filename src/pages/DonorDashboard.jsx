@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { useState, useEffect, cloneElement } from "react";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   User,
@@ -9,76 +9,39 @@ import {
   Calendar,
   Heart,
   CreditCard,
-  Coins,
   LogOut,
   Loader2,
   XCircle,
-  RotateCcw,
-  ChevronRight,
   Save,
   Check,
-  AlertTriangle,
+  Pencil,
+  AlertCircle,
+  CheckCircle2,
+  PauseCircle,
+  Gift,
+  Receipt,
 } from "lucide-react";
 
 import PageTransition from "@/animations/PageTransition";
-import { staggerContainer, slideUp } from "@/animations/variants";
 import Container from "@/components/ui/Container";
 import Section from "@/components/ui/Section";
 import Button from "@/components/ui/Button";
-import OptimizedImage from "@/components/ui/OptimizedImage";
-import ScrollReveal from "@/components/ui/ScrollReveal";
-import CreditShortfallNotice from "@/components/CreditShortfallNotice";
 import { useDonorAuth } from "@/context/DonorAuthContext";
 import {
   useSponsorships,
   useCancelSponsorship,
-  useReactivateSponsorship,
   useDonorDonations,
-  useSponsorshipCreditBalance,
 } from "@/hooks/useSponsorships";
-import { isInsufficientCreditError, isSponsorshipOverdue } from "@/services/sponsorships";
 import { cn, getGravatarUrl } from "@/lib/utils";
+import { monthlyGiftStatus, monthlySponsorshipStatus } from "@/lib/monthlyGiving";
+import { validateProfile, profileHasChanges } from "@/lib/profileValidation";
+import { KES_PER_USD, SPONSORSHIP_CHECKOUT } from "@/lib/sponsorship";
+import { useSponsorshipCart } from "@/context/SponsorshipCartContext";
 
-const STATUS_TABS = ["All", "Active", "Cancelled"];
+import { AnnualFundingNotice } from "@/components/cart/SponsorshipSelection";
+import SponsorshipCard from "@/components/account/SponsorshipCard";
 
-function SponsorshipStatusBadge({ status, cancelledBy, currentUserId }) {
-  const styles = {
-    active: "bg-green-100 text-green-700",
-    paused: "bg-amber-100 text-amber-700",
-    cancelled: "bg-gray-100 text-gray-500",
-  };
-
-  let label = status;
-  if (status === "paused") {
-    label = "Paused by admin";
-  } else if (status === "cancelled" && cancelledBy && cancelledBy !== currentUserId) {
-    label = "Cancelled by admin";
-  }
-
-  return (
-    <span
-      className={cn(
-        "inline-block px-3 py-1 rounded-full font-body text-xs font-semibold capitalize",
-        styles[status] || "bg-gray-100 text-gray-500"
-      )}
-    >
-      {label}
-    </span>
-  );
-}
-
-// Names the child(ren) a donation funded, from the sponsorship_payments links.
-// A cart payment funds several children, so join the names rather than picking
-// the first — otherwise a donor sees one name for money that covered three.
-function sponsoredChildNames(donation) {
-  const links = donation.sponsorship_payments;
-  if (!Array.isArray(links) || links.length === 0) return "";
-  const names = links
-    .map((link) => link?.sponsorships?.children?.first_name)
-    .filter(Boolean);
-  if (names.length === 0) return "";
-  return names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} & ${names[names.length - 1]}`;
-}
+const STATUS_TABS = ["All", "Active", "Paused", "Cancelled"];
 
 function DonationStatusBadge({ status }) {
   const styles = {
@@ -91,7 +54,7 @@ function DonationStatusBadge({ status }) {
     <span
       className={cn(
         "inline-block px-2.5 py-0.5 rounded-full font-body text-xs font-semibold capitalize",
-        styles[status] || "bg-gray-100 text-gray-500"
+        styles[status] || "bg-gray-100 text-gray-500",
       )}
     >
       {status}
@@ -107,25 +70,111 @@ function formatDate(dateStr) {
   });
 }
 
+// Label, hint and error wrapper for the profile form. Styles the single
+// input passed as its child and links it to the hint/error for screen readers.
+function ProfileField({ id, label, required, optional, hint, error, children }) {
+  const describedBy = [hint && `${id}-hint`, error && `${id}-error`]
+    .filter(Boolean)
+    .join(" ");
+  const input = children;
+  return (
+    <div>
+      <label
+        htmlFor={id}
+        className="mb-1.5 flex items-center gap-1 font-body text-sm font-semibold text-deep-navy"
+      >
+        {label}
+        {required && (
+          <span className="text-red-500" aria-hidden="true">
+            *
+          </span>
+        )}
+        {optional && (
+          <span className="font-normal text-on-surface-variant">
+            (optional)
+          </span>
+        )}
+      </label>
+      {cloneElement(input, {
+          "aria-invalid": error ? true : undefined,
+          "aria-describedby": describedBy || undefined,
+          "aria-required": required || undefined,
+          className: cn(
+            "w-full rounded-xl border bg-white px-3.5 py-3 font-body text-sm text-deep-navy outline-none transition-colors placeholder:text-slate-400 focus:ring-4 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-on-surface-variant",
+            error
+              ? "border-red-400 focus:border-red-500 focus:ring-red-100"
+              : "border-slate-300 focus:border-vibrant-blue focus:ring-vibrant-blue/15",
+          ),
+      })}
+      {hint && !error && (
+        <p
+          id={`${id}-hint`}
+          className="mt-1.5 font-body text-xs text-on-surface-variant"
+        >
+          {hint}
+        </p>
+      )}
+      {error && (
+        <p
+          id={`${id}-error`}
+          role="alert"
+          className="mt-1.5 flex items-center gap-1.5 font-body text-xs font-medium text-red-600"
+        >
+          <AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// Gift amounts are recorded in USD; Paystack charges them in KES.
+function chargedLabel(donation) {
+  const kes = Number(donation.converted_amount);
+  if (donation.currency === "KES" && Number.isFinite(kes) && kes > 0)
+    return `KSh ${kes.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+  if (donation.currency === "KES") {
+    const estimate = Number(donation.amount) * KES_PER_USD;
+    return Number.isFinite(estimate)
+      ? `KSh ${estimate.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+      : "KES";
+  }
+  return donation.currency || "USD";
+}
+
 export default function DonorDashboard() {
-  const { user, profile, loading: authLoading, signOut, updateProfile } = useDonorAuth();
+  const {
+    user,
+    profile,
+    loading: authLoading,
+    profileLoading,
+    profileError,
+    retryProfile,
+    signOut,
+    updateProfile,
+  } = useDonorAuth();
   const [activeTab, setActiveTab] = useState("sponsorships");
   const [statusFilter, setStatusFilter] = useState("All");
   // Per-sponsorship plan choice shown on cancelled cards, so a donor can
   // reactivate as one-time or monthly. Defaults to the slot's original plan.
   const [reactivatePlans, setReactivatePlans] = useState({});
-  // Amount the donor is agreeing to on reactivation, per sponsorship id.
-  // Switching a one-time sponsorship to monthly reuses the one-time figure as
-  // the MONTHLY figure server-side unless we send an explicit amount, so the
-  // donor types (or confirms) the number they actually intend to pay.
-  const [reactivateAmounts, setReactivateAmounts] = useState({});
-  // Per-sponsorship error text, e.g. "not enough credit" or a server message.
-  const [reactivateErrors, setReactivateErrors] = useState({});
 
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ first_name: "", last_name: "", phone: "", location: "" });
+  const [form, setForm] = useState({
+    first_name: "",
+    last_name: "",
+    phone: "",
+    location: "",
+  });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [profileAttempted, setProfileAttempted] = useState(false);
+  const [profileSaveError, setProfileSaveError] = useState("");
+  const [accountError, setAccountError] = useState("");
+  const [signingOut, setSigningOut] = useState(false);
+  // Must stay above the early returns below: React needs the same hooks on
+  // every render, including the render right after signing out.
+  const [notice, setNotice] = useState(null); // { type, text }
 
   useEffect(() => {
     if (profile) {
@@ -138,18 +187,25 @@ export default function DonorDashboard() {
     }
   }, [profile]);
   const cancelSponsorship = useCancelSponsorship();
-  const reactivateSponsorship = useReactivateSponsorship();
+  const navigate = useNavigate();
+  const { addToCart } = useSponsorshipCart();
 
   const { data: sponsorshipsData, isLoading: sponsorshipsLoading } =
     useSponsorships(user?.id);
   const { data: donationsData, isLoading: donationsLoading } =
     useDonorDonations(user?.id, user?.email);
-  // Spendable sponsorship credit, owned by the server. Read the same number
-  // everywhere so the card, the reactivation form and the server can't disagree.
-  const { data: creditBalance = 0 } = useSponsorshipCreditBalance(user?.id);
 
   const sponsorships = sponsorshipsData?.data ?? [];
   const donations = donationsData?.data ?? [];
+  const monthlyGift = monthlyGiftStatus(donations);
+  const monthlySponsorship = monthlySponsorshipStatus(sponsorships);
+  const formatMonthDate = (date) =>
+    date.toLocaleDateString(undefined, {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      timeZone: "UTC",
+    });
 
   const filteredSponsorships = sponsorships.filter((s) => {
     if (statusFilter === "All") return true;
@@ -157,14 +213,8 @@ export default function DonorDashboard() {
   });
 
   const activeSponsorships = sponsorships.filter(
-    (s) => s.status === "active"
+    (s) => s.status === "active",
   ).length;
-  // Money from cancelled sponsorships, reusable to sponsor another child
-  // without paying again. Cancelling a sponsorship credits the money back;
-  // reactivating or sponsoring with credit draws it down. The server keeps the
-  // ledger, so this is the authoritative balance rather than a sum computed
-  // here (which used to drift when a reactivation overwrote a row's amount).
-  const creditRemaining = Number(creditBalance) || 0;
 
   if (authLoading) {
     return (
@@ -177,29 +227,132 @@ export default function DonorDashboard() {
   }
 
   if (!user) {
-    return <Navigate to="/donor-auth" replace />;
+    return <Navigate to="/login?redirect=%2Faccount" replace />;
   }
 
+  const statusCounts = {
+    All: sponsorships.length,
+    Active: sponsorships.filter((s) => s.status === "active").length,
+    Paused: sponsorships.filter((s) => s.status === "paused").length,
+    Cancelled: sponsorships.filter((s) => s.status === "cancelled").length,
+  };
+
+  const handleCancelSponsorship = async (sponsorship) => {
+    setNotice(null);
+    try {
+      await cancelSponsorship.mutateAsync(sponsorship.id);
+      setNotice({
+        type: "success",
+        text: `${sponsorship.children?.first_name || "The"} sponsorship has been cancelled.`,
+      });
+      return true;
+    } catch (err) {
+      setNotice({
+        type: "error",
+        text:
+          err?.message || "Could not cancel this sponsorship. Please try again.",
+      });
+      return false;
+    }
+  };
+
+  // Reactivating a cancelled sponsorship always needs a new payment. The
+  // child is added to the sponsorship cart with the chosen plan (one-time
+  // Education fees $100, or $25/month) and the donor goes to the normal
+  // secure checkout, where the plan/amount can still be changed. Checkout
+  // re-checks the child's availability before taking payment, and the
+  // sponsorship only becomes active once Paystack verifies the payment.
+  const handleReactivateSponsorship = (sponsorship, plan) => {
+    setNotice(null);
+    const child = sponsorship.children;
+    if (!child?.id) {
+      setNotice({
+        type: "error",
+        text: "We couldn't find this child's profile. Please contact us.",
+      });
+      return;
+    }
+    if (child.sponsorship_status && child.sponsorship_status !== "available") {
+      setNotice({
+        type: "error",
+        text: `${child.first_name || "This child"} is no longer available for sponsorship. Please choose another child.`,
+      });
+      return;
+    }
+    addToCart(child, plan === "monthly" ? "monthly" : "education");
+    navigate(SPONSORSHIP_CHECKOUT);
+  };
+
+  // Monthly sponsorships are paid by hand each month: put every child that is
+  // due into the cart at their monthly amount and open the secure checkout.
+  const handlePayMonthlySponsorship = () => {
+    if (!monthlySponsorship?.due) return;
+    setNotice(null);
+    monthlySponsorship.dueChildren.forEach(({ child, monthlyAmount }) => {
+      if (child?.id) addToCart(child, "monthly", monthlyAmount);
+    });
+    navigate(SPONSORSHIP_CHECKOUT);
+  };
+
   const handleSignOut = async () => {
-    await signOut();
+    if (signingOut) return;
+    setAccountError("");
+    setSigningOut(true);
+    try {
+      await signOut();
+    } catch {
+      setAccountError("We couldn't sign you out. Check your connection and try again.");
+    } finally {
+      setSigningOut(false);
+    }
+  };
+
+  const profileCheck = validateProfile(form);
+  const profileChanged = profileHasChanges(profileCheck.values, profile);
+  const fieldError = (name) =>
+    profileAttempted || form[name] !== (profile?.[name] || "")
+      ? profileCheck.errors[name]
+      : undefined;
+
+  const resetProfileForm = () => {
+    setForm({
+      first_name: profile?.first_name || "",
+      last_name: profile?.last_name || "",
+      phone: profile?.phone || "",
+      location: profile?.location || "",
+    });
+    setProfileAttempted(false);
+    setProfileSaveError("");
   };
 
   const handleSaveProfile = async (e) => {
     e.preventDefault();
+    setProfileAttempted(true);
+    setProfileSaveError("");
+    if (!profileCheck.isValid) return;
+    if (!profileChanged) {
+      setEditing(false);
+      return;
+    }
     setSaving(true);
     setSaved(false);
+    setAccountError("");
     try {
+      const { values } = profileCheck;
       await updateProfile({
-        first_name: form.first_name,
-        last_name: form.last_name,
-        phone: form.phone || null,
-        location: form.location || null,
+        first_name: values.first_name,
+        last_name: values.last_name,
+        phone: values.phone || null,
+        location: values.location || null,
       });
       setSaved(true);
       setEditing(false);
-      setTimeout(() => setSaved(false), 2000);
-    } catch (err) {
-      console.error("Failed to update profile:", err);
+      setProfileAttempted(false);
+      setTimeout(() => setSaved(false), 3000);
+    } catch {
+      setProfileSaveError(
+        "Your profile wasn't saved. Please check your connection and try again.",
+      );
     } finally {
       setSaving(false);
     }
@@ -208,611 +361,479 @@ export default function DonorDashboard() {
   return (
     <PageTransition>
       {/* Hero */}
-      <section className="relative min-h-[40vh] flex items-end overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-deep-navy via-vibrant-blue/90 to-deep-navy">
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-20 left-[10%] w-64 h-64 rounded-full bg-hope-orange/30 blur-3xl" />
-            <div className="absolute bottom-10 right-[15%] w-80 h-80 rounded-full bg-vibrant-blue/30 blur-3xl" />
-          </div>
-        </div>
-
-        <div className="relative z-10 w-full">
-          <Container>
-            <div className="pt-32 pb-16">
-                <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-full bg-vibrant-blue flex items-center justify-center overflow-hidden shadow-lg shrink-0">
-                    {getGravatarUrl(user?.email) ? (
-                      <img
-                        src={getGravatarUrl(user.email, 128)}
-                        alt=""
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-white font-display text-xl font-bold">
-                        {profile?.first_name?.charAt(0) || "D"}
-                      </span>
-                    )}
-                  </div>
-                  <div>
-                    <h1 className="font-display text-3xl md:text-4xl text-white mb-2">
-                      My Account
-                    </h1>
-                    <p className="font-body text-body-lg text-white/70">
-                      Welcome back, {profile?.first_name || "Donor"}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={handleSignOut}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-body text-sm font-medium text-white/60 hover:text-white hover:bg-white/10 transition-colors"
-                >
-                  <LogOut className="h-4 w-4" />
-                  <span className="hidden sm:inline">Sign Out</span>
-                </button>
+      <section className="relative overflow-hidden bg-deep-navy">
+        <div className="absolute inset-0 bg-gradient-to-br from-deep-navy via-[#12366d] to-[#1e5bab]" />
+        <div className="absolute -right-24 -top-24 h-80 w-80 rounded-full border border-white/[0.07]" />
+        <div className="absolute -bottom-32 left-[10%] h-72 w-72 rounded-full bg-hope-orange/10 blur-3xl" />
+        <Container className="relative z-10">
+          <div className="flex flex-col gap-6 pb-20 pt-12 sm:flex-row sm:items-center sm:justify-between sm:pt-14">
+            <div className="flex items-center gap-4 sm:gap-5">
+              <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/15 ring-1 ring-white/20 sm:h-20 sm:w-20">
+                <span className="font-display text-2xl font-bold text-white sm:text-3xl">
+                  {(profile?.first_name || user?.email || "D")
+                    .charAt(0)
+                    .toUpperCase()}
+                </span>
+                {user?.email && (
+                  <img
+                    src={getGravatarUrl(user.email, 160, "404")}
+                    alt=""
+                    className="absolute inset-0 h-full w-full object-cover"
+                    onError={(event) => {
+                      event.currentTarget.hidden = true;
+                    }}
+                  />
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="font-body text-xs font-semibold uppercase tracking-[0.2em] text-[#f0cd72]">
+                  My account
+                </p>
+                <h1 className="mt-1 font-display text-3xl font-bold text-white sm:text-4xl">
+                  Welcome back, {profile?.first_name || "friend"}
+                </h1>
+                <p className="mt-1 truncate font-body text-sm text-white/70">
+                  {profile?.email || user?.email}
+                  {profile?.created_at
+                    ? ` · Member since ${formatDate(profile.created_at)}`
+                    : ""}
+                </p>
               </div>
             </div>
-          </Container>
-        </div>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                to="/sponsor-a-child"
+                className="inline-flex items-center gap-2 rounded-xl bg-[#1e5bab] px-4 py-2.5 font-body text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#174a8d]"
+              >
+                <Heart className="h-4 w-4" aria-hidden="true" />
+                Sponsor a child
+              </Link>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                disabled={signingOut}
+                className="inline-flex items-center gap-2 rounded-xl border border-white/25 bg-white/10 px-4 py-2.5 font-body text-sm font-semibold text-white transition-colors hover:bg-white/20 disabled:opacity-60"
+              >
+                <LogOut className="h-4 w-4" aria-hidden="true" />
+                {signingOut ? "Signing out…" : "Sign out"}
+              </button>
+            </div>
+          </div>
+        </Container>
       </section>
 
-      <Section background="white" className="pt-0 pb-16 -mt-12 relative z-10">
+      <Section background="white" className="relative z-10 -mt-12 pb-20 pt-0">
         <Container>
-          {/* Stats cards */}
-          <ScrollReveal>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
-              <div className="bg-white rounded-xl border border-soft-accent/50 shadow-card p-6 text-center">
-                <Heart className="h-8 w-8 text-hope-orange mx-auto mb-3" />
-                <p className="font-display text-3xl font-bold text-deep-navy">
-                  {activeSponsorships}
-                </p>
-                <p className="font-body text-sm text-on-surface-variant">
-                  Active Sponsorships
-                </p>
-              </div>
-              <div className="bg-white rounded-xl border border-soft-accent/50 shadow-card p-6 text-center">
-                <Coins className="h-8 w-8 text-hope-orange mx-auto mb-3" />
-                <p className="font-display text-3xl font-bold text-deep-navy">
-                  ${creditRemaining.toLocaleString()}
-                </p>
-                <p className="font-body text-sm text-on-surface-variant">
-                  Sponsorship Credit
-                </p>
-                <p className="font-body text-xs text-on-surface-variant/70 mt-0.5">
-                  Available to cover a reactivation
-                </p>
-              </div>
-              <div className="bg-white rounded-xl border border-soft-accent/50 shadow-card p-6 text-center">
-                <Calendar className="h-8 w-8 text-vibrant-blue mx-auto mb-3" />
-                <p className="font-display text-3xl font-bold text-deep-navy">
-                  {donations.length}
-                </p>
-                <p className="font-body text-sm text-on-surface-variant">
-                  Total Donations
-                </p>
-              </div>
+          {(accountError || profileError) && (
+            <div role="alert" className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 font-body text-sm text-red-800">
+              <p>{accountError || profileError}</p>
+              {profileError && <button type="button" onClick={retryProfile} disabled={profileLoading} className="mt-2 font-semibold underline disabled:opacity-50">{profileLoading ? "Loading profile…" : "Retry loading profile"}</button>}
             </div>
-          </ScrollReveal>
+          )}
 
-          {/* Tabs */}
-          <div className="flex gap-1 bg-gray-100 rounded-lg p-1 max-w-xs mb-8">
-            {["sponsorships", "payments", "profile"].map((tab) => (
+          {/* Summary */}
+          <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {[
+              {
+                label: "Active",
+                value: statusCounts.Active,
+                icon: CheckCircle2,
+                tone: "text-emerald-600 bg-emerald-50",
+                tab: "Active",
+              },
+              {
+                label: "Paused",
+                value: statusCounts.Paused,
+                icon: PauseCircle,
+                tone: "text-amber-600 bg-amber-50",
+                tab: "Paused",
+              },
+              {
+                label: "Cancelled",
+                value: statusCounts.Cancelled,
+                icon: XCircle,
+                tone: "text-slate-500 bg-slate-100",
+                tab: "Cancelled",
+              },
+            ].map(({ label, value, icon: Icon, tone, tab }) => (
               <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={cn(
-                  "flex-1 py-2.5 rounded-md font-body text-xs sm:text-sm font-medium transition-all capitalize whitespace-nowrap",
-                  activeTab === tab
-                    ? "bg-white text-deep-navy shadow-sm"
-                    : "text-on-surface-variant hover:text-deep-navy"
-                )}
+                key={label}
+                type="button"
+                onClick={() => {
+                  setActiveTab("sponsorships");
+                  setStatusFilter(tab);
+                }}
+                className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-[0_16px_40px_-34px_rgba(15,38,82,0.6)] transition-colors hover:border-vibrant-blue/40 sm:p-5"
               >
-                {tab === "sponsorships" ? "Sponsorships" : tab === "payments" ? "Payments" : "Profile"}
+                <span className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-xl", tone)}>
+                  <Icon className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <span>
+                  <span className="block font-display text-2xl font-bold leading-none text-deep-navy">
+                    {value}
+                  </span>
+                  <span className="mt-1 block font-body text-xs font-medium text-on-surface-variant sm:text-sm">
+                    {label} sponsorships
+                  </span>
+                </span>
               </button>
             ))}
           </div>
 
+          {/* Monthly sponsorship reminder (paid by hand each month) */}
+          {monthlySponsorship && (
+            <div
+              className={cn(
+                "mb-6 flex flex-col gap-4 rounded-2xl border p-5 sm:flex-row sm:items-center sm:justify-between",
+                monthlySponsorship.overdue
+                  ? "border-red-200 bg-red-50"
+                  : monthlySponsorship.due
+                    ? "border-amber-200 bg-amber-50"
+                    : "border-slate-200/80 bg-white",
+              )}
+            >
+              <div className="flex items-start gap-3">
+                <Heart
+                  className={cn(
+                    "mt-0.5 h-5 w-5 shrink-0",
+                    monthlySponsorship.overdue
+                      ? "text-red-700"
+                      : monthlySponsorship.due
+                        ? "text-amber-700"
+                        : "text-vibrant-blue",
+                  )}
+                  aria-hidden="true"
+                />
+                <div>
+                  <p className="font-body text-sm font-semibold text-deep-navy">
+                    {monthlySponsorship.overdue
+                      ? "Your monthly sponsorship payment is overdue"
+                      : monthlySponsorship.due
+                      ? "Your monthly sponsorship is due"
+                      : "This month's sponsorship is paid — thank you"}
+                  </p>
+                  <p className="mt-1 font-body text-sm text-on-surface-variant">
+                    {monthlySponsorship.due
+                      ? `${monthlySponsorship.dueChildren
+                          .map(
+                            (c) =>
+                              `${c.child?.first_name || "Your child"} ($${c.monthlyAmount}/month${
+                                c.monthsBehind > 1
+                                  ? `, ${c.monthsBehind} months unpaid`
+                                  : ""
+                              })`,
+                          )
+                          .join(", ")}. Monthly sponsorships are not charged automatically, so please pay this month's support.`
+                      : `Your next monthly payment is due from ${formatMonthDate(monthlySponsorship.nextDue)}.`}
+                  </p>
+                </div>
+              </div>
+              {monthlySponsorship.due && (
+                <Button
+                  variant="primary"
+                  onClick={handlePayMonthlySponsorship}
+                  className="shrink-0"
+                >
+                  Pay ${monthlySponsorship.dueTotal.toLocaleString()} for this month
+                </Button>
+              )}
+            </div>
+          )}
+
+          {/* Monthly gift reminder (monthly gifts are paid by hand each month) */}
+          {monthlyGift && (
+            <div
+              className={cn(
+                "mb-10 flex flex-col gap-4 rounded-2xl border p-5 sm:flex-row sm:items-center sm:justify-between",
+                monthlyGift.due
+                  ? "border-amber-200 bg-amber-50"
+                  : "border-slate-200/80 bg-white",
+              )}
+            >
+              <div className="flex items-start gap-3">
+                <Calendar
+                  className={cn(
+                    "mt-0.5 h-5 w-5 shrink-0",
+                    monthlyGift.due ? "text-amber-700" : "text-vibrant-blue",
+                  )}
+                />
+                <div>
+                  <p className="font-body text-sm font-semibold text-deep-navy">
+                    {monthlyGift.due
+                      ? "Your monthly gift is due"
+                      : "This month's gift is complete — thank you"}
+                  </p>
+                  <p className="mt-1 font-body text-sm text-on-surface-variant">
+                    Last monthly gift: $
+                    {monthlyGift.lastAmount.toLocaleString()} on{" "}
+                    {formatMonthDate(monthlyGift.lastDate)}.{" "}
+                    {monthlyGift.due
+                      ? "Monthly gifts are not charged automatically, so give again whenever you are ready."
+                      : `Your next gift is due from ${formatMonthDate(monthlyGift.nextDue)}.`}
+                  </p>
+                </div>
+              </div>
+              {monthlyGift.due && (
+                <Button
+                  variant="primary"
+                  as={Link}
+                  to={`/donate?frequency=monthly&amount=${encodeURIComponent(monthlyGift.lastAmount)}`}
+                  className="shrink-0"
+                >
+                  Give ${monthlyGift.lastAmount.toLocaleString()} this month
+                </Button>
+              )}
+            </div>
+          )}
+
+          {/* Main navigation */}
+          <div
+            role="tablist"
+            aria-label="Account sections"
+            className="mb-8 flex max-w-xl rounded-2xl border border-slate-200 bg-slate-50 p-1.5"
+          >
+            {[
+              ["sponsorships", "Sponsorships", Heart],
+              ["payments", "Payments", CreditCard],
+              ["profile", "Profile", User],
+            ].map(([tab, label, Icon]) => (
+              <button
+                key={tab}
+                type="button"
+                role="tab"
+                aria-selected={activeTab === tab}
+                onClick={() => setActiveTab(tab)}
+                className={cn(
+                  "flex min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl px-2 py-2.5 font-body text-[13px] font-semibold transition-all sm:gap-2 sm:px-3 sm:text-sm",
+                  activeTab === tab
+                    ? "bg-white text-deep-navy shadow-sm"
+                    : "text-on-surface-variant hover:text-deep-navy",
+                )}
+              >
+                <Icon className="hidden h-4 w-4 sm:block" aria-hidden="true" />
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {notice && (
+            <div
+              role={notice.type === "error" ? "alert" : "status"}
+              className={cn(
+                "mb-6 flex items-start justify-between gap-3 rounded-xl border px-4 py-3 font-body text-sm",
+                notice.type === "error"
+                  ? "border-red-200 bg-red-50 text-red-800"
+                  : "border-emerald-200 bg-emerald-50 text-emerald-800",
+              )}
+            >
+              <span className="flex items-start gap-2">
+                {notice.type === "error" ? (
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                ) : (
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                )}
+                {notice.text}
+              </span>
+              <button
+                type="button"
+                onClick={() => setNotice(null)}
+                aria-label="Dismiss message"
+                className="shrink-0 opacity-70 hover:opacity-100"
+              >
+                <XCircle className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </div>
+          )}
+
+          <AnnualFundingNotice />
+
           {/* Sponsorships Tab */}
           {activeTab === "sponsorships" && (
-            <motion.div
-              variants={staggerContainer}
-              initial="hidden"
-              animate="visible"
-            >
-              {/* Status filter */}
-              <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 max-w-md mb-6">
-                {STATUS_TABS.map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => setStatusFilter(s)}
-                    className={cn(
-                      "px-4 py-1.5 rounded-md font-body text-xs font-medium transition-colors capitalize",
-                      statusFilter === s
-                        ? "bg-white text-deep-navy shadow-sm"
-                        : "text-on-surface-variant hover:text-deep-navy"
-                    )}
-                  >
-                    {s}
-                  </button>
-                ))}
+            <div>
+              <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <h2 className="font-display text-2xl font-bold text-deep-navy sm:text-3xl">
+                    My sponsorships
+                  </h2>
+                  <p className="mt-1 font-body text-sm text-on-surface-variant">
+                    Every child you support, with their status and payments.
+                  </p>
+                </div>
+                <div
+                  role="group"
+                  aria-label="Filter by status"
+                  className="flex w-full flex-wrap gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 sm:w-fit"
+                >
+                  {STATUS_TABS.map((tab) => (
+                    <button
+                      key={tab}
+                      type="button"
+                      aria-pressed={statusFilter === tab}
+                      onClick={() => setStatusFilter(tab)}
+                      className={cn(
+                        "flex-1 rounded-lg px-3 py-2 font-body text-xs font-semibold transition-all sm:flex-none sm:text-sm",
+                        statusFilter === tab
+                          ? "bg-white text-deep-navy shadow-sm"
+                          : "text-on-surface-variant hover:text-deep-navy",
+                      )}
+                    >
+                      {tab}{" "}
+                      <span className="text-on-surface-variant">
+                        ({statusCounts[tab]})
+                      </span>
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {sponsorshipsLoading ? (
-                <div className="flex items-center justify-center py-20">
-                  <Loader2 className="h-6 w-6 animate-spin text-vibrant-blue" />
+                <div className="flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-50/60 py-24">
+                  <Loader2 className="h-7 w-7 animate-spin text-vibrant-blue" />
                 </div>
               ) : filteredSponsorships.length === 0 ? (
-                <div className="text-center py-20 bg-white rounded-xl border border-soft-accent/50">
-                  <Heart className="h-16 w-16 mx-auto text-on-surface-variant/30 mb-4" />
-                  <p className="font-body text-body-lg text-on-surface-variant mb-2">
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50/60 px-6 py-16 text-center">
+                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-blue-50">
+                    <Heart className="h-7 w-7 text-[#1e5bab]" aria-hidden="true" />
+                  </div>
+                  <p className="font-display text-xl font-bold text-deep-navy">
                     {statusFilter === "All"
-                      ? "You haven't sponsored any children yet."
-                      : `No ${statusFilter.toLowerCase()} sponsorships.`}
+                      ? "You haven't sponsored a child yet"
+                      : `No ${statusFilter.toLowerCase()} sponsorships`}
                   </p>
-                  <Button
-                    variant="primary"
-                    as={Link}
-                    to="/sponsor-a-child"
-                    className="mt-4"
-                  >
-                    Browse Children to Sponsor
-                  </Button>
+                  <p className="mx-auto mt-2 max-w-md font-body text-sm text-on-surface-variant">
+                    {statusFilter === "All"
+                      ? "Sponsor a child from $100, or $25 a month. After payment, they'll appear here."
+                      : "Try another filter to see your other sponsorships."}
+                  </p>
+                  {statusFilter === "All" ? (
+                    <Link
+                      to="/sponsor-a-child"
+                      className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#1e5bab] px-5 py-2.5 font-body text-sm font-semibold text-white hover:bg-[#174a8d]"
+                    >
+                      <Heart className="h-4 w-4" aria-hidden="true" />
+                      Browse children
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setStatusFilter("All")}
+                      className="mt-5 inline-flex items-center rounded-xl border border-slate-300 bg-white px-5 py-2.5 font-body text-sm font-semibold text-deep-navy hover:bg-slate-50"
+                    >
+                      Show all sponsorships
+                    </button>
+                  )}
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
                   {filteredSponsorships.map((sponsorship) => (
-                    <motion.div
+                    <SponsorshipCard
                       key={sponsorship.id}
-                      variants={slideUp}
-                      className="bg-white rounded-xl border border-soft-accent/50 shadow-card overflow-hidden"
-                    >
-                      <div className="flex flex-col sm:flex-row">
-                        {/* Child photo */}
-                        <div className="sm:w-40 overflow-hidden">
-                          {sponsorship.children?.photo_url ? (
-                            <OptimizedImage
-                              src={sponsorship.children.photo_url}
-                              alt={sponsorship.children.first_name}
-                              className="w-full h-auto"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-vibrant-blue/15 to-hope-orange/15 flex items-center justify-center min-h-[12rem]">
-                              <span className="font-display text-4xl font-bold text-vibrant-blue/30">
-                                {sponsorship.children?.first_name?.charAt(0) || "?"}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Info */}
-                        <div className="flex-1 p-5">
-                          <div className="flex flex-wrap items-center gap-2 mb-2">
-                            <div className="min-w-0">
-                              <h3 className="font-display text-headline-md text-deep-navy">
-                                {sponsorship.children?.first_name || "Unknown Child"}
-                              </h3>
-                              <p className="font-body text-sm text-on-surface-variant">
-                                {sponsorship.children?.age && `Age ${sponsorship.children.age}`}
-                                {sponsorship.children?.age && sponsorship.children?.location && " · "}
-                                {sponsorship.children?.location}
-                              </p>
-                            </div>
-                            <SponsorshipStatusBadge
-                              status={sponsorship.status}
-                              cancelledBy={sponsorship.cancelled_by}
-                              currentUserId={user?.id}
-                            />
-                          </div>
-
-                          <div className="mt-4 text-sm font-body text-on-surface-variant">
-                            <span className="flex items-center gap-1.5">
-                              <Calendar className="h-4 w-4" />
-                              Since {formatDate(sponsorship.start_date)}
-                            </span>
-                          </div>
-
-                          {(sponsorship.amount ?? sponsorship.monthly_amount) && (
-                            <p className="mt-1.5 flex items-center gap-1.5 font-body text-sm font-medium text-deep-navy">
-                              <CreditCard className="h-4 w-4 text-on-surface-variant" />
-                              Sponsored with{" "}
-                              <span className="font-bold text-hope-orange">
-                                $
-                                {Number(
-                                  sponsorship.amount ?? sponsorship.monthly_amount
-                                ).toLocaleString()}
-                              </span>
-                              {sponsorship.monthly_amount ? "/mo" : ""}
-                            </p>
-                          )}
-
-                          {sponsorship.reassigned_at && sponsorship.previous_child && (
-                            <p className="mt-1 font-body text-xs text-vibrant-blue">
-                              Reassigned from{" "}
-                              {sponsorship.previous_child.first_name} on{" "}
-                              {formatDate(sponsorship.reassigned_at)} (no extra
-                              payment)
-                            </p>
-                          )}
-
-                          {sponsorship.status === "paused" && (
-                            <p className="mt-2 font-body text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                              Sponsorship paused by our team — your child stays
-                              reserved for you. Contact us to resume.
-                            </p>
-                          )}
-
-                          {/* Monthly billing period. The due date comes from the
-                              server (next_payment_due) rather than being
-                              recalculated in the browser, so what the donor is
-                              told can never disagree with what the renewal
-                              payment will actually do. The old version looped
-                              from start_date in the browser, which drifted out
-                              of step with the stored period. */}
-                          {sponsorship.status === "active" &&
-                            sponsorship.monthly_amount != null &&
-                            (() => {
-                              const overdue = isSponsorshipOverdue(sponsorship);
-                              const due = sponsorship.next_payment_due
-                                ? new Date(sponsorship.next_payment_due)
-                                : null;
-
-                              if (!due || Number.isNaN(due.getTime())) return null;
-
-                              return (
-                                <div
-                                  role={overdue ? "alert" : undefined}
-                                  className={`mt-2 rounded-lg border px-3 py-2 ${
-                                    overdue
-                                      ? "border-red-300 bg-red-50"
-                                      : "border-vibrant-blue/20 bg-vibrant-blue/5"
-                                  }`}
-                                >
-                                  <p
-                                    className={`font-body text-xs font-medium ${
-                                      overdue ? "text-red-800" : "text-vibrant-blue"
-                                    }`}
-                                  >
-                                    {overdue ? (
-                                      <span className="inline-flex items-center gap-1">
-                                        <AlertTriangle className="h-3.5 w-3.5" />
-                                        Payment overdue — due {formatDate(due)}
-                                      </span>
-                                    ) : (
-                                      <>Next payment due {formatDate(due)}</>
-                                    )}
-                                  </p>
-                                  {overdue && (
-                                    <p className="mt-1 font-body text-xs text-red-700">
-                                      Your monthly sponsorship of ${Number(sponsorship.monthly_amount).toLocaleString()} for{" "}
-                                      {sponsorship.children?.first_name || "this child"}{" "}
-                                      isn&apos;t covered for the next period.{" "}
-                                      {/* Takes the donor to the donate page
-                                          pre-filled to renew this exact
-                                          sponsorship; paying there advances the
-                                          period and re-activates the child. */}
-                                      <Link
-                                        to={`/donate?renew=${sponsorship.id}&child=${sponsorship.child_id}`}
-                                        className="font-medium text-vibrant-blue underline underline-offset-2 hover:text-hope-orange"
-                                      >
-                                        Update sponsorship
-                                      </Link>{" "}
-                                      to keep this child supported.
-                                    </p>
-                                  )}
-                                </div>
-                              );
-                            })()}
-
-                          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-4 border-t border-gray-100 pt-3">
-                            <Link
-                              to={`/sponsor-a-child/${sponsorship.child_id}`}
-                              className="inline-flex items-center gap-1 font-body text-sm font-medium text-vibrant-blue hover:underline"
-                            >
-                              View Profile
-                              <ChevronRight className="h-4 w-4" />
-                            </Link>
-                            {sponsorship.status === "active" && (
-                              <button
-                                onClick={() => {
-                                  if (confirm("Cancel this sponsorship? The child will become available for others to sponsor.")) {
-                                    cancelSponsorship.mutate(sponsorship.id);
-                                  }
-                                }}
-                                className="inline-flex items-center gap-1 font-body text-sm font-medium text-on-surface-variant hover:text-hope-orange transition-colors"
-                              >
-                                <XCircle className="h-3.5 w-3.5" />
-                                Cancel
-                              </button>
-                            )}
-                            {sponsorship.status === "cancelled" && (() => {
-                              const plan =
-                                reactivatePlans[sponsorship.id] ??
-                                (sponsorship.monthly_amount
-                                  ? "monthly"
-                                  : "one-time");
-                              // Default to the figure already on the slot for the
-                              // chosen plan, so an unchanged reactivation needs
-                              // no typing, but the donor can override it.
-                              const defaultAmount =
-                                plan === "monthly"
-                                  ? (sponsorship.monthly_amount ??
-                                     sponsorship.amount ??
-                                     "")
-                                  : (sponsorship.amount ??
-                                     sponsorship.monthly_amount ??
-                                     "");
-                              const amount =
-                                reactivateAmounts[sponsorship.id] ??
-                                String(defaultAmount ?? "");
-                              const requested = Number(amount);
-                              const amountInvalid =
-                                amount.trim() === "" ||
-                                Number.isNaN(requested) ||
-                                requested <= 0;
-                              // The amount is charged against the donor's credit
-                              // balance, so it can never exceed what's available.
-                              // Caught here to give immediate feedback; the server
-                              // enforces the same rule authoritatively.
-                              const exceedsCredit =
-                                !amountInvalid && requested > creditRemaining;
-                              const error = reactivateErrors[sponsorship.id];
-
-                              const setError = (text) =>
-                                setReactivateErrors((prev) => ({
-                                  ...prev,
-                                  [sponsorship.id]: text,
-                                }));
-
-                              return (
-                                <div className="w-full">
-                                  <div className="flex flex-wrap items-center gap-2">
-                                    <div className="inline-flex rounded-lg border border-soft-accent/60 overflow-hidden">
-                                      {["one-time", "monthly"].map((p) => {
-                                        const selected = plan === p;
-                                        return (
-                                          <button
-                                            key={p}
-                                            type="button"
-                                            onClick={() => {
-                                              setReactivatePlans((prev) => ({
-                                                ...prev,
-                                                [sponsorship.id]: p,
-                                              }));
-                                              setError(null);
-                                            }}
-                                            aria-pressed={selected}
-                                            className={cn(
-                                              "px-2.5 py-1 font-body text-xs font-medium transition-colors",
-                                              selected
-                                                ? "bg-vibrant-blue text-white"
-                                                : "bg-white text-on-surface-variant hover:bg-vibrant-blue/5"
-                                            )}
-                                          >
-                                            {p === "one-time" ? "One-time" : "Monthly"}
-                                          </button>
-                                        );
-                                      })}
-                                    </div>
-
-                                    <label className="inline-flex items-center gap-1 text-xs text-on-surface-variant">
-                                      <span className="sr-only">
-                                        Sponsorship amount per {plan}
-                                      </span>
-                                      <span aria-hidden="true">$</span>
-                                      <input
-                                        type="number"
-                                        inputMode="decimal"
-                                        min="1"
-                                        step="1"
-                                        value={amount}
-                                        onChange={(e) => {
-                                          setReactivateAmounts((prev) => ({
-                                            ...prev,
-                                            [sponsorship.id]: e.target.value,
-                                          }));
-                                          setError(null);
-                                        }}
-                                        aria-label={`Sponsorship amount${
-                                          plan === "monthly" ? " per month" : ""
-                                        }`}
-                                        aria-invalid={exceedsCredit}
-                                        className={cn(
-                                          "w-20 rounded-lg border px-2 py-1 font-body text-xs text-deep-navy focus:outline-none",
-                                          exceedsCredit
-                                            ? "border-amber-500 focus:border-amber-600"
-                                            : "border-soft-accent/60 focus:border-vibrant-blue"
-                                        )}
-                                      />
-                                      {plan === "monthly" ? (
-                                        <span>/mo</span>
-                                      ) : (
-                                        <span className="sr-only">one-time</span>
-                                      )}
-                                    </label>
-
-                                    <span className="text-xs text-on-surface-variant/80">
-                                      of ${creditRemaining.toLocaleString()} credit
-                                    </span>
-
-                                    <button
-                                      onClick={async () => {
-                                        if (amountInvalid) {
-                                          setError(
-                                            "Enter an amount greater than zero to reactivate."
-                                          );
-                                          return;
-                                        }
-                                        if (exceedsCredit) return; // notice is showing
-                                        const verb =
-                                          plan === "monthly"
-                                            ? "monthly"
-                                            : "one-time";
-                                        const suffix =
-                                          plan === "monthly" ? " per month" : "";
-                                        if (
-                                          !confirm(
-                                            `Reactivate this ${verb} sponsorship at $${requested.toLocaleString()}${suffix}?`
-                                          )
-                                        )
-                                          return;
-                                        try {
-                                          await reactivateSponsorship.mutateAsync({
-                                            id: sponsorship.id,
-                                            plan,
-                                            amount: requested,
-                                          });
-                                          setError(null);
-                                        } catch (err) {
-                                          setError(
-                                            err?.message ||
-                                              "Could not reactivate this sponsorship."
-                                          );
-                                        }
-                                      }}
-                                      disabled={
-                                        reactivateSponsorship.isPending ||
-                                        exceedsCredit
-                                      }
-                                      className="inline-flex items-center gap-1 font-body text-sm font-medium text-vibrant-blue hover:underline disabled:opacity-50 disabled:hover:no-underline"
-                                    >
-                                      {reactivateSponsorship.isPending ? (
-                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                      ) : (
-                                        <RotateCcw className="h-3.5 w-3.5" />
-                                      )}
-                                      Reactivate
-                                    </button>
-                                  </div>
-
-                                  {exceedsCredit && (
-                                    <CreditShortfallNotice
-                                      available={creditRemaining}
-                                      required={requested}
-                                    />
-                                  )}
-                                  {!exceedsCredit && error && (
-                                    <p
-                                      role="alert"
-                                      className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 font-body text-xs text-red-800"
-                                    >
-                                      {error}
-                                      {isInsufficientCreditError({
-                                        message: error,
-                                      }) && (
-                                        <>
-                                          {" "}
-                                          <Link
-                                            to="/donate"
-                                            className="font-medium text-vibrant-blue underline underline-offset-2"
-                                          >
-                                            add money on the donations page
-                                          </Link>
-                                        </>
-                                      )}
-                                    </p>
-                                  )}
-                                </div>
-                              );
-                            })()}
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
+                      sponsorship={sponsorship}
+                      currentUserId={user?.id}
+                      onCancel={handleCancelSponsorship}
+                      cancelling={
+                        cancelSponsorship.isPending &&
+                        cancelSponsorship.variables === sponsorship.id
+                      }
+                      onReactivate={handleReactivateSponsorship}
+                      reactivatePlan={
+                        reactivatePlans[sponsorship.id] ??
+                        (sponsorship.monthly_amount ? "monthly" : "one-time")
+                      }
+                      onReactivatePlanChange={(plan) =>
+                        setReactivatePlans((prev) => ({
+                          ...prev,
+                          [sponsorship.id]: plan,
+                        }))
+                      }
+                    />
                   ))}
                 </div>
               )}
-            </motion.div>
+            </div>
           )}
 
           {/* Payments Tab */}
           {activeTab === "payments" && (
-            <motion.div
-              variants={staggerContainer}
-              initial="hidden"
-              animate="visible"
-            >
+            <div>
+              <div className="mb-6">
+                <h2 className="font-display text-2xl font-bold text-deep-navy sm:text-3xl">
+                  Payment history
+                </h2>
+                <p className="mt-1 break-words font-body text-sm text-on-surface-variant">
+                  Donations and sponsorships made with {user?.email}.
+                </p>
+              </div>
               {donationsLoading ? (
-                <div className="flex items-center justify-center py-20">
+                <div className="flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-50/60 py-20">
                   <Loader2 className="h-6 w-6 animate-spin text-vibrant-blue" />
                 </div>
               ) : donations.length === 0 ? (
-                <div className="text-center py-20 bg-white rounded-xl border border-soft-accent/50">
-                  <CreditCard className="h-16 w-16 mx-auto text-on-surface-variant/30 mb-4" />
-                  <p className="font-body text-body-lg text-on-surface-variant">
-                    No donation history yet.
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50/60 px-6 py-16 text-center">
+                  <Receipt className="mx-auto mb-3 h-10 w-10 text-slate-300" aria-hidden="true" />
+                  <p className="font-display text-xl font-bold text-deep-navy">
+                    No payments yet
                   </p>
-                  <Button
-                    variant="primary"
-                    as={Link}
+                  <Link
                     to="/donate"
-                    className="mt-4"
+                    className="mt-5 inline-flex items-center rounded-xl bg-vibrant-blue px-5 py-2.5 font-body text-sm font-semibold text-white hover:bg-vibrant-blue/90"
                   >
-                    Make a Donation
-                  </Button>
+                    Make a donation
+                  </Link>
                 </div>
               ) : (
-                <div className="bg-white rounded-xl border border-soft-accent/50 overflow-hidden">
-                  <div className="hidden sm:grid grid-cols-[1fr_100px_100px_120px_100px] gap-4 px-6 py-3 bg-gray-50 border-b border-gray-200">
-                    <span className="font-body text-xs font-semibold text-on-surface-variant uppercase tracking-wider">
-                      Reference
-                    </span>
-                    <span className="font-body text-xs font-semibold text-on-surface-variant uppercase tracking-wider">
-                      Amount
-                    </span>
-                    <span className="font-body text-xs font-semibold text-on-surface-variant uppercase tracking-wider">
-                      Currency
-                    </span>
-                    <span className="font-body text-xs font-semibold text-on-surface-variant uppercase tracking-wider">
-                      Date
-                    </span>
-                    <span className="font-body text-xs font-semibold text-on-surface-variant uppercase tracking-wider">
-                      Status
-                    </span>
-                  </div>
-                  <div className="divide-y divide-gray-100">
-                    {donations.map((donation) => (
-                      <div
+                <ul className="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                  {donations.map((donation) => {
+                    const Icon = donation.is_sponsorship ? Heart : Gift;
+                    return (
+                      <li
                         key={donation.id}
-                        className="px-6 py-4 sm:grid sm:grid-cols-[1fr_100px_100px_120px_100px] sm:gap-4 sm:items-center"
+                        className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5"
                       >
-                        <div className="mb-2 sm:mb-0">
-                          <p className="font-body text-sm font-medium text-deep-navy truncate">
-                            {donation.is_sponsorship
-                              ? `Child sponsorship${sponsoredChildNames(donation) ? ` — ${sponsoredChildNames(donation)}` : ""}`
-                              : "General donation"}
-                          </p>
-                          <p className="font-body text-xs text-on-surface-variant truncate">
-                            {donation.payment_reference || "—"}
-                          </p>
-                          <p className="font-body text-xs text-on-surface-variant sm:hidden">
-                            {formatDate(donation.created_at)}
-                          </p>
-                        </div>
-                        <span className="hidden sm:block font-body text-sm text-deep-navy font-medium">
-                          ${Number(donation.amount).toLocaleString()}
-                        </span>
-                        <span className="hidden sm:block font-body text-sm text-on-surface-variant">
-                          {donation.currency}
-                        </span>
-                        <span className="hidden sm:block font-body text-sm text-on-surface-variant">
-                          {formatDate(donation.created_at)}
-                        </span>
-                        <span className="hidden sm:block">
-                          <DonationStatusBadge status={donation.status} />
-                        </span>
-                        {/* Mobile */}
-                        <div className="flex items-center gap-3 sm:hidden mt-1">
-                          <span className="font-body text-sm font-medium text-deep-navy">
-                            ${Number(donation.amount).toLocaleString()} {donation.currency}
+                        <div className="flex min-w-0 items-center gap-3">
+                          <span
+                            className={cn(
+                              "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
+                              donation.is_sponsorship
+                                ? "bg-blue-50 text-[#1e5bab]"
+                                : "bg-blue-50 text-vibrant-blue",
+                            )}
+                          >
+                            <Icon className="h-5 w-5" aria-hidden="true" />
                           </span>
+                          <div className="min-w-0">
+                            <p className="font-body text-sm font-semibold text-deep-navy">
+                              {donation.is_sponsorship ? "Child sponsorship" : "Donation"}
+                              <span className="font-normal text-on-surface-variant">
+                                {" · "}
+                                {donation.frequency === "monthly" ? "Monthly" : "One-time"}
+                              </span>
+                            </p>
+                            <p className="truncate font-body text-xs text-on-surface-variant">
+                              {formatDate(donation.created_at)}
+                              {donation.payment_reference
+                                ? ` · Ref ${donation.payment_reference}`
+                                : ""}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between gap-4 sm:justify-end">
+                          <div className="text-left sm:text-right">
+                            <p className="font-body text-base font-bold text-deep-navy">
+                              ${Number(donation.amount).toLocaleString()}
+                            </p>
+                            <p className="font-body text-xs text-on-surface-variant">
+                              Charged {chargedLabel(donation)}
+                            </p>
+                          </div>
                           <DonationStatusBadge status={donation.status} />
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                      </li>
+                    );
+                  })}
+                </ul>
               )}
-            </motion.div>
+            </div>
           )}
 
           {/* Profile Tab */}
@@ -821,217 +842,271 @@ export default function DonorDashboard() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
-              className="max-w-lg"
+              className="max-w-2xl"
             >
-              <div className="bg-white rounded-xl border border-soft-accent/50 shadow-card p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="font-display text-headline-md text-deep-navy">
-                    Profile Information
-                  </h3>
+              <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_20px_60px_-48px_rgba(15,38,82,0.45)]">
+                {/* Header */}
+                <div className="flex flex-col gap-4 border-b border-slate-100 bg-slate-50/70 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-7">
+                  <div className="flex min-w-0 items-center gap-4">
+                    <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-deep-navy ring-4 ring-white shadow-sm">
+                      <span className="font-display text-2xl font-bold text-white">
+                        {(profile?.first_name || user?.email || "D")
+                          .charAt(0)
+                          .toUpperCase()}
+                      </span>
+                      {user?.email && (
+                        <img
+                          src={getGravatarUrl(user.email, 128, "404")}
+                          alt=""
+                          className="absolute inset-0 h-full w-full object-cover"
+                          onError={(event) => {
+                            event.currentTarget.hidden = true;
+                          }}
+                        />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="font-display text-2xl font-bold text-deep-navy">
+                        Profile information
+                      </h3>
+                      <p className="truncate font-body text-sm text-on-surface-variant">
+                        {[profile?.first_name, profile?.last_name]
+                          .filter(Boolean)
+                          .join(" ") || "Your details"}{" "}
+                        · {profile?.email || user?.email}
+                      </p>
+                    </div>
+                  </div>
                   {!editing && (
                     <button
-                      onClick={() => setEditing(true)}
-                      className="font-body text-sm font-medium text-vibrant-blue hover:underline"
+                      type="button"
+                      onClick={() => {
+                        resetProfileForm();
+                        setEditing(true);
+                      }}
+                      disabled={profileLoading || !profile}
+                      className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-body text-sm font-semibold text-deep-navy transition-colors hover:border-vibrant-blue hover:text-vibrant-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vibrant-blue/30 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      Edit
+                      <Pencil className="h-4 w-4" aria-hidden="true" />
+                      Edit profile
                     </button>
                   )}
                 </div>
 
-                {/* Gravatar preview */}
-                <div className="flex items-center gap-4 mb-6 pb-6 border-b border-gray-100">
-                  <div className="w-14 h-14 rounded-full bg-vibrant-blue flex items-center justify-center overflow-hidden shrink-0">
-                    {getGravatarUrl(user?.email) ? (
-                      <img
-                        src={getGravatarUrl(user.email, 112)}
-                        alt=""
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-white font-display text-lg font-bold">
-                        {profile?.first_name?.charAt(0) || "D"}
-                      </span>
-                    )}
-                  </div>
-                  <div>
-                    <p className="font-body text-sm font-medium text-deep-navy">
-                      {profile?.first_name} {profile?.last_name}
+                <div className="p-6 sm:p-7">
+                  {saved && !editing && (
+                    <p
+                      role="status"
+                      className="mb-5 flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3 font-body text-sm text-green-800"
+                    >
+                      <Check className="h-4 w-4 shrink-0" aria-hidden="true" />
+                      Your profile has been updated.
                     </p>
-                    <p className="font-body text-xs text-on-surface-variant">
-                      {profile?.email || user?.email}
-                    </p>
-                    <p className="font-body text-xs text-on-surface-variant mt-1">
-                      Profile image from Gravatar
-                    </p>
-                  </div>
-                </div>
+                  )}
 
-                {editing ? (
-                  <form onSubmit={handleSaveProfile} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block font-body text-xs font-medium text-on-surface-variant mb-1.5">
-                          First Name
-                        </label>
-                        <input
-                          type="text"
-                          value={form.first_name}
-                          onChange={(e) => setForm({ ...form, first_name: e.target.value })}
+                  {editing ? (
+                    <form
+                      onSubmit={handleSaveProfile}
+                      noValidate
+                      className="space-y-5"
+                    >
+                      {profileSaveError && (
+                        <p
+                          role="alert"
+                          className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 font-body text-sm text-red-700"
+                        >
+                          <AlertCircle
+                            className="mt-0.5 h-4 w-4 shrink-0"
+                            aria-hidden="true"
+                          />
+                          {profileSaveError}
+                        </p>
+                      )}
+
+                      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                        <ProfileField
+                          id="profile-first-name"
+                          label="First name"
                           required
-                          className="w-full px-3 py-2 rounded-lg border border-gray-200 font-body text-sm text-deep-navy focus:outline-none focus:ring-2 focus:ring-vibrant-blue/30 focus:border-vibrant-blue transition-colors"
-                        />
-                      </div>
-                      <div>
-                        <label className="block font-body text-xs font-medium text-on-surface-variant mb-1.5">
-                          Last Name
-                        </label>
-                        <input
-                          type="text"
-                          value={form.last_name}
-                          onChange={(e) => setForm({ ...form, last_name: e.target.value })}
+                          error={fieldError("first_name")}
+                        >
+                          <input
+                            id="profile-first-name"
+                            type="text"
+                            autoComplete="given-name"
+                            maxLength={50}
+                            value={form.first_name}
+                            onChange={(e) =>
+                              setForm({ ...form, first_name: e.target.value })
+                            }
+                          />
+                        </ProfileField>
+                        <ProfileField
+                          id="profile-last-name"
+                          label="Last name"
                           required
-                          className="w-full px-3 py-2 rounded-lg border border-gray-200 font-body text-sm text-deep-navy focus:outline-none focus:ring-2 focus:ring-vibrant-blue/30 focus:border-vibrant-blue transition-colors"
+                          error={fieldError("last_name")}
+                        >
+                          <input
+                            id="profile-last-name"
+                            type="text"
+                            autoComplete="family-name"
+                            maxLength={50}
+                            value={form.last_name}
+                            onChange={(e) =>
+                              setForm({ ...form, last_name: e.target.value })
+                            }
+                          />
+                        </ProfileField>
+                      </div>
+
+                      <ProfileField
+                        id="profile-email"
+                        label="Email"
+                        hint="Your sign-in email can't be changed here."
+                      >
+                        <input
+                          id="profile-email"
+                          type="email"
+                          value={profile?.email || user?.email || ""}
+                          disabled
                         />
-                      </div>
-                    </div>
+                      </ProfileField>
 
-                    <div>
-                      <label className="block font-body text-xs font-medium text-on-surface-variant mb-1.5">
-                        Email
-                      </label>
-                      <input
-                        type="email"
-                        value={profile?.email || user?.email || ""}
-                        disabled
-                        className="w-full px-3 py-2 rounded-lg border border-gray-200 font-body text-sm text-on-surface-variant bg-gray-50 cursor-not-allowed"
-                      />
-                    </div>
+                      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                        <ProfileField
+                          id="profile-phone"
+                          label="Phone"
+                          optional
+                          hint="Include your country code, e.g. +256."
+                          error={fieldError("phone")}
+                        >
+                          <input
+                            id="profile-phone"
+                            type="tel"
+                            inputMode="tel"
+                            autoComplete="tel"
+                            maxLength={20}
+                            placeholder="+256 700 123 456"
+                            value={form.phone}
+                            onChange={(e) =>
+                              setForm({ ...form, phone: e.target.value })
+                            }
+                          />
+                        </ProfileField>
+                        <ProfileField
+                          id="profile-location"
+                          label="Location"
+                          optional
+                          error={fieldError("location")}
+                        >
+                          <input
+                            id="profile-location"
+                            type="text"
+                            autoComplete="address-level2"
+                            maxLength={100}
+                            placeholder="City, Country"
+                            value={form.location}
+                            onChange={(e) =>
+                              setForm({ ...form, location: e.target.value })
+                            }
+                          />
+                        </ProfileField>
+                      </div>
 
-                    <div>
-                      <label className="block font-body text-xs font-medium text-on-surface-variant mb-1.5">
-                        Phone
-                      </label>
-                      <input
-                        type="tel"
-                        value={form.phone}
-                        onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                        placeholder="Optional"
-                        className="w-full px-3 py-2 rounded-lg border border-gray-200 font-body text-sm text-deep-navy focus:outline-none focus:ring-2 focus:ring-vibrant-blue/30 focus:border-vibrant-blue transition-colors"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block font-body text-xs font-medium text-on-surface-variant mb-1.5">
-                        Location
-                      </label>
-                      <input
-                        type="text"
-                        value={form.location}
-                        onChange={(e) => setForm({ ...form, location: e.target.value })}
-                        placeholder="Optional"
-                        className="w-full px-3 py-2 rounded-lg border border-gray-200 font-body text-sm text-deep-navy focus:outline-none focus:ring-2 focus:ring-vibrant-blue/30 focus:border-vibrant-blue transition-colors"
-                      />
-                    </div>
-
-                    <div className="flex items-center gap-3 pt-2">
-                      <Button
-                        type="submit"
-                        variant="primary"
-                        size="sm"
-                        disabled={saving}
-                        className="inline-flex items-center gap-1.5"
-                      >
-                        {saving ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : saved ? (
-                          <Check className="h-4 w-4" />
-                        ) : (
-                          <Save className="h-4 w-4" />
-                        )}
-                        {saving ? "Saving..." : saved ? "Saved!" : "Save Changes"}
-                      </Button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditing(false);
-                          setForm({
-                            first_name: profile.first_name || "",
-                            last_name: profile.last_name || "",
-                            phone: profile.phone || "",
-                            location: profile.location || "",
-                          });
-                        }}
-                        className="font-body text-sm text-on-surface-variant hover:text-deep-navy transition-colors"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </form>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-vibrant-blue/10 flex items-center justify-center shrink-0">
-                        <User className="h-5 w-5 text-vibrant-blue" />
+                      <div className="flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            resetProfileForm();
+                            setEditing(false);
+                          }}
+                          disabled={saving}
+                          className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-2.5 font-body text-sm font-semibold text-deep-navy transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:opacity-50"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={
+                            saving ||
+                            profileLoading ||
+                            !profile ||
+                            !profileChanged
+                          }
+                          className="inline-flex items-center justify-center gap-2 rounded-xl bg-vibrant-blue px-5 py-2.5 font-body text-sm font-semibold text-white shadow-sm transition-colors hover:bg-vibrant-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vibrant-blue/40 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {saving ? (
+                            <Loader2
+                              className="h-4 w-4 animate-spin"
+                              aria-hidden="true"
+                            />
+                          ) : (
+                            <Save className="h-4 w-4" aria-hidden="true" />
+                          )}
+                          {saving ? "Saving…" : "Save changes"}
+                        </button>
                       </div>
-                      <div>
-                        <p className="font-body text-xs text-on-surface-variant">Name</p>
-                        <p className="font-body text-sm font-medium text-deep-navy">
-                          {profile?.first_name} {profile?.last_name}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-vibrant-blue/10 flex items-center justify-center shrink-0">
-                        <Mail className="h-5 w-5 text-vibrant-blue" />
-                      </div>
-                      <div>
-                        <p className="font-body text-xs text-on-surface-variant">Email</p>
-                        <p className="font-body text-sm font-medium text-deep-navy">
-                          {profile?.email || user?.email}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-vibrant-blue/10 flex items-center justify-center shrink-0">
-                        <Phone className="h-5 w-5 text-vibrant-blue" />
-                      </div>
-                      <div>
-                        <p className="font-body text-xs text-on-surface-variant">Phone</p>
-                        <p className="font-body text-sm font-medium text-deep-navy">
-                          {profile?.phone || "—"}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-vibrant-blue/10 flex items-center justify-center shrink-0">
-                        <MapPin className="h-5 w-5 text-vibrant-blue" />
-                      </div>
-                      <div>
-                        <p className="font-body text-xs text-on-surface-variant">Location</p>
-                        <p className="font-body text-sm font-medium text-deep-navy">
-                          {profile?.location || "—"}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-vibrant-blue/10 flex items-center justify-center shrink-0">
-                        <Calendar className="h-5 w-5 text-vibrant-blue" />
-                      </div>
-                      <div>
-                        <p className="font-body text-xs text-on-surface-variant">Member Since</p>
-                        <p className="font-body text-sm font-medium text-deep-navy">
-                          {profile?.created_at
+                    </form>
+                  ) : (
+                    <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      {[
+                        {
+                          icon: User,
+                          label: "Name",
+                          value: [profile?.first_name, profile?.last_name]
+                            .filter(Boolean)
+                            .join(" "),
+                        },
+                        {
+                          icon: Mail,
+                          label: "Email",
+                          value: profile?.email || user?.email,
+                        },
+                        { icon: Phone, label: "Phone", value: profile?.phone },
+                        {
+                          icon: MapPin,
+                          label: "Location",
+                          value: profile?.location,
+                        },
+                        {
+                          icon: Calendar,
+                          label: "Member since",
+                          value: profile?.created_at
                             ? formatDate(profile.created_at)
-                            : "—"}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                            : "",
+                        },
+                      ].map(({ icon: Icon, label, value }) => (
+                        <div
+                          key={label}
+                          className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/60 p-3.5"
+                        >
+                          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-vibrant-blue/10">
+                            <Icon
+                              className="h-5 w-5 text-vibrant-blue"
+                              aria-hidden="true"
+                            />
+                          </span>
+                          <div className="min-w-0">
+                            <dt className="font-body text-xs text-on-surface-variant">
+                              {label}
+                            </dt>
+                            <dd
+                              className={cn(
+                                "truncate font-body text-sm font-medium",
+                                value
+                                  ? "text-deep-navy"
+                                  : "text-on-surface-variant/70",
+                              )}
+                            >
+                              {value || "Not added yet"}
+                            </dd>
+                          </div>
+                        </div>
+                      ))}
+                    </dl>
+                  )}
+                </div>
               </div>
             </motion.div>
           )}

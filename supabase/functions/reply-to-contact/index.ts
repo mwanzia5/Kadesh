@@ -7,6 +7,29 @@ const corsHeaders = {
 // The project secret was created under the name "RESEND"; accept either name.
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? Deno.env.get("RESEND");
 
+// Same allowlist as the is_admin() SQL helper in migrations.sql.
+const ADMIN_EMAILS = ["masooshem@gmail.com", "kadeshhope.africa@gmail.com"];
+
+// Only a signed-in admin may send replies. Without this check anyone could
+// use this function to send emails from the mission's verified domain.
+// The token is verified against the auth server, not just decoded.
+async function isAdminCaller(req: Request): Promise<boolean> {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+  const token = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "").trim();
+  if (!supabaseUrl || !anonKey || !token) return false;
+  try {
+    const res = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      headers: { Authorization: `Bearer ${token}`, apikey: anonKey },
+    });
+    if (!res.ok) return false;
+    const user = await res.json();
+    return ADMIN_EMAILS.includes(String(user?.email || "").toLowerCase());
+  } catch {
+    return false;
+  }
+}
+
 // Must be an address on a domain verified in Resend.
 const FROM_ADDRESS = "Kadesh Hope Mission <noreply@contact.kadeshhopemission.org>";
 
@@ -29,6 +52,13 @@ Deno.serve(async (req: Request) => {
     return new Response(
       JSON.stringify({ success: false, error: "Server misconfiguration: missing RESEND_API_KEY" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  if (!(await isAdminCaller(req))) {
+    return new Response(
+      JSON.stringify({ success: false, error: "Admin access required" }),
+      { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
@@ -56,7 +86,7 @@ Deno.serve(async (req: Request) => {
       body: JSON.stringify({
         from: FROM_ADDRESS,
         to: [to],
-        subject: `Re: ${original_subject || "Your message to Kadesh Hope Mission"}`,
+        subject: `Re: ${String(original_subject || "Your message to Kadesh Hope Mission").replace(/[\r\n]+/g, " ")}`,
         html: `
           <p>Hi ${safeName},</p>
           <p>Thank you for reaching out to Kadesh Hope Mission. Here is our reply to
@@ -91,7 +121,7 @@ Deno.serve(async (req: Request) => {
   } catch (error) {
     console.error("[reply-to-contact] Error:", error);
     return new Response(
-      JSON.stringify({ success: false, error: (error as Error).message }),
+      JSON.stringify({ success: false, error: "Could not send the reply. Please try again." }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

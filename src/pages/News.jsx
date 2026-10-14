@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Calendar, Tag, ArrowUpRight, Newspaper, Clock, User, Search, Loader2 } from "lucide-react";
 
 import PageTransition from "@/animations/PageTransition";
+import SEO from "@/components/ui/SEO";
 import { staggerContainer, slideUp } from "@/animations/variants";
 
 import Container from "@/components/ui/Container";
@@ -12,32 +13,10 @@ import Button from "@/components/ui/Button";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import GlareHover from "@/components/ui/GlareHover";
 import { useNews } from "@/hooks/useNews";
-import { cmsText, useCMSReady } from "@/hooks/useCMS";
-import { matchesQuery } from "@/lib/searchMatch";
 
 const CATEGORIES = ["All", "Education", "Health", "Food Security", "Community", "Events", "Announcement"];
 
-// The hero headline keeps its gradient-on-the-last-word treatment no matter what
-// an admin types: split on the final space and wrap the tail.
-function GradientHeadline({ text }) {
-  const value = String(text ?? "");
-  const lastSpace = value.lastIndexOf(" ");
-  const head = lastSpace > 0 ? value.slice(0, lastSpace) : "";
-  const tail = lastSpace > 0 ? value.slice(lastSpace + 1) : value;
-
-  return (
-    <>
-      {head && <>{head} </>}
-      <span className="text-transparent bg-clip-text bg-gradient-to-r from-vibrant-blue to-hope-orange">
-        {tail}
-      </span>
-    </>
-  );
-}
-
 export default function News() {
-  useCMSReady();
-
   const { data: newsData, isLoading } = useNews();
   const articles = newsData?.data ?? [];
 
@@ -46,11 +25,10 @@ export default function News() {
 
   const filtered = articles.filter((a) => {
     if (a.display_location === "popup_only") return false;
-    const matchesCategory =
-      selectedCategory === "All" ||
-      (a.category || "").toLowerCase() === selectedCategory.toLowerCase();
-    // Title, excerpt and category are all searchable.
-    const matchesSearch = matchesQuery(searchTerm, a.title, a.excerpt, a.category);
+    const matchesCategory = selectedCategory === "All" || a.category === selectedCategory;
+    const matchesSearch =
+      (a.title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (a.excerpt || "").toLowerCase().includes(searchTerm.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
@@ -69,6 +47,7 @@ export default function News() {
 
   return (
     <PageTransition>
+      <SEO title="News" description="News and updates from Kadesh Hope Mission and the communities we serve across Africa." />
       <section className="relative min-h-[50vh] flex items-center justify-center overflow-hidden bg-deep-navy">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-40 -left-40 w-80 h-80 rounded-full bg-vibrant-blue/20 blur-3xl" />
@@ -85,7 +64,7 @@ export default function News() {
                 className="mb-6"
               >
                 <span className="inline-block rounded-full bg-vibrant-blue px-5 py-2 font-body text-label-bold uppercase tracking-widest text-white">
-                  {cmsText("news", "heroBadge")}
+                  Latest Updates
                 </span>
               </motion.div>
 
@@ -95,7 +74,10 @@ export default function News() {
                 transition={{ duration: 0.8, delay: 0.4 }}
                 className="font-display text-4xl md:text-6xl font-bold leading-tight mb-6"
               >
-                <GradientHeadline text={cmsText("news", "heroTitle")} />
+                News &{" "}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-vibrant-blue to-hope-orange">
+                  Updates
+                </span>
               </motion.h1>
 
               <motion.p
@@ -104,7 +86,7 @@ export default function News() {
                 transition={{ duration: 0.6, delay: 0.6 }}
                 className="font-body text-body-lg md:text-xl max-w-2xl text-white/80"
               >
-                {cmsText("news", "heroSubtitle")}
+                Stay informed about our programs, events, and community impact across Africa
               </motion.p>
             </div>
           </Container>
@@ -124,8 +106,7 @@ export default function News() {
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-vibrant-blue transition-colors" />
               <input
                 type="text"
-                placeholder={cmsText("news", "searchPlaceholder")}
-                aria-label="Search articles"
+                placeholder="Search articles..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-10 py-2.5 rounded-xl border-2 border-soft-accent bg-white font-body text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-vibrant-blue/30 focus:border-vibrant-blue transition-all"
@@ -163,12 +144,10 @@ export default function News() {
           {filtered.length === 0 ? (
             <div className="text-center py-20">
               <Newspaper className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="font-display text-2xl text-deep-navy mb-2">
-                {cmsText("news", "emptyTitle")}
-              </h3>
+              <h3 className="font-display text-2xl text-deep-navy mb-2">No articles found</h3>
               <p className="font-body text-on-surface-variant">
                 {articles.length === 0
-                  ? cmsText("news", "emptyDesc")
+                  ? "Check back soon for news and updates from our programs."
                   : "Try adjusting your search or filter criteria."}
               </p>
             </div>
@@ -235,7 +214,7 @@ export default function News() {
                   variants={staggerContainer}
                   initial="hidden"
                   whileInView="visible"
-                  viewport={{ once: true, margin: "-100px" }}
+                  viewport={{ once: true, margin: "-100px 0px" }}
                   className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
                 >
                   {rest.map((article) => (

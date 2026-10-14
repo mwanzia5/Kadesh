@@ -1,4 +1,5 @@
 import { Helmet } from "react-helmet-async";
+import { useLocation } from "react-router-dom";
 import { SITE_CONFIG } from "@/constants";
 
 export default function SEO({
@@ -9,13 +10,15 @@ export default function SEO({
   type = "website",
   structuredData,
 }) {
+  const { pathname } = useLocation();
   const fullTitle = title
     ? `${title} | ${SITE_CONFIG.name}`
     : `${SITE_CONFIG.name} | ${SITE_CONFIG.tagline}`;
 
   const metaDescription = description || SITE_CONFIG.description;
   const metaImage = image || "/images/newlogo.png";
-  const metaUrl = url || SITE_CONFIG.url;
+  // Each page is its own canonical URL (never the homepage by default).
+  const metaUrl = url || `${SITE_CONFIG.url}${pathname === "/" ? "" : pathname}`;
 
   return (
     <Helmet>

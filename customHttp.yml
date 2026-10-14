@@ -1,0 +1,24 @@
+customHeaders:
+  # Security headers for every page and file.
+  - pattern: '**/*'
+    headers:
+      - key: 'Strict-Transport-Security'
+        value: 'max-age=31536000; includeSubDomains'
+      - key: 'X-Content-Type-Options'
+        value: 'nosniff'
+      - key: 'X-Frame-Options'
+        value: 'SAMEORIGIN'
+      - key: 'Referrer-Policy'
+        value: 'strict-origin-when-cross-origin'
+      - key: 'Permissions-Policy'
+        value: 'camera=(), microphone=(), geolocation=()'
+  # PDFs in /documents download instead of opening (same as vercel.json).
+  - pattern: '/documents/*'
+    headers:
+      - key: 'Content-Disposition'
+        value: 'attachment'
+  # Built JS/CSS files have unique names, so they can be cached for a year.
+  - pattern: '/assets/*'
+    headers:
+      - key: 'Cache-Control'
+        value: 'public, max-age=31536000, immutable'

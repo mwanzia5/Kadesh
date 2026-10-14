@@ -39,7 +39,15 @@ const Button = forwardRef(function Button(
       )}
       {...props}
     >
-      <ClickSpark sparkColor="#ffffff" sparkSize={8} sparkRadius={12} sparkCount={6} duration={300}>
+      <ClickSpark
+        sparkColor="#ffffff"
+        sparkSize={8}
+        sparkRadius={12}
+        sparkCount={6}
+        duration={300}
+        // Lay out icon + text in a row, inheriting the button's own gap.
+        className="relative inline-flex h-full w-full items-center justify-center gap-[inherit]"
+      >
         {children}
       </ClickSpark>
     </Component>

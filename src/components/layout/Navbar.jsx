@@ -1,268 +1,395 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { Menu, ChevronDown, User, UserPlus } from "lucide-react";
-import { cn, getGravatarUrl } from "@/lib/utils";
-import Button from "@/components/ui/Button";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { Menu, ChevronDown, ArrowUpRight, Images, Play, UserRound } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { NAV_LINKS } from "@/constants";
-import { useProjects } from "@/hooks/useProjects";
-import { buildProjectCategories } from "@/lib/navProjects";
+import { isProgramLinkActive } from "@/lib/programs";
+import { useSponsorshipCart } from "@/context/SponsorshipCartContext";
 import { useDonorAuth } from "@/context/DonorAuthContext";
 import SponsorshipCartMenu from "@/components/cart/SponsorshipCartMenu";
+import {
+  AccountLink,
+  NavigationActions,
+  ProjectNavigation,
+} from "./NavigationParts";
 import MobileMenu from "./MobileMenu";
+import "./navigation.css";
+
+const primaryLinks = NAV_LINKS.filter(
+  (link) => link.href !== "/sponsor-a-child",
+);
 const dropdownVariants = {
-  hidden: { opacity: 0, y: 8, scale: 0.98 },
-  visible: { opacity: 1, y: 0, scale: 1 },
-  exit: { opacity: 0, y: 8, scale: 0.98 },
+  hidden: { opacity: 0, y: 10 },
+  visible: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: 6 },
+};
+const mediaDetails = {
+  "/gallery": { icon: Images, description: "Our work in pictures" },
+  "/videos": { icon: Play, description: "Stories from our community" },
 };
 
 export default function Navbar() {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
+  const reducedMotion = useReducedMotion();
+  const { closeCart, isCartOpen } = useSponsorshipCart();
   const { user, profile, loading: authLoading } = useDonorAuth();
+  const firstName = profile?.first_name?.trim() || "";
   const [scrolled, setScrolled] = useState(false);
-  const [megaOpen, setMegaOpen] = useState(false);
-  const [mediaOpen, setMediaOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  const megaRef = useRef(null);
-  const mediaRef = useRef(null);
+  const [desktop, setDesktop] = useState(
+    () => window.matchMedia("(min-width: 1280px)").matches,
+  );
+  const dropdownRefs = useRef({});
+  const triggerRefs = useRef({});
+  const keyboardOpen = useRef(null);
+  const closeMobile = useCallback(() => {
+    setMobileOpen(false);
+    closeCart();
+  }, [closeCart]);
+  const closeDropdowns = useCallback(() => setOpenDropdown(null), []);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener("scroll", onScroll, { passive: true });
+    const onScroll = () => setScrolled(window.scrollY > 20);
     onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   useEffect(() => {
-    setMegaOpen(false);
-    setMediaOpen(false);
-    setMobileOpen(false);
-  }, [pathname]);
+    const query = window.matchMedia("(min-width: 1280px)");
+    const onResize = (event) => {
+      setDesktop(event.matches);
+      setMobileOpen(false);
+      setOpenDropdown(null);
+      closeCart();
+    };
+    query.addEventListener("change", onResize);
+    return () => query.removeEventListener("change", onResize);
+  }, [closeCart]);
 
   useEffect(() => {
-    if (!megaOpen && !mediaOpen) return;
-    function handleClick(e) {
-      if (megaRef.current && !megaRef.current.contains(e.target)) setMegaOpen(false);
-      if (mediaRef.current && !mediaRef.current.contains(e.target)) setMediaOpen(false);
+    setOpenDropdown(null);
+    setMobileOpen(false);
+  }, [pathname, search]);
+
+  useEffect(() => {
+    if (!isCartOpen) return;
+    setOpenDropdown(null);
+    // Sponsorship pages can open the cart directly on smaller screens too.
+    if (!desktop) setMobileOpen(true);
+  }, [isCartOpen, desktop]);
+
+  useEffect(() => {
+    if (!openDropdown) return;
+    if (keyboardOpen.current === openDropdown) {
+      dropdownRefs.current[openDropdown]
+        ?.querySelector(".site-nav-dropdown a")
+        ?.focus();
+      keyboardOpen.current = null;
     }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [megaOpen, mediaOpen]);
+    const handleOutside = (event) => {
+      if (!dropdownRefs.current[openDropdown]?.contains(event.target))
+        setOpenDropdown(null);
+    };
+    const handleKey = (event) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      setOpenDropdown(null);
+      triggerRefs.current[openDropdown]?.focus();
+    };
+    document.addEventListener("pointerdown", handleOutside);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("pointerdown", handleOutside);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [openDropdown]);
 
-  const isActive = (href) => pathname === href;
-
-  const projectsLink = NAV_LINKS.find((l) => l.label === "Projects");
-  const mediaLink = NAV_LINKS.find((l) => l.label === "Media");
-
-  // Hardcoded categories plus any projects created in the admin (DB).
-  const { data: projectsData } = useProjects();
-  const projectsCategories = useMemo(
-    () => buildProjectCategories(projectsLink?.children, projectsData?.data),
-    [projectsLink, projectsData]
-  );
+  const isActive = (href) => isProgramLinkActive(href, pathname, search);
 
   return (
     <>
+      <style>{`
+        /* Desktop navbar text/icons: larger without increasing navbar height */
+        @media (min-width: 1280px) {
+          .site-nav-link {
+            font-size: 17px !important;
+            line-height: 1.1 !important;
+          }
+
+          .site-nav-actions,
+          .site-nav-actions a,
+          .site-nav-actions button {
+            font-size: 17px !important;
+            line-height: 1.1 !important;
+          }
+
+          .site-nav-utilities svg,
+          .site-nav-actions svg {
+            width: 24px !important;
+            height: 24px !important;
+          }
+
+          .site-nav-chevron {
+            width: 18px !important;
+            height: 18px !important;
+          }
+
+          /* Keep the account icon compact, but clearly label its purpose. */
+          .site-nav-account-labeled {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+            cursor: pointer;
+          }
+
+          .site-nav-account-label {
+            font-size: 13px !important;
+            line-height: 1 !important;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+          }
+
+          /* Signed in: show who is signed in, with a link to the account. */
+          .site-nav-account-name {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            max-width: 140px;
+          }
+          .site-nav-account-name strong {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 14px !important;
+            line-height: 1.1 !important;
+            font-weight: 700;
+            color: #142845;
+          }
+          .site-nav-account-name small {
+            font-size: 12px !important;
+            line-height: 1 !important;
+            font-weight: 600;
+            color: #1e5bab;
+          }
+        }
+      `}</style>
       <nav
-        className={cn(
-          "fixed top-0 inset-x-0 z-50 transition-all duration-300",
-          scrolled ? "bg-white/95 shadow-lg" : "bg-white/80 backdrop-blur-glass"
-        )}
+        aria-label="Main navigation"
+        className={cn("site-navbar", scrolled && "is-scrolled")}
       >
-        <div className="mx-auto flex items-center justify-between h-20 px-3.5 sm:px-5 md:px-16 max-w-[1280px]">
-         <Link to="/" className="flex-shrink-0">
-  <img src="/images/newlogo.png" alt="Kadesh Hope Mission" className="h-24" />
-</Link>
-
-          {/* Desktop links */}
-          <div className="hidden lg:flex items-center gap-1">
-            {NAV_LINKS.map((link) => {
-              if (link.label === "Projects") {
-                return (
-                  <div key={link.label} ref={megaRef} className="relative">
-                    <button
-                      onClick={() => { setMegaOpen((v) => !v); setMediaOpen(false); }}
+        <div className="site-navbar-inner">
+          <Link to="/" className="site-nav-brand" onClick={closeDropdowns}>
+            <img src="/images/newlogo.png" alt="Kadesh Hope Mission home" />
+          </Link>
+          {desktop && (
+            <div className="site-nav-links">
+              {primaryLinks.map((link) => {
+                if (!link.children)
+                  return (
+                    <Link
+                      key={link.href}
+                      to={link.href}
                       className={cn(
-                        "flex items-center gap-1 px-4 py-2 rounded-lg text-body-md font-medium transition-colors",
-                        megaOpen || pathname.startsWith("/projects")
-                          ? "text-vibrant-blue font-bold"
-                          : "text-on-surface hover:text-vibrant-blue"
+                        "site-nav-link",
+                        isActive(link.href) && "is-active",
                       )}
+                      aria-current={isActive(link.href) ? "page" : undefined}
                     >
                       {link.label}
-                      <ChevronDown className={cn("w-4 h-4 transition-transform", megaOpen && "rotate-180")} />
-                    </button>
-                    <AnimatePresence>
-                      {megaOpen && (
-                        <motion.div
-                          variants={dropdownVariants}
-                          initial="hidden"
-                          animate="visible"
-                          exit="exit"
-                          transition={{ duration: 0.2 }}
-                          className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-[520px] bg-white rounded-xl shadow-card p-6"
-                        >
-                          <div className="grid grid-cols-2 gap-6">
-                            {projectsCategories.map((cat) => (
-                              <div key={cat.category}>
-                                <p className="text-label-bold text-deep-navy mb-2 uppercase tracking-wider">
-                                  {cat.category}
-                                </p>
-                                <ul className="space-y-1">
-                                  {cat.items.map((item) => (
-                                    <li key={item.href}>
-                                      <Link
-                                        to={item.href}
-                                        className={cn(
-                                          "block px-3 py-2 rounded-lg text-body-md transition-colors whitespace-nowrap",
-                                          isActive(item.href)
-                                            ? "text-vibrant-blue font-bold bg-vibrant-blue/5"
-                                            : "text-on-surface-variant hover:text-vibrant-blue hover:bg-surface"
-                                        )}
-                                      >
-                                        {item.label}
-                                      </Link>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            ))}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                );
-              }
-
-              if (link.label === "Media") {
+                    </Link>
+                  );
+                const isProjects = link.label === "Projects";
+                const open = openDropdown === link.label;
+                const active = isProjects
+                  ? pathname.startsWith("/projects")
+                  : link.children.some((item) => isActive(item.href));
+                const panelId = "desktop-" + link.label.toLowerCase();
                 return (
-                  <div key={link.label} ref={mediaRef} className="relative">
+                  <div
+                    key={link.label}
+                    className={cn(
+                      "site-nav-disclosure",
+                      !isProjects && "site-nav-media",
+                    )}
+                    ref={(node) => {
+                      dropdownRefs.current[link.label] = node;
+                    }}
+                    onBlur={(event) => {
+                      if (!event.currentTarget.contains(event.relatedTarget))
+                        setOpenDropdown((current) =>
+                          current === link.label ? null : current,
+                        );
+                    }}
+                  >
                     <button
-                      onClick={() => { setMediaOpen((v) => !v); setMegaOpen(false); }}
+                      type="button"
+                      ref={(node) => {
+                        triggerRefs.current[link.label] = node;
+                      }}
+                      aria-expanded={open}
+                      aria-controls={panelId}
                       className={cn(
-                        "flex items-center gap-1 px-4 py-2 rounded-lg text-body-md font-medium transition-colors",
-                        mediaOpen || pathname === "/gallery" || pathname === "/videos"
-                          ? "text-vibrant-blue font-bold"
-                          : "text-on-surface hover:text-vibrant-blue"
+                        "site-nav-link",
+                        (active || open) && "is-active",
                       )}
+                      onClick={() => {
+                        closeCart();
+                        setOpenDropdown(open ? null : link.label);
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key !== "ArrowDown") return;
+                        event.preventDefault();
+                        closeCart();
+                        if (open)
+                          dropdownRefs.current[link.label]
+                            ?.querySelector(".site-nav-dropdown a")
+                            ?.focus();
+                        else {
+                          keyboardOpen.current = link.label;
+                          setOpenDropdown(link.label);
+                        }
+                      }}
                     >
                       {link.label}
-                      <ChevronDown className={cn("w-4 h-4 transition-transform", mediaOpen && "rotate-180")} />
-                    </button>
-                    <AnimatePresence>
-                      {mediaOpen && (
-                        <motion.div
-                          variants={dropdownVariants}
-                          initial="hidden"
-                          animate="visible"
-                          exit="exit"
-                          transition={{ duration: 0.2 }}
-                          className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-48 bg-white rounded-xl shadow-card p-3"
-                        >
-                          {link.children.map((item) => (
-                            <Link
-                              key={item.href}
-                              to={item.href}
-                              className={cn(
-                                "block px-4 py-2 rounded-lg text-body-md transition-colors",
-                                isActive(item.href)
-                                  ? "text-vibrant-blue font-bold bg-vibrant-blue/5"
-                                  : "text-on-surface-variant hover:text-vibrant-blue hover:bg-surface"
-                              )}
-                            >
-                              {item.label}
-                            </Link>
-                          ))}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                );
-              }
-
-              return (
-                <Link
-                  key={link.href}
-                  to={link.href}
-                  className={cn(
-                    "px-4 py-2 rounded-lg text-body-md font-medium transition-colors",
-                    isActive(link.href)
-                      ? "text-vibrant-blue font-bold"
-                      : "text-on-surface hover:text-vibrant-blue"
-                  )}
-                >
-                  {link.label}
-                </Link>
-              );
-            })}
-          </div>
-
-          <div className="hidden lg:flex items-center gap-3">
-            <Button as={Link} to="/donate" variant="lightblue" size="sm">
-              Donate
-            </Button>
-            {!authLoading && (
-              user ? (
-                <Link
-                  to="/account"
-                  className={cn(
-                    "flex items-center gap-2 px-3 py-2 rounded-lg font-body text-sm font-medium transition-colors",
-                    pathname === "/account"
-                      ? "text-vibrant-blue bg-vibrant-blue/5"
-                      : "text-on-surface hover:text-vibrant-blue hover:bg-surface"
-                  )}
-                >
-                  <div className="w-7 h-7 rounded-full bg-vibrant-blue flex items-center justify-center overflow-hidden">
-                    {getGravatarUrl(user?.email) ? (
-                      <img
-                        src={getGravatarUrl(user.email, 56)}
-                        alt=""
-                        className="w-full h-full object-cover"
+                      <ChevronDown
+                        size={17}
+                        aria-hidden="true"
+                        className={cn("site-nav-chevron", open && "is-open")}
                       />
+                    </button>
+                    <AnimatePresence>
+                      {open && (
+                        <motion.div
+                          id={panelId}
+                          className={cn(
+                            "site-nav-dropdown",
+                            isProjects
+                              ? "site-nav-mega"
+                              : "site-nav-media-panel",
+                          )}
+                          variants={dropdownVariants}
+                          initial="hidden"
+                          animate="visible"
+                          exit="exit"
+                          transition={{ duration: reducedMotion ? 0 : 0.18 }}
+                        >
+                          {isProjects ? (
+                            <>
+                              <div className="site-nav-mega-heading">
+                                <div>
+                                  <span>Our work</span>
+                                  <strong>
+                                    Three pathways to lasting opportunity.
+                                  </strong>
+                                </div>
+                                <Link to="/projects" onClick={closeDropdowns}>
+                                  Explore all projects{" "}
+                                  <ArrowUpRight size={18} aria-hidden="true" />
+                                </Link>
+                              </div>
+                              <ProjectNavigation
+                                pathname={pathname}
+                                search={search}
+                                onNavigate={closeDropdowns}
+                              />
+                            </>
+                          ) : (
+                            link.children.map((item) => {
+                              const detail = mediaDetails[item.href];
+                              const Icon = detail?.icon || Images;
+                              return (
+                                <Link
+                                  key={item.href}
+                                  to={item.href}
+                                  onClick={closeDropdowns}
+                                  aria-current={
+                                    isActive(item.href) ? "page" : undefined
+                                  }
+                                >
+                                  <span className="site-nav-media-icon">
+                                    <Icon size={22} aria-hidden="true" />
+                                  </span>
+                                  <span>
+                                    <strong>{item.label}</strong>
+                                    <small>{detail?.description}</small>
+                                  </span>
+                                  <ArrowUpRight size={16} aria-hidden="true" />
+                                </Link>
+                              );
+                            })
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <div className="site-nav-actions">
+            {desktop ? (
+              <>
+                <NavigationActions onNavigate={closeDropdowns} />
+                <div className="site-nav-utilities">
+                  <div className="site-nav-cart">
+                    <SponsorshipCartMenu onOpen={closeDropdowns} />
+                  </div>
+                  {!authLoading && !user ? (
+                    <Link to="/login" className="site-nav-auth" onClick={closeDropdowns}>
+                      <UserRound size={18} strokeWidth={2} aria-hidden="true" />
+                      Log in / Sign up
+                    </Link>
+                  ) : (
+                  <div
+                    className="site-nav-account-labeled"
+                    onClick={(event) => {
+                      // The AccountLink already owns the real navigation.
+                      // Clicking the label or empty space delegates to that same control,
+                      // making the icon + text behave like one clickable item.
+                      if (event.target.closest("a, button")) return;
+                      event.currentTarget.querySelector("a, button")?.click();
+                    }}
+                  >
+                    <AccountLink onNavigate={closeDropdowns} />
+                    {authLoading ? null : user ? (
+                      <span className="site-nav-account-name">
+                        <strong>Hi, {firstName || "there"}</strong>
+                        <small>My account</small>
+                      </span>
                     ) : (
-                      <span className="text-white text-xs font-semibold">
-                        {profile?.first_name?.charAt(0) || "D"}
+                      <span className="site-nav-account-label">
+                        Sign Up / Login
                       </span>
                     )}
                   </div>
-                  <span className="hidden xl:inline">{profile?.first_name || "Account"}</span>
-                </Link>
-              ) : (
-                <Link
-                  to="/donor-auth?mode=signup"
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 py-2 rounded-lg font-body text-sm font-medium transition-colors",
-                    pathname === "/donor-auth"
-                      ? "text-vibrant-blue bg-vibrant-blue/5"
-                      : "text-on-surface hover:text-vibrant-blue hover:bg-surface"
                   )}
+                </div>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className="site-nav-menu-toggle"
+                  onClick={() => {
+                    closeCart();
+                    setMobileOpen(true);
+                  }}
+                  aria-label="Open menu"
+                  aria-expanded={mobileOpen}
+                  aria-controls="mobile-navigation"
                 >
-                  <UserPlus className="h-4 w-4" />
-                  <span>Sign Up</span>
-                </Link>
-              )
+                  <Menu size={26} strokeWidth={1.7} aria-hidden="true" />
+                </button>
+                <AccountLink onNavigate={closeMobile} />
+              </>
             )}
           </div>
-
-          {/* Sponsorship cart: desktop only — on mobile it lives in the menu */}
-          <div className="hidden lg:block">
-            <SponsorshipCartMenu />
-          </div>
-
-          {/* Mobile hamburger */}
-          <button
-            className="lg:hidden flex-shrink-0 inline-flex items-center justify-center w-11 h-11 rounded-xl text-deep-navy hover:bg-surface active:bg-surface transition-colors"
-            onClick={() => setMobileOpen(true)}
-            aria-label="Open menu"
-          >
-            <Menu className="w-6 h-6" />
-          </button>
         </div>
       </nav>
-
-      <MobileMenu isOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
+      {!desktop && <MobileMenu isOpen={mobileOpen} onClose={closeMobile} />}
     </>
   );
 }

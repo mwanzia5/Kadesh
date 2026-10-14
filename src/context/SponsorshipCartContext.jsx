@@ -7,31 +7,35 @@ import {
   useMemo,
 } from "react";
 import { captureEvent } from "@/lib/analytics";
+import {
+  addSponsorshipChild,
+  changeSponsorshipFrequency,
+  DEFAULT_SPONSORSHIP_PLAN,
+  getSponsorshipOption,
+  isSelectableSponsorshipOption,
+  MONTHLY_SPONSORSHIP_AMOUNTS,
+  getSponsorshipSubtotal,
+  normalizeSponsorshipItem,
+  restoreSponsorshipCart,
+} from "@/lib/sponsorship";
 
-// Sponsorship cart — lets a donor collect several children and pay for all of
-// them in one checkout on the donation page (cart + checkout, sponsorship
-// style). Persisted per-device so it survives page reloads and sign-in round
-// trips.
 const STORAGE_KEY = "khm_sponsorship_cart";
-
-// Rounds to 2 decimal places so sponsorship amounts can be set with cents
-// (e.g. $1.50) while staying safe for payments.
-const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
-
 const SponsorshipCartContext = createContext(null);
 
 export function SponsorshipCartProvider({ children }) {
-  const [cartItems, setCartItems] = useState([]);
+  const [{ items: cartItems, frequency }, setCart] = useState({
+    items: [],
+    frequency: "one-time",
+  });
   const [loaded, setLoaded] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      const parsed = raw ? JSON.parse(raw) : [];
-      setCartItems(Array.isArray(parsed) ? parsed : []);
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+      setCart(restoreSponsorshipCart(saved));
     } catch {
-      setCartItems([]);
+      setCart({ items: [], frequency: "one-time" });
     }
     setLoaded(true);
   }, []);
@@ -39,74 +43,109 @@ export function SponsorshipCartProvider({ children }) {
   useEffect(() => {
     if (!loaded) return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(cartItems));
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ version: 3, frequency, items: cartItems }),
+      );
     } catch {
-      // Storage unavailable (private mode / quota) — cart still works in memory.
+      /* The cart still works if device storage is unavailable. */
     }
-  }, [cartItems, loaded]);
+  }, [cartItems, frequency, loaded]);
 
-  const addToCart = useCallback((child, amount = 50) => {
-    const item = {
-      child_id: child.id,
-      first_name: child.first_name || "Child",
-      photo_url: child.photo_url || null,
-      location: child.location || null,
-      amount: Math.max(0.01, round2(Number(amount) || 0) || 50),
-    };
+  const setFrequency = useCallback((value) => {
+    if (!["one-time", "monthly"].includes(value)) return;
+    setCart((cart) => ({
+      frequency: value,
+      items: changeSponsorshipFrequency(cart.items, value),
+    }));
+  }, []);
+
+  // supportType: "education" | "supplies" | "meals" | "full" | "monthly".
+  // Without one, a new child starts on Education fees ($100), or $25/month
+  // when the cart is already monthly.
+  const addToCart = useCallback((child, supportType, monthlyAmount) => {
+    if (typeof child?.id !== "string" || !child.id) return;
+    const option = getSponsorshipOption(supportType || DEFAULT_SPONSORSHIP_PLAN);
     captureEvent("sponsorship_cart_added", {
       child_id: child.id,
-      amount: item.amount,
+      plan: option?.id,
+      amount: supportType === "monthly" ? monthlyAmount || option?.amount : option?.amount,
     });
-    setCartItems((prev) => {
-      const exists = prev.some((i) => i.child_id === item.child_id);
-      if (exists) {
-        return prev.map((i) =>
-          i.child_id === item.child_id ? { ...i, amount: item.amount } : i
-        );
-      }
-      return [...prev, item];
-    });
-  }, []);
-
-  const removeFromCart = useCallback((childId) => {
-    setCartItems((prev) => prev.filter((i) => i.child_id !== childId));
-  }, []);
-
-  const clearCart = useCallback(() => {
-    setCartItems([]);
-  }, []);
-
-  const setItemAmount = useCallback((childId, amount) => {
-    const next = Math.max(0, round2(amount));
-    setCartItems((prev) =>
-      prev.map((i) => (i.child_id === childId ? { ...i, amount: next } : i))
+    setCart((cart) =>
+      addSponsorshipChild(cart, child, supportType, monthlyAmount),
     );
   }, []);
 
+  const setItemPlan = useCallback((childId, supportType) => {
+    const option = getSponsorshipOption(supportType);
+    if (!option || !isSelectableSponsorshipOption(option.id)) return;
+    setCart((cart) => {
+      if ((option.id === "monthly") !== (cart.frequency === "monthly"))
+        return cart;
+      return {
+        ...cart,
+        items: cart.items.map((item) =>
+          item.child_id === childId
+            ? normalizeSponsorshipItem({
+                ...item,
+                support_type: supportType,
+                one_time_type:
+                  supportType === "monthly" ? item.one_time_type : supportType,
+              })
+            : item,
+        ),
+      };
+    });
+  }, []);
+  // Monthly sponsorship: $25 or $50 per month for this child.
+  const setItemMonthlyAmount = useCallback((childId, amount) => {
+    if (!MONTHLY_SPONSORSHIP_AMOUNTS.includes(Number(amount))) return;
+    setCart((cart) => ({
+      ...cart,
+      items: cart.items.map((item) =>
+        item.child_id === childId
+          ? normalizeSponsorshipItem({ ...item, monthly_amount: Number(amount) })
+          : item,
+      ),
+    }));
+  }, []);
+  const removeFromCart = useCallback(
+    (childId) =>
+      setCart((cart) => ({
+        ...cart,
+        items: cart.items.filter((item) => item.child_id !== childId),
+      })),
+    [],
+  );
+  const clearCart = useCallback(
+    () => setCart((cart) => ({ ...cart, items: [] })),
+    [],
+  );
   const isInCart = useCallback(
-    (childId) => cartItems.some((i) => i.child_id === childId),
-    [cartItems]
+    (childId) => cartItems.some((item) => item.child_id === childId),
+    [cartItems],
   );
-
   const subtotal = useMemo(
-    () => cartItems.reduce((sum, i) => sum + (Number(i.amount) || 0), 0),
-    [cartItems]
+    () => getSponsorshipSubtotal(cartItems),
+    [cartItems],
   );
-
   const openCart = useCallback(() => setIsCartOpen(true), []);
   const closeCart = useCallback(() => setIsCartOpen(false), []);
-  const toggleCart = useCallback(() => setIsCartOpen((v) => !v), []);
-
+  const toggleCart = useCallback(() => setIsCartOpen((open) => !open), []);
   const value = useMemo(
     () => ({
       cartItems,
       cartCount: cartItems.length,
       subtotal,
+      frequency,
+      setFrequency,
+      loaded,
       isCartOpen,
       addToCart,
       removeFromCart,
       clearCart,
-      setItemAmount,
+      setItemPlan,
+      setItemMonthlyAmount,
       isInCart,
       openCart,
       closeCart,
@@ -115,16 +154,20 @@ export function SponsorshipCartProvider({ children }) {
     [
       cartItems,
       subtotal,
+      frequency,
+      setFrequency,
+      loaded,
       isCartOpen,
       addToCart,
       removeFromCart,
       clearCart,
-      setItemAmount,
+      setItemPlan,
+      setItemMonthlyAmount,
       isInCart,
       openCart,
       closeCart,
       toggleCart,
-    ]
+    ],
   );
 
   return (
@@ -135,11 +178,10 @@ export function SponsorshipCartProvider({ children }) {
 }
 
 export function useSponsorshipCart() {
-  const ctx = useContext(SponsorshipCartContext);
-  if (!ctx) {
+  const context = useContext(SponsorshipCartContext);
+  if (!context)
     throw new Error(
-      "useSponsorshipCart must be used within a SponsorshipCartProvider"
+      "useSponsorshipCart must be used within a SponsorshipCartProvider",
     );
-  }
-  return ctx;
+  return context;
 }

@@ -13,7 +13,6 @@ import {
   CheckCircle,
   Users,
   Loader2,
-  AlertTriangle,
 } from "lucide-react";
 
 import { staggerContainer, slideUp } from "@/animations/variants";
@@ -23,7 +22,7 @@ import {
   useAdminResumeSponsorship,
   useAdminCancelSponsorship,
 } from "@/hooks/useSponsorships";
-import { isSponsorshipOverdue } from "@/services/sponsorships";
+import { sponsorshipPaymentState } from "@/lib/monthlyGiving";
 
 const statusColors = {
   active: "bg-emerald-50 text-emerald-700 border-emerald-200",
@@ -71,6 +70,9 @@ export default function SponsorshipsManager() {
     (s) => s.status === "cancelled"
   ).length;
   const reassignedCount = sponsorships.filter((s) => s.reassigned_at).length;
+  // Monthly sponsorships are paid by hand; these are 2+ payments behind.
+  const isOverdue = (s) => Boolean(sponsorshipPaymentState(s)?.overdue);
+  const overdueCount = sponsorships.filter(isOverdue).length;
   const totalAmount = sponsorships.reduce(
     (sum, s) => sum + Number(s.amount ?? s.monthly_amount ?? 0),
     0
@@ -86,7 +88,9 @@ export default function SponsorshipsManager() {
   ];
 
   const filtered = sponsorships.filter((s) => {
-    const matchesStatus = statusFilter === "all" || s.status === statusFilter;
+    const matchesStatus =
+      statusFilter === "all" ||
+      (statusFilter === "overdue" ? isOverdue(s) : s.status === statusFilter);
     const q = searchTerm.toLowerCase();
     const donorName = [s.donor?.first_name, s.donor?.last_name]
       .filter(Boolean)
@@ -201,7 +205,7 @@ export default function SponsorshipsManager() {
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
-            {["all", "active", "paused", "cancelled"].map((status) => (
+            {["all", "active", "paused", "cancelled", "overdue"].map((status) => (
               <button
                 key={status}
                 onClick={() => setStatusFilter(status)}
@@ -212,6 +216,7 @@ export default function SponsorshipsManager() {
                 }`}
               >
                 {status}
+                {status === "overdue" && overdueCount > 0 ? ` (${overdueCount})` : ""}
               </button>
             ))}
           </div>
@@ -328,23 +333,18 @@ export default function SponsorshipsManager() {
                           <StatusIcon className="h-3 w-3" />
                           {sponsorship.status}
                         </span>
-                        {/* Monthly billing health, so an admin can see at a
-                            glance which sponsorships need chasing. Uses the
-                            same definition as the donor account page. */}
-                        {isSponsorshipOverdue(sponsorship) && (
-                          <span className="mt-1.5 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border border-red-300 bg-red-50 text-red-700">
-                            <AlertTriangle className="h-3 w-3" />
-                            Payment overdue
-                          </span>
-                        )}
-                        {!isSponsorshipOverdue(sponsorship) &&
-                          sponsorship.status === "active" &&
-                          sponsorship.monthly_amount != null &&
-                          sponsorship.next_payment_due && (
-                            <span className="mt-1.5 block font-body text-xs text-on-surface-variant">
-                              Due {formatDate(sponsorship.next_payment_due)}
+                        {(() => {
+                          const payment = sponsorshipPaymentState(sponsorship);
+                          return payment?.overdue ? (
+                            <span className="mt-1.5 block whitespace-nowrap text-xs font-semibold text-red-700">
+                              Overdue · {payment.monthsBehind} months unpaid
                             </span>
-                          )}
+                          ) : payment?.due ? (
+                            <span className="mt-1.5 block whitespace-nowrap text-xs text-amber-700">
+                              This month due
+                            </span>
+                          ) : null;
+                        })()}
                       </td>
                       <td className="px-6 py-4">
                         <span className="flex items-center gap-1.5 text-xs text-on-surface-variant">

@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 const directions = {
@@ -15,14 +15,19 @@ function ScrollReveal({
   className,
   ...props
 }) {
-  const offset = directions[direction];
+  const reduceMotion = useReducedMotion();
+  const offset = directions[direction] || directions.up;
 
   return (
     <motion.div
-      initial={{ opacity: 0, ...offset }}
+      initial={reduceMotion ? false : { opacity: 0, ...offset }}
       whileInView={{ opacity: 1, x: 0, y: 0 }}
-      viewport={{ once: true, margin: "-100px" }}
-      transition={{ duration: 0.6, delay, ease: "easeOut" }}
+      viewport={{ once: true, margin: "0px 0px -40px 0px", amount: 0.1 }}
+      transition={{
+        duration: reduceMotion ? 0 : 0.6,
+        delay: reduceMotion ? 0 : delay,
+        ease: "easeOut",
+      }}
       className={cn(className)}
       {...props}
     >

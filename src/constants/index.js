@@ -1,3 +1,5 @@
+import { PROGRAM_CATEGORIES } from "@/lib/programs";
+
 export const SUPABASE_IMAGE_URL = import.meta.env.VITE_SUPABASE_URL
   ? `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public`
   : "";
@@ -45,34 +47,12 @@ export const NAV_LINKS = [
   {
     label: "Projects",
     href: "/projects",
-    children: [
-      {
-        category: "Child to School",
-        items: [
-          { label: "Child Education Project", href: "/projects/child-education" },
-        ],
-      },
-      {
-        category: "Health & Wellness",
-        items: [{ label: "Home Care", href: "/projects/home-care" }],
-      },
-      {
-        category: "Education",
-        items: [
-          { label: "Lumina Charis School of Africa", href: "/projects/lumina-charis" },
-        ],
-      },
-      {
-        category: "Social Development",
-        items: [
-          { label: "Borewell Project", href: "/projects/borewell" },
-        ],
-      },
-      {
-        category: "Food Security",
-        items: [{ label: "Bethlehem Bread", href: "/projects/bethlehem-bread" }],
-      },
-    ],
+    children: PROGRAM_CATEGORIES.map((category) => ({
+      id: category.id,
+      category: category.title,
+      href: category.href,
+      items: category.projects.map(({ label, href }) => ({ label, href })),
+    })),
   },
   { label: "Sponsor a Child", href: "/sponsor-a-child" },
   {
@@ -125,81 +105,18 @@ export const MINISTRY_AREAS = [
   },
 ];
 
-export const PROJECTS = [
-  {
-    slug: "child-education",
-    title: "Child Education Project",
-    category: "Child to School",
-    shortDescription: "Keeping children in school and empowering them to compete globally.",
-    image: "/images/child to school/child project_1.jpeg",
-  },
-  {
-    slug: "home-care",
-    title: "Home Care",
-    category: "Health & Wellness",
-    shortDescription: "Home-based healthcare programs reaching underserved populations.",
-    image: "/images/healthcare/healthcare_1.jpg",
-  },
-  {
-    slug: "lumina-charis",
-    title: "Lumina Charis School of Africa",
-    category: "Education",
-    shortDescription: "Constructing schools and learning centers for African youth.",
-    image: "/images/Lumina School/Lumina School_01.jpeg",
-  },
-  {
-    slug: "borewell",
-    title: "Borewell Project",
-    category: "Social Development",
-    shortDescription: "Providing clean water access to communities in need.",
-    image: "/borehole2/Picture1.webp",
-  },
-  {
-    slug: "bethlehem-bread",
-    title: "Bethlehem Bread",
-    category: "Food Security",
-    shortDescription: "Providing daily meals and food security for vulnerable communities.",
-    image: "/bread-baking/Picture44.webp",
-  },
-];
+export const PROJECTS = PROGRAM_CATEGORIES.flatMap((category) =>
+  category.projects.map((project) => ({
+    ...project,
+    category: category.title,
+    shortDescription: project.description,
+  })),
+);
 
-export const PROGRAM_PILLARS = [
-  {
-    title: "Education",
-    icon: "School",
-    description: "Ensuring access to education for every child.",
-    color: "vibrant-blue",
-    href: "/projects/lumina-charis",
-  },
-  {
-    title: "Health",
-    icon: "Heart",
-    description: "Home-based healthcare for underserved populations.",
-    color: "hope-orange",
-    href: "/projects/home-care",
-  },
-  {
-    title: "Food Security",
-    icon: "UtensilsCrossed",
-    description: "Daily meals through the Bethlehem Bread Project.",
-    color: "vibrant-blue",
-    href: "/projects/bethlehem-bread",
-  },
-  {
-    title: "Enterprise Programs",
-    icon: "Rocket",
-    description: "Skills training and mentorship for youth.",
-    color: "hope-orange",
-    href: "/projects/child-education",
-  },
-  {
-    title: "Social Development",
-    icon: "Users",
-    description: "Micro-financing for women's empowerment.",
-    color: "vibrant-blue",
-    href: "/projects/borewell",
-  },
-];
+export const PROGRAM_PILLARS = PROGRAM_CATEGORIES.map((category) => ({
+  ...category,
+  color: category.id === "healthcare" ? "hope-orange" : "vibrant-blue",
+}));
 
 export const TIMELINE = [
   {

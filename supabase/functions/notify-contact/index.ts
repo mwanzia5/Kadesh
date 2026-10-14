@@ -1,4 +1,10 @@
 // Self-contained: no cross-file imports, so it deploys as a single file.
+//
+// Called only by the Supabase Database Webhook on contact_messages INSERT.
+// Whatever the caller sends, the message is re-read from the database by id,
+// so this function can only
+// ever email the mission about a message that was really saved by the
+// contact form (it cannot be used to send arbitrary emails).
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -57,21 +63,39 @@ Deno.serve(async (req: Request) => {
     let payload: ContactPayload;
     let recordId: string | undefined;
 
-    // Check if this is a Supabase database webhook payload
-    if (req.headers.get("x-supabase-event") === "INSERT") {
-      const data = JSON.parse(body);
-      const record = data.record;
-      recordId = record.id;
-      payload = {
-        first_name: record.first_name,
-        last_name: record.last_name,
-        email: record.email,
-        subject: record.subject,
-        message: record.message,
-      };
-    } else {
-      payload = JSON.parse(body);
+    const data = JSON.parse(body);
+    // Database webhooks send { record: {...} }; a direct call may send { id }.
+    const webhookId = data?.record?.id ?? data?.id;
+    if (!webhookId) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Forbidden" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
+
+    // Load the saved message itself rather than trusting the request body.
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    const lookup = await fetch(
+      `${supabaseUrl}/rest/v1/contact_messages?id=eq.${encodeURIComponent(String(webhookId))}&select=id,first_name,last_name,email,subject,message`,
+      { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } }
+    );
+    const rows = lookup.ok ? await lookup.json() : [];
+    const record = Array.isArray(rows) ? rows[0] : null;
+    if (!record) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Message not found" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    recordId = record.id;
+    payload = {
+      first_name: record.first_name,
+      last_name: record.last_name,
+      email: record.email,
+      subject: record.subject,
+      message: record.message,
+    };
 
     const { first_name, last_name, email, subject, message } = payload;
 
@@ -99,7 +123,7 @@ Deno.serve(async (req: Request) => {
         from: FROM_ADDRESS,
         to: [NOTIFICATION_EMAIL],
         reply_to: email,
-        subject: `New Contact: ${subject || "General Inquiry"} \u2014 ${first_name} ${last_name}`,
+        subject: `New Contact: ${subject || "General Inquiry"} \u2014 ${first_name} ${last_name}`.replace(/[\r\n]+/g, " "),
         html: `
           <h2>New Contact Form Message</h2>
           <p><strong>From:</strong> ${safeFirstName} ${safeLastName} (${safeEmail})</p>
@@ -131,7 +155,7 @@ Deno.serve(async (req: Request) => {
   } catch (error) {
     console.error("[notify-contact] Error:", error);
     return new Response(
-      JSON.stringify({ success: false, error: (error as Error).message }),
+      JSON.stringify({ success: false, error: "Notification failed" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

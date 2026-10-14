@@ -1,5 +1,29 @@
 import { clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { extendTailwindMerge } from "tailwind-merge";
+
+// Register the custom font sizes from tailwind.config.js. Without this,
+// tailwind-merge treats e.g. "text-headline-lg" as a text colour and drops it
+// whenever a colour class such as "text-white" is also present.
+const twMerge = extendTailwindMerge({
+  extend: {
+    classGroups: {
+      "font-size": [
+        {
+          text: [
+            "display-lg",
+            "display-lg-mobile",
+            "headline-lg",
+            "headline-md",
+            "body-lg",
+            "body-md",
+            "label-bold",
+            "caption",
+          ],
+        },
+      ],
+    },
+  },
+});
 
 export function cn(...inputs) {
   return twMerge(clsx(inputs));
@@ -85,8 +109,10 @@ function md5(string) {
   return hex(md51(string));
 }
 
-export function getGravatarUrl(email, size = 80) {
+// fallback "404" makes Gravatar fail for people without a photo, so the
+// caller can show their initial instead of a random pattern.
+export function getGravatarUrl(email, size = 80, fallback = "identicon") {
   if (!email) return null;
   const hash = md5(email.trim().toLowerCase());
-  return `https://www.gravatar.com/avatar/${hash}?d=identicon&s=${size}`;
+  return `https://www.gravatar.com/avatar/${hash}?d=${fallback}&s=${size}`;
 }

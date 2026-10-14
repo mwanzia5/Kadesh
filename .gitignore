@@ -16,6 +16,8 @@ dist-ssr
 .env
 .env.local
 .env.production
+.env.scripts
+Kadesh(env.local)
 
 # Supabase CLI local cache
 supabase/.temp
@@ -30,3 +32,11 @@ supabase/.temp
 *.njsproj
 *.sln
 *.sw?
+
+# AI coding assistant config (not part of the website)
+.claude/
+.agents/
+.gemini/
+.jolli/
+agent/
+skills-lock.json
