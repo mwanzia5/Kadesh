@@ -28,7 +28,7 @@ const TEAM_MEMBERS = [
     image: "/images/Team/Team_4.jpeg",
   },
   {
-    name: "Miss. Sirisha Govindu",
+    name: "Miss Sirisha Govindu",
     role: "Administration, Mission",
     image: "/images/Team/Team_5.jpeg",
   },
@@ -78,7 +78,7 @@ export default function Teams() {
             variants={staggerContainer}
             initial="hidden"
             whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
+            viewport={{ once: true, margin: "-100px 0px" }}
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mt-12"
           >
             {TEAM_MEMBERS.map((member) => (

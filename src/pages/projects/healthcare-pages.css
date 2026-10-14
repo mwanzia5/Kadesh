@@ -1,0 +1,856 @@
+.program-page-healthcare {
+  --healthcare-paper: #f6f7f1;
+  --healthcare-green: #245b50;
+  --healthcare-dark: #163f39;
+  --program-accent: #245b50;
+  background: #fffdfa;
+}
+.program-page-healthcare .program-category-intro {
+  background: #f3f5ee;
+}
+.program-page-healthcare .program-category-orbit {
+  width: 460px;
+  height: 460px;
+  top: -230px;
+  right: -80px;
+  background: #dce7d638;
+  border-color: #668c7626;
+  box-shadow: 0 0 0 35px #dce7d621;
+}
+.program-page-healthcare .program-category-heading {
+  padding: 28px 0 32px;
+  gap: 60px;
+}
+.program-page-healthcare .program-category-heading h1 {
+  font-size: clamp(2.5rem, 4vw, 3.5rem);
+  font-weight: 500;
+  margin: 10px 0 7px;
+}
+.program-page-healthcare .program-category-heading .program-category-tagline {
+  font-size: 19px;
+}
+.program-page-healthcare .program-category-description {
+  font-size: 17px;
+}
+.program-page-healthcare .program-project-tabs-bar {
+  background: #fffdf9f5;
+  border-color: #e0e5db;
+}
+.program-page-healthcare .program-project-tabs {
+  gap: 28px;
+  padding: 0;
+}
+.program-page-healthcare .program-project-tab {
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  min-height: 85px;
+  padding: 18px 4px;
+}
+.program-page-healthcare .program-project-tab[aria-selected="true"] {
+  color: var(--program-ink);
+  background: transparent;
+  border-bottom-color: var(--healthcare-green);
+}
+.program-page-healthcare .program-project-tab:hover {
+  background: var(--healthcare-paper);
+}
+.program-page-healthcare
+  .program-project-tab[aria-selected="true"]
+  .program-tab-number {
+  color: white;
+  background: var(--healthcare-dark);
+  border-color: var(--healthcare-dark);
+  opacity: 1;
+}
+.healthcare-tab-label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.healthcare-tab-label strong {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.healthcare-tab-label small {
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #63736e;
+}
+.program-page-healthcare .program-tab-dot {
+  color: var(--healthcare-green);
+}
+.program-page-healthcare .program-other-project {
+  background: #fffdfa;
+  padding: 24px 0 54px;
+}
+.program-page-healthcare .program-other-project button {
+  border-radius: 12px;
+  background: var(--healthcare-paper);
+  border-color: #dce2d8;
+}
+.program-page-healthcare .program-other-project small {
+  font-size: 14px;
+}
+.program-page-healthcare .program-support {
+  background: var(--healthcare-dark);
+  border-radius: 16px;
+}
+.program-page-healthcare .program-support p {
+  font-size: 17px;
+}
+.program-page-healthcare .program-support .program-eyebrow {
+  color: #cce0bf;
+}
+.program-page-healthcare .program-support .program-button,
+.program-page-healthcare .program-support-contact {
+  font-size: 15px;
+}
+
+.healthcare-project {
+  background: #fffdfa;
+}
+.healthcare-project h3 {
+  font-size: clamp(2rem, 3.1vw, 2.85rem);
+  line-height: 1.16;
+  font-weight: 500;
+}
+.healthcare-project h4 {
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 25px;
+  line-height: 1.28;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+}
+.healthcare-eyebrow {
+  display: block;
+  color: var(--healthcare-green);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.7;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.healthcare-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+  padding: 52px 0 0;
+  background: var(--healthcare-paper);
+}
+.healthcare-hero-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.08fr;
+  align-items: center;
+  gap: 58px;
+}
+.healthcare-project .healthcare-hero-copy h2 {
+  margin: 16px 0 20px;
+  font-size: clamp(2.7rem, 4.5vw, 4rem);
+  font-weight: 500;
+  line-height: 1.02;
+  letter-spacing: -0.045em;
+}
+.healthcare-hero-copy .healthcare-tagline {
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 26px;
+  line-height: 1.4;
+  font-style: italic;
+  color: var(--healthcare-green);
+  margin-bottom: 19px;
+}
+.healthcare-introduction {
+  max-width: 475px;
+  font-size: 18px;
+}
+.healthcare-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 24px;
+  margin-top: 27px;
+}
+.healthcare-button,
+.healthcare-text-link {
+  display: inline-flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.healthcare-button {
+  padding: 13px 22px;
+  border-radius: 999px;
+  background: var(--healthcare-dark);
+  color: white;
+  transition:
+    background 180ms,
+    transform 180ms;
+}
+.healthcare-button:hover {
+  background: #286458;
+  transform: translateY(-2px);
+}
+.healthcare-text-link {
+  color: var(--healthcare-dark);
+  text-underline-offset: 5px;
+}
+.healthcare-text-link:hover {
+  text-decoration: underline;
+}
+.healthcare-location {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 24px;
+  font-size: 13px;
+}
+.healthcare-location svg {
+  flex-shrink: 0;
+  color: var(--healthcare-green);
+}
+.healthcare-hero-photo {
+  position: relative;
+  aspect-ratio: 1.2;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 100px 14px 14px;
+  background: #e1e6dd;
+}
+.healthcare-hero-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.healthcare-hero-photo::after {
+  content: "";
+  position: absolute;
+  inset: 55% 0 0;
+  background: linear-gradient(transparent, #0d302bdd);
+  pointer-events: none;
+}
+.healthcare-hero-photo figcaption {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  left: 26px;
+  right: 24px;
+  bottom: 25px;
+  z-index: 1;
+  color: white;
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 22px;
+  line-height: 1.4;
+}
+.healthcare-hero-photo figcaption svg {
+  flex-shrink: 0;
+}
+.healthcare-photo-mark {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 1px solid #ffffff80;
+  color: white;
+  background: #163f3940;
+  border-radius: 50%;
+}
+.healthcare-project-home-care .healthcare-hero-photo {
+  aspect-ratio: 0.91;
+  max-width: 475px;
+  justify-self: end;
+}
+.healthcare-project-home-care .healthcare-hero-photo img {
+  object-position: center 42%;
+}
+.healthcare-highlights {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  border-top: 1px solid #d9e1d5;
+  margin-top: 42px;
+  padding: 24px 0;
+}
+.healthcare-highlights li {
+  display: flex;
+  gap: 13px;
+  align-items: center;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+.healthcare-highlights li > span {
+  font-size: 12px;
+  color: var(--healthcare-green);
+}
+
+.healthcare-foundation {
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+  padding: 68px 0;
+}
+.healthcare-story-grid {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 72px;
+}
+.healthcare-story-grid h3 {
+  margin-top: 13px;
+  max-width: 430px;
+}
+.healthcare-story-copy {
+  font-size: 18px;
+}
+.healthcare-story-copy p + p {
+  margin-top: 17px;
+}
+.healthcare-heading-line {
+  display: block;
+  height: 1px;
+  width: 90px;
+  margin-top: 26px;
+  background: #8da988;
+  transform-origin: left;
+  animation: healthcare-line 8s ease-in-out infinite alternate;
+}
+.healthcare-purpose-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 37px;
+}
+.healthcare-purpose-card {
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+  padding: 34px 36px;
+  border-radius: 12px;
+}
+.healthcare-purpose-card > svg {
+  margin-bottom: 23px;
+}
+.healthcare-purpose-card h3 {
+  font-size: 34px;
+  margin: 9px 0 15px;
+}
+.healthcare-purpose-card p {
+  font-size: 18px;
+}
+.healthcare-vision {
+  background: var(--healthcare-dark);
+  color: white;
+}
+.healthcare-vision .healthcare-eyebrow,
+.healthcare-vision > svg {
+  color: #c3d5ad;
+}
+.healthcare-vision p {
+  color: #e4ece6;
+}
+.healthcare-vision::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: 260px;
+  height: 260px;
+  top: -120px;
+  right: -115px;
+  border-radius: 50%;
+  border: 1px solid #d1e2bc35;
+  outline: 1px solid #d1e2bc20;
+  outline-offset: 28px;
+}
+.healthcare-mission {
+  background: #f0eee3;
+  border: 1px solid #e1dfd2;
+}
+.healthcare-mission > svg {
+  color: var(--healthcare-green);
+}
+.healthcare-values {
+  display: flex;
+  align-items: baseline;
+  gap: 27px;
+  padding-top: 26px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.healthcare-values > span {
+  flex-shrink: 0;
+  color: #63736e;
+}
+.healthcare-values ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  font-weight: 600;
+}
+.healthcare-values li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.healthcare-values li::before {
+  content: "";
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #9bac97;
+}
+
+.healthcare-services {
+  background: #f5f6f0;
+  padding: 62px 0;
+  border-block: 1px solid #e5e7dc;
+}
+.healthcare-section-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 45px;
+  margin-bottom: 34px;
+}
+.healthcare-section-heading h3 {
+  max-width: 660px;
+  margin-top: 13px;
+}
+.healthcare-section-heading > p {
+  max-width: 340px;
+  font-size: 17px;
+}
+.healthcare-services-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 26px 32px;
+}
+.healthcare-services-four {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.healthcare-service {
+  border-top: 1px solid #cbd5c7;
+  padding: 25px 0 12px;
+}
+.healthcare-service-top {
+  display: flex;
+  justify-content: space-between;
+  color: var(--healthcare-green);
+  margin-bottom: 24px;
+}
+.healthcare-service-top span {
+  font-size: 12px;
+  color: #879481;
+}
+.healthcare-service h4 {
+  margin-bottom: 13px;
+}
+.healthcare-service p {
+  font-size: 17px;
+}
+.healthcare-service-invitation {
+  padding: 26px 29px;
+  background: #e7edde;
+  border: 1px solid #d7dfcc;
+  border-radius: 12px;
+}
+.healthcare-service-invitation > svg {
+  color: var(--healthcare-green);
+  margin-bottom: 15px;
+}
+.healthcare-service-invitation .healthcare-text-link {
+  margin-top: 10px;
+}
+.healthcare-person {
+  padding: 64px 0;
+}
+.healthcare-person-panel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: #edf2ea;
+  border-radius: 14px;
+  overflow: hidden;
+}
+.healthcare-person-photo {
+  min-height: 390px;
+}
+.healthcare-person-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.healthcare-person-copy {
+  padding: 40px;
+}
+.healthcare-person-copy h3 {
+  margin: 14px 0 18px;
+  font-size: clamp(1.9rem, 2.8vw, 2.5rem);
+}
+.healthcare-person-copy > p {
+  font-size: 17px;
+}
+.healthcare-person-copy ul {
+  margin-top: 23px;
+}
+.healthcare-person-copy li {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid #d8e0d1;
+  font-size: 15px;
+  line-height: 1.6;
+}
+.healthcare-person-copy li:last-child {
+  border: 0;
+  padding-bottom: 0;
+}
+.healthcare-person-copy li svg {
+  flex-shrink: 0;
+  color: var(--healthcare-green);
+}
+.healthcare-journey {
+  padding: 0 0 62px;
+}
+.healthcare-timeline {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  padding-top: 18px;
+}
+.healthcare-timeline li {
+  position: relative;
+  border-top: 1px solid #acbfa6;
+  padding: 30px 20px 0 0;
+}
+.healthcare-timeline-dot {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  top: -36px;
+  left: 0;
+  border-radius: 50%;
+  background: var(--healthcare-green);
+  box-shadow: 0 0 0 6px #fffdfa;
+}
+.healthcare-timeline li > div {
+  position: relative;
+}
+.healthcare-timeline h4 {
+  font-size: 22px;
+  margin: 12px 0 8px;
+}
+.healthcare-timeline p {
+  font-size: 15px;
+}
+.healthcare-gallery {
+  padding-bottom: 45px;
+}
+.healthcare-gallery .healthcare-section-heading > div > p {
+  max-width: 610px;
+  font-size: 17px;
+  margin-top: 15px;
+}
+.healthcare-gallery .healthcare-text-link {
+  flex-shrink: 0;
+}
+.healthcare-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+.healthcare-gallery-link {
+  display: block;
+}
+.healthcare-gallery-link > div {
+  position: relative;
+  aspect-ratio: 1.2;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #e4e8df;
+}
+.healthcare-gallery-link img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 400ms;
+}
+.healthcare-gallery-link:hover img {
+  transform: scale(1.035);
+}
+.healthcare-gallery-link > div > span {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  right: 13px;
+  bottom: 13px;
+  width: 37px;
+  height: 37px;
+  background: #fffdf7;
+  color: var(--healthcare-dark);
+  border-radius: 50%;
+}
+.healthcare-gallery-link > span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 16px 0;
+  font-size: 15px;
+  font-weight: 500;
+  border-bottom: 1px solid #dfe3d8;
+}
+.healthcare-gallery-link > span > svg {
+  flex-shrink: 0;
+}
+.healthcare-gallery-note {
+  margin-top: 20px;
+  font-size: 13px;
+}
+.healthcare-future {
+  padding-bottom: 26px;
+}
+.healthcare-future-panel {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  align-items: center;
+  gap: 45px;
+  padding: 32px 0;
+  border-block: 1px solid #dfe3d8;
+}
+.healthcare-future-panel h3 {
+  font-size: 32px;
+  margin: 12px 0 17px;
+}
+.healthcare-future-panel p {
+  font-size: 17px;
+}
+@keyframes healthcare-line {
+  from {
+    transform: scaleX(0.65);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@media (max-width: 1023px) {
+  .healthcare-hero-grid {
+    gap: 32px;
+  }
+  .healthcare-hero-photo {
+    aspect-ratio: 0.9;
+    border-top-left-radius: 65px;
+  }
+  .healthcare-hero-photo figcaption {
+    font-size: 19px;
+    left: 20px;
+    right: 18px;
+    bottom: 20px;
+  }
+  .healthcare-hero-photo figcaption > svg {
+    display: none;
+  }
+  .healthcare-story-grid {
+    gap: 35px;
+  }
+  .healthcare-purpose-card {
+    padding: 28px;
+  }
+  .healthcare-services-grid {
+    gap: 24px;
+  }
+  .healthcare-person-copy {
+    padding: 30px;
+  }
+  .healthcare-timeline li {
+    padding-right: 13px;
+  }
+  .healthcare-timeline h4 {
+    font-size: 20px;
+  }
+  .healthcare-future-panel {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}
+@media (max-width: 767px) {
+  .program-page-healthcare .program-category-heading {
+    gap: 15px;
+    padding: 25px 0;
+  }
+  .program-page-healthcare .program-category-heading h1 {
+    font-size: 2.6rem;
+  }
+  .program-page-healthcare .program-project-tabs {
+    gap: 14px;
+  }
+  .program-page-healthcare .program-project-tab {
+    gap: 8px;
+    padding: 13px 4px;
+    min-height: 78px;
+  }
+  .healthcare-tab-label strong {
+    font-size: 15px;
+  }
+  .healthcare-tab-label small {
+    font-size: 12px;
+  }
+  .program-page-healthcare .program-tab-dot {
+    display: none;
+  }
+  .healthcare-hero {
+    padding-top: 30px;
+  }
+  .healthcare-hero-grid {
+    grid-template-columns: 1fr;
+    gap: 29px;
+  }
+  .healthcare-project .healthcare-hero-copy h2 {
+    font-size: clamp(2.7rem, 10vw, 3.6rem);
+  }
+  .healthcare-hero-copy .healthcare-tagline {
+    font-size: 24px;
+  }
+  .healthcare-introduction,
+  .healthcare-story-copy,
+  .healthcare-purpose-card p {
+    font-size: 17px;
+  }
+  .healthcare-hero-photo {
+    aspect-ratio: 1.25;
+    border-top-left-radius: 65px;
+  }
+  .healthcare-project-home-care .healthcare-hero-photo {
+    aspect-ratio: 1;
+    justify-self: start;
+    max-width: 100%;
+  }
+  .healthcare-highlights {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-top: 28px;
+    padding: 23px 0;
+  }
+  .healthcare-highlights li {
+    font-size: 14px;
+  }
+  .healthcare-foundation,
+  .healthcare-services {
+    padding: 44px 0;
+  }
+  .healthcare-story-grid {
+    grid-template-columns: 1fr;
+    gap: 23px;
+  }
+  .healthcare-heading-line {
+    margin-top: 22px;
+  }
+  .healthcare-purpose-grid {
+    grid-template-columns: 1fr;
+    gap: 17px;
+    margin-top: 28px;
+  }
+  .healthcare-purpose-card {
+    padding: 28px;
+  }
+  .healthcare-values {
+    flex-direction: column;
+    gap: 13px;
+  }
+  .healthcare-values ul {
+    gap: 10px 18px;
+  }
+  .healthcare-section-heading {
+    flex-direction: column;
+    align-items: start;
+    gap: 18px;
+    margin-bottom: 28px;
+  }
+  .healthcare-section-heading > p {
+    max-width: 520px;
+  }
+  .healthcare-services-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .healthcare-service {
+    padding: 24px 0;
+  }
+  .healthcare-service-invitation {
+    padding: 27px;
+  }
+  .healthcare-person {
+    padding: 42px 0;
+  }
+  .healthcare-person-panel {
+    grid-template-columns: 1fr;
+  }
+  .healthcare-person-photo {
+    min-height: 0;
+    aspect-ratio: 1.3;
+  }
+  .healthcare-person-copy {
+    padding: 28px;
+  }
+  .healthcare-person-copy h3 {
+    font-size: 32px;
+  }
+  .healthcare-journey {
+    padding-bottom: 44px;
+  }
+  .healthcare-timeline {
+    grid-template-columns: 1fr;
+    padding-top: 0;
+    margin-left: 6px;
+  }
+  .healthcare-timeline li {
+    border-top: 0;
+    border-left: 1px solid #acbfa6;
+    padding: 0 0 26px 28px;
+  }
+  .healthcare-timeline li:last-child {
+    padding-bottom: 0;
+  }
+  .healthcare-timeline-dot {
+    top: 7px;
+    left: -34px;
+  }
+  .healthcare-timeline h4 {
+    font-size: 24px;
+    margin-top: 6px;
+  }
+  .healthcare-gallery {
+    padding-bottom: 35px;
+  }
+  .healthcare-gallery-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .healthcare-gallery-link > div {
+    aspect-ratio: 1.4;
+  }
+  .healthcare-future-panel {
+    padding: 26px 0;
+  }
+  .program-page-healthcare .program-other-project {
+    padding: 15px 0 35px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .healthcare-button,
+  .healthcare-gallery-link img {
+    transition: none;
+  }
+  .healthcare-button:hover,
+  .healthcare-gallery-link:hover img {
+    transform: none;
+  }
+}

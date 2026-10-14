@@ -205,7 +205,7 @@ export function ProjectImpact({ impact = [] }) {
           variants={staggerContainer}
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
+          viewport={{ once: true, margin: "-100px 0px" }}
           className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8"
         >
           {stats.map((fact, i) => {

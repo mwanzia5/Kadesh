@@ -1,0 +1,790 @@
+/* Each category has a recognisable palette; structure and motion stay consistent. */
+.program-page-education {
+  --category-accent: #345f96;
+  --category-deep: #213f6a;
+  --category-tint: #dce7f6;
+  --category-light: #edf3fb;
+  --category-line: #b8cce5;
+  --category-rgb: 52, 95, 150;
+  --education-accent: var(--category-accent);
+  --education-paper: #e6eef9;
+}
+.program-page-healthcare {
+  --category-accent: #326a53;
+  --category-deep: #1e5142;
+  --category-tint: #d7e7d9;
+  --category-light: #eaf2e9;
+  --category-line: #accbb5;
+  --category-rgb: 50, 106, 83;
+  --healthcare-paper: var(--category-light);
+  --healthcare-green: var(--category-accent);
+  --healthcare-dark: var(--category-deep);
+}
+.program-page-social-development {
+  --category-accent: #a15731;
+  --category-deep: #793f29;
+  --category-tint: #f1dcc8;
+  --category-light: #faf0e4;
+  --category-line: #dabb9d;
+  --category-rgb: 161, 87, 49;
+}
+.program-page.program-tabbed-page {
+  --program-accent: var(--category-accent);
+  --program-tint: var(--category-light);
+}
+.program-page.program-tabbed-page .program-category-intro {
+  background: var(--category-tint);
+  border-top: 1px solid #ffffff50;
+  border-bottom: 1px solid var(--category-line);
+}
+.program-page.program-tabbed-page .program-category-orbit {
+  width: 460px;
+  height: 460px;
+  top: -215px;
+  right: -70px;
+  background: rgba(var(--category-rgb), 0.035);
+  border-color: rgba(var(--category-rgb), 0.2);
+  box-shadow: 0 0 0 36px rgba(var(--category-rgb), 0.035);
+}
+.program-page.program-tabbed-page .program-category-heading {
+  padding: 28px 0 32px;
+  gap: 60px;
+}
+.program-page.program-tabbed-page .program-category-heading h1 {
+  font-size: clamp(2.5rem, 4vw, 3.5rem);
+  font-weight: 500;
+  margin: 10px 0 7px;
+}
+.program-page.program-tabbed-page
+  .program-category-heading
+  .program-category-tagline {
+  font-size: 19px;
+}
+.program-page.program-tabbed-page .program-category-description {
+  font-size: 17px;
+}
+.program-page.program-tabbed-page .program-eyebrow {
+  color: var(--category-accent);
+}
+
+/* Photo tabs make the two projects visible destinations, with a clear selection. */
+.program-project-tabs-anchor {
+  scroll-margin-top: var(--site-header-height, 80px);
+}
+.program-page.program-tabbed-page .program-project-tabs-bar {
+  background: #fffdfaf5;
+  border-bottom: 1px solid var(--category-line);
+}
+.program-page.program-tabbed-page .program-project-tabs {
+  gap: 20px;
+  padding: 15px 0;
+}
+.program-page.program-tabbed-page .program-project-tab {
+  position: relative;
+  min-width: 0;
+  min-height: 94px;
+  padding: 12px 18px 12px 12px;
+  gap: 17px;
+  border: 1px solid #dddeda;
+  border-radius: 14px;
+  background: white;
+  color: var(--program-ink);
+  box-shadow: 0 2px 6px #0d1b3e03;
+  transition:
+    background 180ms,
+    border-color 180ms,
+    box-shadow 180ms;
+}
+.program-page.program-tabbed-page .program-project-tab:hover {
+  background: var(--category-light);
+  border-color: var(--category-line);
+}
+.program-page.program-tabbed-page .program-project-tab[aria-selected="true"] {
+  background: var(--category-tint);
+  border: 1px solid var(--category-accent);
+  box-shadow:
+    inset 4px 0 0 var(--category-accent),
+    0 4px 12px rgba(var(--category-rgb), 0.08);
+}
+.program-tab-thumbnail {
+  position: relative;
+  display: block;
+  flex: 0 0 70px;
+  height: 66px;
+}
+.program-tab-thumbnail img {
+  width: 100%;
+  height: 100%;
+  border-radius: 9px;
+  object-fit: cover;
+}
+.program-tab-thumbnail > span {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  right: -5px;
+  bottom: -5px;
+  width: 25px;
+  height: 25px;
+  border: 2px solid white;
+  border-radius: 50%;
+  color: white;
+  background: var(--category-accent);
+}
+.program-tab-label {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.program-tab-label strong {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.program-tab-label small {
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #536077;
+}
+.program-tab-state {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  color: var(--category-accent);
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+}
+.program-project-tab[aria-selected="true"] .program-tab-state {
+  color: white;
+  background: var(--category-accent);
+}
+.program-page.program-tabbed-page .program-other-project {
+  background: #fffdfa;
+  padding: 24px 0 54px;
+}
+.program-page.program-tabbed-page .program-other-project button {
+  background: var(--category-light);
+  border-color: var(--category-line);
+  border-radius: 12px;
+}
+.program-page.program-tabbed-page .program-other-project small {
+  font-size: 14px;
+}
+.program-page.program-tabbed-page .program-support {
+  background: var(--category-deep);
+  border-radius: 16px;
+}
+.program-page.program-tabbed-page .program-support .program-eyebrow {
+  color: white;
+  opacity: 0.8;
+}
+.program-page.program-tabbed-page .program-support p {
+  font-size: 17px;
+}
+.program-page.program-tabbed-page .program-support .program-button,
+.program-page.program-tabbed-page .program-support-contact {
+  font-size: 15px;
+}
+
+/* Bring the existing education and healthcare sections into their category palettes. */
+.education-hero {
+  background: var(--category-light);
+}
+.education-hero::before,
+.education-hero::after,
+.education-foundation::before {
+  content: none;
+}
+.education-learning {
+  background: #e6eef9;
+  border-color: var(--category-line);
+}
+.education-learning::before,
+.education-approach::before {
+  border-color: var(--category-line);
+  outline-color: #b8cce550;
+  background: #dce7f629;
+}
+.education-vision {
+  background: var(--category-deep);
+}
+.education-vision > svg,
+.education-vision .education-eyebrow {
+  color: #c5dcfa;
+}
+.education-mission {
+  background: var(--category-tint);
+  border-color: var(--category-line);
+}
+.education-care-panel {
+  background: #e6eef9;
+}
+.education-care-panel .education-eyebrow,
+.education-care-list > div > span {
+  color: var(--category-accent);
+}
+.education-care-panel::before {
+  border-color: var(--category-line);
+  outline-color: #b8cce566;
+}
+.education-care-list > div,
+.education-highlights,
+.education-learning-item {
+  border-color: var(--category-line);
+}
+.education-button {
+  background: var(--category-deep);
+}
+.education-location > span {
+  background: var(--category-line);
+}
+.education-step {
+  color: var(--category-accent);
+}
+.healthcare-hero {
+  background: var(--category-light);
+}
+.healthcare-services {
+  background: #e1ece2;
+  border-color: var(--category-line);
+}
+.healthcare-mission {
+  background: var(--category-tint);
+  border-color: var(--category-line);
+}
+.healthcare-person-panel {
+  background: #dce9dc;
+}
+.healthcare-service-invitation {
+  background: #cfe1ce;
+  border-color: #aac5aa;
+}
+.healthcare-highlights,
+.healthcare-service,
+.healthcare-person-copy li {
+  border-color: var(--category-line);
+}
+
+/* One decorative system, with a user-controlled pause and reduced-motion support. */
+.project-motif {
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  width: 700px;
+  height: 650px;
+  right: -230px;
+  top: -130px;
+}
+.project-orbit {
+  position: absolute;
+  border-radius: 50%;
+}
+.project-orbit-outer {
+  width: 570px;
+  height: 570px;
+  top: 0;
+  right: 0;
+  border: 1px solid rgba(var(--category-rgb), 0.22);
+  outline: 1px solid rgba(var(--category-rgb), 0.13);
+  outline-offset: 35px;
+  background: rgba(var(--category-rgb), 0.045);
+  animation: project-float 18s ease-in-out infinite alternate;
+}
+.project-orbit-inner {
+  width: 400px;
+  height: 400px;
+  top: 85px;
+  right: 85px;
+  border: 1px dashed rgba(var(--category-rgb), 0.2);
+  animation: project-orbit 90s linear infinite;
+}
+.project-motif svg {
+  position: absolute;
+  width: 560px;
+  right: 30px;
+  bottom: 0;
+  overflow: visible;
+}
+.project-motif path {
+  stroke: var(--category-accent);
+  stroke-opacity: 0.3;
+  stroke-width: 1;
+  stroke-dasharray: 8 10;
+  animation: project-path 35s linear infinite;
+}
+.project-motif-left {
+  right: auto;
+  left: -540px;
+  top: 80px;
+  transform: rotate(165deg);
+}
+.project-heading-line,
+.healthcare-heading-line {
+  display: block;
+  width: 90px;
+  height: 1px;
+  margin-top: 26px;
+  background: var(--category-accent);
+  transform-origin: left;
+  animation: project-line 8s ease-in-out infinite alternate;
+}
+.project-marquee {
+  display: flex;
+  align-items: stretch;
+  gap: 20px;
+  overflow: hidden;
+  color: #fff9f1;
+  background: var(--category-deep);
+}
+.project-marquee-window {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 4%,
+    #000 96%,
+    transparent
+  );
+}
+.project-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: project-scroll 44s linear infinite;
+}
+.project-marquee-group {
+  display: flex;
+  flex-shrink: 0;
+}
+.project-marquee-group > span {
+  display: flex;
+  align-items: center;
+  gap: 50px;
+  padding: 22px 25px;
+  white-space: nowrap;
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 27px;
+  font-weight: 400;
+}
+.project-marquee-group svg {
+  opacity: 0.65;
+}
+.project-motion-toggle {
+  display: inline-flex;
+  align-items: center;
+  align-self: center;
+  flex-shrink: 0;
+  gap: 8px;
+  padding: 12px 15px;
+  margin-right: 26px;
+  border: 1px solid #ffffff50;
+  border-radius: 999px;
+  color: white;
+  font-size: 12px;
+  line-height: 1.3;
+}
+.project-motion-toggle:hover {
+  background: #ffffff15;
+}
+.project-motion-toggle:focus-visible {
+  outline: 2px solid white;
+  outline-offset: 3px;
+}
+.project-marquee:hover .project-marquee-track,
+.project-marquee:focus-within .project-marquee-track {
+  animation-play-state: paused;
+}
+.project-surface[data-motion-paused="true"] .project-marquee-track,
+.project-surface[data-motion-paused="true"] .project-orbit,
+.project-surface[data-motion-paused="true"] .project-motif path,
+.project-surface[data-motion-paused="true"] .project-heading-line,
+.project-surface[data-motion-paused="true"] .healthcare-heading-line {
+  animation-play-state: paused;
+}
+@keyframes project-scroll {
+  to {
+    transform: translateX(-50%);
+  }
+}
+@keyframes project-float {
+  to {
+    transform: translate(-18px, 28px);
+  }
+}
+@keyframes project-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes project-path {
+  to {
+    stroke-dashoffset: -180;
+  }
+}
+@keyframes project-line {
+  from {
+    transform: scaleX(0.65);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* Document cards are distinctive downloads with a clear action, not quiet text links. */
+.project-document {
+  display: flex;
+  align-items: start;
+  gap: 20px;
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+  padding: 28px;
+  border-radius: 14px;
+  border: 1px solid var(--category-accent);
+  border-top: 4px solid var(--category-accent);
+  background: var(--category-tint);
+  box-shadow: 0 8px 22px rgba(var(--category-rgb), 0.08);
+  scroll-margin-top: 250px;
+  transition:
+    transform 200ms,
+    box-shadow 200ms;
+}
+.project-document::after {
+  content: "";
+  position: absolute;
+  width: 160px;
+  height: 160px;
+  right: -85px;
+  top: -60px;
+  border-radius: 50%;
+  border: 1px solid var(--category-line);
+  outline: 1px solid var(--category-line);
+  outline-offset: 20px;
+  z-index: -1;
+}
+.project-document:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(var(--category-rgb), 0.15);
+}
+.project-document-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  width: 62px;
+  padding: 17px 0 12px;
+  border-radius: 7px 18px 7px 7px;
+  background: white;
+  color: var(--category-accent);
+  box-shadow: 0 4px 12px rgba(var(--category-rgb), 0.08);
+}
+.project-document-icon > span {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+}
+.project-document-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+}
+.project-document-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--category-accent);
+}
+.project-document strong {
+  display: block;
+  margin-top: 7px;
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 26px;
+  font-weight: 500;
+  line-height: 1.15;
+}
+.project-document-description {
+  display: block;
+  font-size: 14px;
+  line-height: 1.65;
+  margin-top: 11px;
+  color: #435168;
+}
+.project-document small {
+  margin-top: 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #536077;
+}
+.project-document-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 20px;
+  padding: 11px 17px;
+  border-radius: 999px;
+  background: var(--category-deep);
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+}
+.project-document-shortcut {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 14px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid var(--category-line);
+  color: var(--category-accent);
+  font-size: 13px;
+  font-weight: 600;
+}
+.project-document-shortcut:hover {
+  border-color: var(--category-accent);
+}
+.education-future-panel,
+.healthcare-future-panel {
+  grid-template-columns: 1.05fr 0.95fr;
+}
+
+@media (max-width: 1023px) {
+  .program-page.program-tabbed-page .program-project-tab {
+    gap: 14px;
+  }
+  .program-tab-thumbnail {
+    flex-basis: 60px;
+    height: 60px;
+  }
+  .program-tab-state {
+    display: none;
+  }
+  .education-future-panel,
+  .healthcare-future-panel {
+    grid-template-columns: 1fr;
+  }
+  .project-document {
+    max-width: 560px;
+  }
+}
+@media (max-width: 767px) {
+  .program-page.program-tabbed-page .program-category-heading {
+    gap: 15px;
+    padding: 25px 0;
+  }
+  .program-page.program-tabbed-page .program-category-heading h1 {
+    font-size: 2.6rem;
+  }
+  .program-page.program-tabbed-page .program-project-tabs {
+    gap: 10px;
+    padding: 12px 0;
+  }
+  .program-page.program-tabbed-page .program-project-tab {
+    gap: 11px;
+    padding: 10px;
+    min-height: 84px;
+    border-radius: 11px;
+  }
+  .program-tab-thumbnail {
+    flex-basis: 48px;
+    height: 50px;
+  }
+  .program-tab-thumbnail > span {
+    width: 21px;
+    height: 21px;
+  }
+  .program-tab-thumbnail svg {
+    width: 12px;
+    height: 12px;
+  }
+  .program-tab-label strong {
+    font-size: 15px;
+  }
+  .program-tab-label small {
+    font-size: 12px;
+  }
+  .project-marquee {
+    gap: 0;
+  }
+  .project-marquee-group > span {
+    padding: 20px;
+    gap: 40px;
+    font-size: 24px;
+  }
+  .project-motion-toggle {
+    margin-right: 15px;
+    padding: 11px;
+  }
+  .project-motion-toggle span {
+    display: none;
+  }
+  .project-motif {
+    right: -400px;
+    top: -30px;
+  }
+  .project-motif-left {
+    left: -620px;
+    right: auto;
+    top: 70px;
+  }
+  .project-document {
+    gap: 16px;
+    padding: 23px;
+  }
+  .project-document-icon {
+    width: 49px;
+    padding: 15px 0 11px;
+  }
+  .project-document strong {
+    font-size: 25px;
+  }
+  .program-page.program-tabbed-page .program-other-project {
+    padding: 15px 0 35px;
+  }
+}
+@media (max-width: 479px) {
+  .project-document {
+    padding: 20px;
+    gap: 12px;
+  }
+  .project-document-icon {
+    width: 40px;
+  }
+  .project-document-icon > svg {
+    width: 25px;
+  }
+  .project-document-action {
+    padding: 11px 14px;
+    gap: 9px;
+    white-space: nowrap;
+  }
+  .program-tab-label small {
+    display: none;
+  }
+  .program-tab-thumbnail {
+    flex-basis: 38px;
+    height: 42px;
+  }
+  .program-page.program-tabbed-page .program-project-tab {
+    min-height: 76px;
+    gap: 9px;
+    padding: 9px;
+  }
+  .program-tab-label strong {
+    font-size: 14px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .project-marquee-track,
+  .project-orbit,
+  .project-motif path,
+  .project-heading-line,
+  .healthcare-heading-line {
+    animation: none;
+  }
+  .project-marquee {
+    padding: 15px 20px;
+  }
+  .project-marquee-window {
+    mask-image: none;
+  }
+  .project-marquee-track {
+    width: auto;
+  }
+  .project-marquee-group {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .project-marquee-group > span {
+    white-space: normal;
+    font-size: 20px;
+    gap: 20px;
+    padding: 7px 10px;
+  }
+  .project-marquee-group:nth-child(2),
+  .project-motion-toggle {
+    display: none;
+  }
+  .project-document {
+    transition: none;
+  }
+  .project-document:hover {
+    transform: none;
+  }
+}
+
+/* =========================================================
+   One palette for every project page, matching the
+   "Three Pathways" circles on the home page:
+   Education = blue, Healthcare = green, Social Development = gold.
+   Two-class selectors so these win over older per-page values.
+   ========================================================= */
+.program-page.program-page-education {
+  --category-accent: #255dab;
+  --category-deep: #1b4580;
+  --category-tint: #e4eefc;
+  --category-light: #eef5ff;
+  --category-line: #c7daf3;
+  --category-rgb: 37, 93, 171;
+  --education-accent: #255dab;
+  --education-paper: #eef5ff;
+  --program-accent: #255dab;
+  --program-tint: #eef5ff;
+}
+.program-page.program-page-healthcare {
+  --category-accent: #28694f;
+  --category-deep: #1e5140;
+  --category-tint: #e3f2ea;
+  --category-light: #edf7f2;
+  --category-line: #cbe2d5;
+  --category-rgb: 40, 105, 79;
+  --healthcare-paper: #edf7f2;
+  --healthcare-green: #28694f;
+  --healthcare-dark: #1e5140;
+  --program-accent: #28694f;
+  --program-tint: #edf7f2;
+}
+.program-page.program-page-social-development {
+  --category-accent: #8b5a24;
+  --category-deep: #6b441b;
+  --category-tint: #faeedc;
+  --category-light: #fcf4e8;
+  --category-line: #ead8bc;
+  --category-rgb: 139, 90, 36;
+  --program-accent: #8b5a24;
+  --program-tint: #fcf4e8;
+}
+
+/* Spots that used fixed colours outside the palette */
+.program-page-education .education-care-panel .education-eyebrow,
+.program-page-education .education-care-list > div > span {
+  color: var(--category-accent);
+}
+.program-page-education .education-button:hover {
+  background: var(--category-deep);
+}
+.program-page-education .program-support .program-eyebrow {
+  color: var(--category-line);
+}
+.program-page-healthcare .healthcare-timeline li {
+  border-color: var(--category-line);
+}
+.program-page-social-development .social-vision .social-eyebrow,
+.program-page-social-development .social-vision > svg {
+  color: var(--category-line);
+}
+.program-page-social-development .social-vision p {
+  color: var(--category-light);
+}
+.program-page-healthcare .healthcare-vision .healthcare-eyebrow,
+.program-page-healthcare .healthcare-vision > svg {
+  color: var(--category-line);
+}
+.program-page-healthcare .healthcare-service-top span {
+  color: rgba(var(--category-rgb), 0.6);
+}

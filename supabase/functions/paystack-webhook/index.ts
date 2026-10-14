@@ -16,7 +16,7 @@
 //   https://<project-ref>.supabase.co/functions/v1/paystack-webhook
 
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { recordVerifiedTransaction } from "../verify-paystack-transaction/index.ts";
+import { recordVerifiedTransaction } from "../_shared/record-verified-transaction.js";
 
 // Paystack signs the raw request body with your secret key (HMAC-SHA512) and
 // sends the hex digest in the x-paystack-signature header. Verifying this is
@@ -35,7 +35,13 @@ async function isValidSignature(rawBody: string, signature: string | null, secre
   const expected = Array.from(new Uint8Array(sigBuffer))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
-  return expected === signature;
+  // Constant-time comparison so the signature can't be guessed by timing.
+  if (expected.length !== signature.length) return false;
+  let diff = 0;
+  for (let i = 0; i < expected.length; i++) {
+    diff |= expected.charCodeAt(i) ^ signature.charCodeAt(i);
+  }
+  return diff === 0;
 }
 
 Deno.serve(async (req) => {

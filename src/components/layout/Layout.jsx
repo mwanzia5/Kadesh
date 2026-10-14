@@ -15,7 +15,9 @@ export default function Layout({ children }) {
       </a>
       <ScrollToTop />
       <Navbar />
-      <main id="main-content" className="flex-1 pt-20">{children}</main>
+      <main id="main-content" className="site-main flex-1">
+        {children}
+      </main>
       <Footer />
       <WhatsAppFAB />
       <NewsPopup />

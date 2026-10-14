@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Calendar, Tag, ArrowLeft, User, Clock, Loader2 } from "lucide-react";
 
 import PageTransition from "@/animations/PageTransition";
+import SEO from "@/components/ui/SEO";
 import Container from "@/components/ui/Container";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import { getNewsArticleById, getNews } from "@/services/news";
@@ -63,6 +64,7 @@ export default function NewsArticle() {
 
   return (
     <PageTransition>
+      <SEO title={article.title} />
       <section className="relative min-h-[40vh] flex items-end overflow-hidden bg-deep-navy">
         {article.image && (
           <div className="absolute inset-0">

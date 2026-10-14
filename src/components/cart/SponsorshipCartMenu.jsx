@@ -1,46 +1,49 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useId } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { UserPlus, Minus, Plus, X, Heart } from "lucide-react";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { HandHeart, Heart } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { useSponsorshipCart } from "@/context/SponsorshipCartContext";
-import SponsorshipAmountInput from "@/components/cart/SponsorshipAmountInput";
+import { SponsorshipCartSelection } from "./SponsorshipSelection";
+import { SPONSORSHIP_CHECKOUT } from "@/lib/sponsorship";
 import { captureEvent } from "@/lib/analytics";
 
-// Global sponsorship cart control in the navbar — the +human icon. Clicking
-// "Sponsor" on a child adds them here instead of jumping straight to the
-// donation page. The menu shows each child's photo/name and a +/− stepper to
-// set their sponsorship amount, then the running total, and one Donate button
-// that pays for all of them in a single checkout on the donation page.
-const round2 = (n) => Math.round(Number(n) * 100) / 100;
-const MAX_AMOUNT = 100000;
-const MIN_AMOUNT = 0.01;
+// Cart summary; support options and amounts are chosen at checkout.
 
-export default function SponsorshipCartMenu() {
-  const {
-    cartItems,
-    cartCount,
-    subtotal,
-    isCartOpen,
-    setItemAmount,
-    removeFromCart,
-    toggleCart,
-    closeCart,
-  } = useSponsorshipCart();
+export default function SponsorshipCartMenu({ onOpen }) {
+  const { cartItems, cartCount, subtotal, isCartOpen, toggleCart, closeCart } =
+    useSponsorshipCart();
   const ref = useRef(null);
+  const triggerRef = useRef(null);
+  const panelId = useId();
+  const reducedMotion = useReducedMotion();
   const { pathname, search } = useLocation();
+  const previousRoute = useRef(pathname + search);
 
   useEffect(() => {
     if (!isCartOpen) return;
     function handleClick(e) {
       if (ref.current && !ref.current.contains(e.target)) closeCart();
     }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
+    function handleKey(event) {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      event.preventDefault();
+      closeCart();
+      triggerRef.current?.focus();
+    }
+    document.addEventListener("pointerdown", handleClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("pointerdown", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
   }, [isCartOpen, closeCart]);
 
   useEffect(() => {
-    closeCart();
+    const route = pathname + search;
+    // Mounting inside the mobile drawer must preserve a cart opened by a page.
+    if (previousRoute.current !== route) closeCart();
+    previousRoute.current = route;
   }, [pathname, search, closeCart]);
 
   const checkout = () => {
@@ -54,12 +57,19 @@ export default function SponsorshipCartMenu() {
   return (
     <div className="relative" ref={ref}>
       <button
-        onClick={toggleCart}
+        ref={triggerRef}
+        type="button"
+        onClick={() => {
+          if (!isCartOpen) onOpen?.();
+          toggleCart();
+        }}
         aria-label="Sponsorship cart"
+        aria-expanded={isCartOpen}
+        aria-controls={panelId}
         title="Sponsorship cart"
         className="relative inline-flex items-center justify-center w-11 h-11 rounded-xl text-on-surface hover:text-vibrant-blue hover:bg-surface transition-colors"
       >
-        <UserPlus className="h-6 w-6" />
+        <HandHeart className="h-6 w-6" aria-hidden="true" />
         {cartCount > 0 && (
           <span className="absolute -top-1 -right-1 min-w-[1.125rem] h-[1.125rem] px-1 rounded-full bg-hope-orange text-white text-[0.68rem] font-bold flex items-center justify-center">
             {cartCount}
@@ -70,18 +80,19 @@ export default function SponsorshipCartMenu() {
       <AnimatePresence>
         {isCartOpen && (
           <motion.div
+            id={panelId}
             initial={{ opacity: 0, y: 8, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.98 }}
-            transition={{ duration: 0.15 }}
-            className="absolute right-0 top-full mt-2 w-[22rem] max-w-[calc(100vw-2rem)] max-lg:fixed max-lg:inset-x-3 max-lg:top-24 max-lg:mt-0 max-lg:w-auto max-lg:max-w-none bg-white rounded-xl border border-soft-accent shadow-xl z-40 overflow-hidden"
+            transition={{ duration: reducedMotion ? 0 : 0.15 }}
+            className="absolute right-0 top-full mt-2 w-[22rem] max-w-[calc(100vw-2rem)] max-lg:fixed max-lg:inset-x-3 max-lg:top-24 max-lg:mt-0 max-lg:w-auto max-lg:max-w-none bg-white rounded-xl border border-soft-accent shadow-xl z-40 max-h-[calc(100dvh-7rem)] overflow-y-auto"
           >
             <div className="px-4 py-3 border-b border-soft-accent/60 bg-cream/50">
               <p className="font-body text-sm font-semibold text-deep-navy">
                 Children to sponsor
               </p>
               <p className="font-body text-xs text-on-surface-variant">
-                Adjust each amount, then pay for all in one checkout
+                Review your children, then choose support options at checkout.
               </p>
             </div>
 
@@ -102,79 +113,16 @@ export default function SponsorshipCartMenu() {
                 </Button>
               </div>
             ) : (
-              <ul className="max-h-72 overflow-y-auto divide-y divide-soft-accent/40">
-                {cartItems.map((item) => (
-                  <li key={item.child_id} className="flex items-center gap-3 px-4 py-3">
-                    <div className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 bg-gradient-to-br from-vibrant-blue/15 to-hope-orange/15 flex items-center justify-center">
-                      {item.photo_url ? (
-                        <img
-                          src={item.photo_url}
-                          alt={item.first_name}
-                          loading="lazy"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <span className="font-display text-lg font-bold text-vibrant-blue/40">
-                          {(item.first_name || "?").charAt(0)}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      <p className="font-body text-sm font-medium text-deep-navy truncate">
-                        {item.first_name}
-                      </p>
-                      {item.location && (
-                        <p className="font-body text-xs text-on-surface-variant truncate">
-                          {item.location}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="flex items-center rounded-lg border border-soft-accent/70 overflow-hidden">
-                      <button
-                        onClick={() =>
-                          setItemAmount(
-                            item.child_id,
-                            Math.max(MIN_AMOUNT, round2(item.amount - 1))
-                          )
-                        }
-                        aria-label={`Decrease ${item.first_name}'s sponsorship amount`}
-                        className="p-1.5 text-on-surface-variant hover:text-vibrant-blue hover:bg-surface transition-colors"
-                      >
-                        <Minus className="h-3.5 w-3.5" />
-                      </button>
-                      <SponsorshipAmountInput
-                        value={item.amount}
-                        onCommit={(v) => setItemAmount(item.child_id, v)}
-                        min={MIN_AMOUNT}
-                        aria-label={`${item.first_name}'s sponsorship amount`}
-                        className="w-16 bg-transparent text-center font-body text-sm font-semibold text-deep-navy outline-none"
-                      />
-                      <button
-                        onClick={() =>
-                          setItemAmount(
-                            item.child_id,
-                            Math.min(MAX_AMOUNT, round2(item.amount + 1))
-                          )
-                        }
-                        aria-label={`Increase ${item.first_name}'s sponsorship amount`}
-                        className="p-1.5 text-on-surface-variant hover:text-vibrant-blue hover:bg-surface transition-colors"
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-
-                    <button
-                      onClick={() => removeFromCart(item.child_id)}
-                      aria-label={`Remove ${item.first_name} from cart`}
-                      className="text-on-surface-variant hover:text-hope-orange transition-colors"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              <div className="p-3">
+                <SponsorshipCartSelection compact />
+                <Link
+                  to="/sponsor-a-child"
+                  onClick={closeCart}
+                  className="mt-3 inline-block text-sm font-semibold text-blue-700 underline"
+                >
+                  Choose more children
+                </Link>
+              </div>
             )}
 
             <div className="p-4 border-t border-soft-accent/60">
@@ -190,13 +138,13 @@ export default function SponsorshipCartMenu() {
                 variant="lightblue"
                 size="sm"
                 as={Link}
-                to="/donate?purpose=sponsorship&cart=1"
+                to={SPONSORSHIP_CHECKOUT}
                 onClick={checkout}
                 className="w-full"
               >
                 {cartCount > 0
-                  ? `Donate $${subtotal.toLocaleString()}`
-                  : "Go to Donation Page"}
+                  ? `Continue sponsorship · $${subtotal.toLocaleString()}`
+                  : "Sponsorship checkout"}
               </Button>
             </div>
           </motion.div>

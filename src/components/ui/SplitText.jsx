@@ -1,4 +1,5 @@
 import { useRef, useEffect } from "react";
+import { useReducedMotion } from "framer-motion";
 import gsap from "gsap";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +13,7 @@ function SplitText({
   ...props
 }) {
   const containerRef = useRef(null);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -20,6 +22,10 @@ function SplitText({
     const chars = el.querySelectorAll(".split-char");
 
     if (chars.length === 0) return;
+    if (reduceMotion) {
+      gsap.set(chars, { clearProps: "all" });
+      return;
+    }
 
     const animation = gsap.fromTo(
       chars,
@@ -32,15 +38,19 @@ function SplitText({
         stagger,
         ease: "power3.out",
         clearProps: "all",
-      }
+      },
     );
 
     return () => animation.kill();
-  }, [delay, duration, stagger]);
+  }, [text, delay, duration, stagger, reduceMotion]);
 
   if (text) {
     return (
-      <span ref={containerRef} className={cn("inline-block", className)} {...props}>
+      <span
+        ref={containerRef}
+        className={cn("inline-block", className)}
+        {...props}
+      >
         {text.split("").map((char, i) => (
           <span key={i} className="split-char inline-block">
             {char === " " ? "\u00A0" : char}
@@ -51,7 +61,11 @@ function SplitText({
   }
 
   return (
-    <span ref={containerRef} className={cn("inline-block", className)} {...props}>
+    <span
+      ref={containerRef}
+      className={cn("inline-block", className)}
+      {...props}
+    >
       {children}
     </span>
   );

@@ -1,5 +1,9 @@
 import { useState } from "react";
-import { useParams, Link, useSearchParams, useNavigate } from "react-router-dom";
+import {
+  useParams,
+  Link,
+  useNavigate,
+} from "react-router-dom";
 import {
   Heart,
   MapPin,
@@ -7,25 +11,25 @@ import {
   ArrowLeft,
   Loader2,
   LogIn,
-  CheckCircle2,
 } from "lucide-react";
 
 import PageTransition from "@/animations/PageTransition";
+import SEO from "@/components/ui/SEO";
 import Container from "@/components/ui/Container";
 import Section from "@/components/ui/Section";
 import Button from "@/components/ui/Button";
 import OptimizedImage from "@/components/ui/OptimizedImage";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import { useChild } from "@/hooks/useChildren";
-import {
-  useSponsorWithCredit,
-  useSponsorshipCreditBalance,
-} from "@/hooks/useSponsorships";
-import { isInsufficientCreditError } from "@/services/sponsorships";
-import CreditShortfallNotice from "@/components/CreditShortfallNotice";
 import { useDonorAuth } from "@/context/DonorAuthContext";
 import { useSponsorshipCart } from "@/context/SponsorshipCartContext";
 import { cn } from "@/lib/utils";
+import { useAnnualFunding } from "@/hooks/useAnnualFunding";
+import { annualChildStatus, getSponsorshipOption } from "@/lib/sponsorship";
+import {
+  MonthlyAmountSelect,
+  SponsorshipPlanSelect,
+} from "@/components/cart/SponsorshipSelection";
 
 function StatusBadge({ status }) {
   const styles = {
@@ -37,7 +41,7 @@ function StatusBadge({ status }) {
     <span
       className={cn(
         "inline-block px-4 py-1.5 rounded-full font-body text-sm font-semibold capitalize",
-        styles[status] || "bg-gray-100 text-gray-600"
+        styles[status] || "bg-gray-100 text-gray-600",
       )}
     >
       {status}
@@ -47,79 +51,23 @@ function StatusBadge({ status }) {
 
 export default function ChildProfile() {
   const { id } = useParams();
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useDonorAuth();
+  const { user } = useDonorAuth();
   const { addToCart, openCart } = useSponsorshipCart();
+  const funding = useAnnualFunding();
   const { data, isLoading, error } = useChild(id);
 
-  const child = data?.data;
+  const child = data?.data
+    ? {
+        ...data.data,
+        sponsorship_status: annualChildStatus(data.data, funding.data?.[id]),
+      }
+    : null;
 
-  const sponsorWithCredit = useSponsorWithCredit();
-  const [creditError, setCreditError] = useState(null);
-  // Amount the donor asked for when it exceeded their credit balance, so the
-  // shortfall notice can name both figures.
-  const [creditShortfall, setCreditShortfall] = useState(null);
-  const [creditAmount, setCreditAmount] = useState("");
-  const [creditPlan, setCreditPlan] = useState("one-time");
-
-  // Spendable sponsorship credit, owned by the server. This used to be a count
-  // of cancelled rows, which said nothing about how much money was available.
-  const { data: creditBalance = 0 } = useSponsorshipCreditBalance(user?.id);
-  const creditRemaining = Number(creditBalance) || 0;
-  const hasCredit = creditRemaining > 0;
-
-  const handleSponsorWithCredit = async () => {
-    setCreditError(null);
-    const isMonthly = creditPlan === "monthly";
-    const amount = creditAmount.trim() === "" ? null : Number(creditAmount);
-    if (amount !== null && (Number.isNaN(amount) || amount <= 0)) {
-      setCreditError("Please enter a valid sponsorship amount greater than zero.");
-      return;
-    }
-    // Sponsoring with credit draws the amount down, so it can't exceed the
-    // balance. The server refuses anything larger; catching it here avoids a
-    // pointless round-trip and points the donor at the donations page.
-    if (amount !== null && amount > creditRemaining) {
-      setCreditError(null);
-      setCreditShortfall(amount);
-      return;
-    }
-    setCreditShortfall(null);
-    if (
-      !confirm(
-        `Sponsor ${child.first_name} ${
-          isMonthly ? "monthly" : "one-time"
-        } using your existing sponsorship donation of $${creditRemaining.toLocaleString()}? ${
-          isMonthly
-            ? "Your credit covers the first month, then recurring monthly support begins."
-            : "No additional payment will be taken."
-        }`
-      )
-    ) {
-      return;
-    }
-    // A one-time slot carries no monthly figure, so switching to monthly needs
-    // an amount — the RPC rejects it otherwise. Catch it here to avoid a
-    // pointless round-trip and to make the requirement obvious.
-    if (isMonthly && amount === null) {
-      setCreditError(
-        "Enter the monthly amount to reactivate as a monthly sponsorship."
-      );
-      return;
-    }
-    try {
-      await sponsorWithCredit.mutateAsync({
-        childId: child.id,
-        amount,
-        plan: creditPlan,
-      });
-    } catch (err) {
-      setCreditError(
-        err?.message || "Could not sponsor this child. Please try again."
-      );
-    }
-  };
+  // How the donor wants to support this child before adding to the cart.
+  const [giveMode, setGiveMode] = useState("one-time");
+  const [annualPlan, setAnnualPlan] = useState("education");
+  const [monthlyAmount, setMonthlyAmount] = useState(25);
 
   if (isLoading) {
     return (
@@ -149,33 +97,17 @@ export default function ChildProfile() {
 
   return (
     <PageTransition>
-      {/* Hero */}
-      <section className="relative min-h-[50vh] flex items-end overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-deep-navy via-vibrant-blue/90 to-deep-navy">
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-20 left-[10%] w-64 h-64 rounded-full bg-hope-orange/30 blur-3xl" />
-            <div className="absolute bottom-10 right-[15%] w-80 h-80 rounded-full bg-vibrant-blue/30 blur-3xl" />
-          </div>
-        </div>
-
-        <div className="relative z-10 w-full">
-          <Container>
-            <div className="pt-32 pb-16">
-              <Link
-                to="/sponsor-a-child"
-                className="inline-flex items-center gap-2 font-body text-sm font-medium text-white/60 hover:text-white transition-colors mb-8"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Back to Sponsor a Child
-              </Link>
-            </div>
-          </Container>
-        </div>
-      </section>
-
+      <SEO title="Sponsor a Child" />
       {/* Profile */}
-      <Section background="white" className="pt-0 pb-16 -mt-16 relative z-10">
+      <Section background="white" className="relative z-10 pt-5 pb-16 sm:pt-6 lg:pt-8">
         <Container>
+          <Link
+            to="/sponsor-a-child"
+            className="mb-4 inline-flex items-center gap-2 font-body text-sm font-semibold text-deep-navy transition-colors hover:text-[#1e5bab] sm:mb-6"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Sponsor a Child
+          </Link>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
             {/* Photo + quick info — sticks in view while the story scrolls */}
             <ScrollReveal direction="left" className="lg:col-span-5">
@@ -219,154 +151,79 @@ export default function ChildProfile() {
 
                     {child.sponsorship_status === "available" ? (
                       user ? (
-                        hasCredit ? (
-                          <div className="space-y-3">
-                            <div>
-                              <span className="block font-body text-xs font-medium text-on-surface-variant mb-1.5">
-                                Sponsorship plan
-                              </span>
-                              <div className="grid grid-cols-2 gap-2">
-                                {[
-                                  {
-                                    value: "one-time",
-                                    label: "One-time",
-                                    hint: "No recurring payment",
-                                  },
-                                  {
-                                    value: "monthly",
-                                    label: "Monthly",
-                                    hint: "Recurring support",
-                                  },
-                                ].map((option) => (
-                                  <button
-                                    key={option.value}
-                                    type="button"
-                                    onClick={() => setCreditPlan(option.value)}
-                                    aria-pressed={creditPlan === option.value}
-                                    className={`px-3 py-2 rounded-lg border-2 text-left transition-all duration-200 ${
-                                      creditPlan === option.value
-                                        ? "border-vibrant-blue bg-vibrant-blue/5"
-                                        : "border-soft-accent/60 bg-white hover:border-vibrant-blue/40"
-                                    }`}
-                                  >
-                                    <span className="block font-body text-sm font-semibold text-deep-navy">
-                                      {option.label}
-                                    </span>
-                                    <span className="block font-body text-xs text-on-surface-variant">
-                                      {option.hint}
-                                    </span>
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                            <div>
-                              <label
-                                htmlFor="creditAmount"
-                                className="block font-body text-xs font-medium text-on-surface-variant mb-1.5"
-                              >
-                                Sponsorship amount (optional)
-                              </label>
-                              <input
-                                id="creditAmount"
-                                type="number"
-                                min="0"
-                                step="any"
-                                placeholder="e.g. 50"
-                                value={creditAmount}
-                                onChange={(e) => {
-                                  setCreditAmount(e.target.value);
-                                  setCreditShortfall(null);
-                                  setCreditError(null);
-                                }}
-                                className="w-full px-3 py-2 rounded-lg border border-soft-accent/60 bg-white font-body text-sm text-deep-navy placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-vibrant-blue/40 focus:border-vibrant-blue transition-all"
-                              />
-                              <p className="mt-1.5 font-body text-xs text-on-surface-variant">
-                                Using ${creditRemaining.toLocaleString()} of your
-                                sponsorship credit
-                              </p>
-                            </div>
-                            {creditShortfall !== null && (
-                              <CreditShortfallNotice
-                                available={creditRemaining}
-                                required={creditShortfall}
-                              />
-                            )}
-                            {creditError && (
-                              <p
-                                role="alert"
-                                className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 font-body text-xs text-red-800"
-                              >
-                                {creditError}
-                                {isInsufficientCreditError({
-                                  message: creditError,
-                                }) && (
-                                  <>
-                                    {" "}
-                                    <Link
-                                      to="/donate"
-                                      className="font-medium text-vibrant-blue underline underline-offset-2"
-                                    >
-                                      add money on the donations page
-                                    </Link>
-                                  </>
-                                )}
-                              </p>
-                            )}
-                            <Button
-                              variant="lightblue"
-                              size="lg"
-                              onClick={handleSponsorWithCredit}
-                              disabled={sponsorWithCredit.isPending}
-                              className="w-full"
+                          <div className="space-y-4">
+                            <div
+                              role="group"
+                              aria-label="How would you like to give?"
+                              className="grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1"
                             >
-                              {sponsorWithCredit.isPending ? (
-                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                              ) : (
-                                <Heart className="mr-2 h-5 w-5" />
-                              )}
-                              {creditPlan === "monthly"
-                                ? "Sponsor Monthly with Credit"
-                                : "Sponsor This Child"}
-                            </Button>
-                            <p className="font-body text-xs text-on-surface-variant text-center">
-                              No additional payment needed — this comes out of your
-                              sponsorship credit
-                              {creditPlan === "monthly"
-                                ? " for the first month, then recurring monthly support begins."
-                                : "."}
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="space-y-3">
+                              {[
+                                ["one-time", "One payment"],
+                                ["monthly", "Monthly"],
+                              ].map(([mode, label]) => (
+                                <button
+                                  key={mode}
+                                  type="button"
+                                  aria-pressed={giveMode === mode}
+                                  onClick={() => setGiveMode(mode)}
+                                  className={cn(
+                                    "rounded-lg px-3 py-2 font-body text-sm font-semibold transition-colors",
+                                    giveMode === mode
+                                      ? "bg-white text-deep-navy shadow-sm"
+                                      : "text-slate-600 hover:text-deep-navy",
+                                  )}
+                                >
+                                  {label}
+                                </button>
+                              ))}
+                            </div>
+                            {giveMode === "monthly" ? (
+                              <MonthlyAmountSelect
+                                name={`Monthly support for ${child.first_name}`}
+                                value={monthlyAmount}
+                                onChange={setMonthlyAmount}
+                              />
+                            ) : (
+                              <SponsorshipPlanSelect
+                                name={`Support for ${child.first_name}`}
+                                value={annualPlan}
+                                onChange={setAnnualPlan}
+                              />
+                            )}
                             <Button
-                              variant="lightblue"
                               size="lg"
-                              className="w-full"
+                              className="w-full gap-2 rounded-xl bg-[#1e5bab] text-white shadow-[0_12px_28px_rgba(30,91,171,0.25)] hover:bg-[#174a8d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1e5bab]/40 focus-visible:ring-offset-2"
                               onClick={() => {
-                                addToCart(child);
+                                if (giveMode === "monthly")
+                                  addToCart(child, "monthly", monthlyAmount);
+                                else addToCart(child, annualPlan);
                                 openCart();
                               }}
                             >
-                              Sponsor This Child
-                              <Heart className="ml-2 h-5 w-5" />
+                              <Heart className="h-5 w-5" aria-hidden="true" />
+                              Sponsor This Child ·{" "}
+                              {giveMode === "monthly"
+                                ? `$${monthlyAmount}/month`
+                                : `$${getSponsorshipOption(annualPlan)?.amount}`}
                             </Button>
                             <p className="font-body text-xs text-on-surface-variant text-center">
-                              {child.first_name} will be added to your sponsorship
-                              cart. Set the amount there, then checkout in one
-                              payment.
-                            </p>
-                            <p className="font-body text-xs text-on-surface-variant/80 text-center">
-                              You currently have no sponsorship credit. If you've
-                              sponsored before, cancelling returns the money to your
-                              credit balance.
+                              Each child can receive up to $300 per year. If{" "}
+                              {child.first_name}&apos;s support for this year is
+                              already complete, we&apos;ll ask you to choose
+                              another child at checkout. All children in your
+                              cart share one payment type (one payment or
+                              monthly).
                             </p>
                           </div>
-                        )
                       ) : (
                         <Button
                           variant="lightblue"
                           size="lg"
-                          onClick={() => navigate(`/donor-auth?mode=signup&redirect=/sponsor-a-child/${child.id}`)}
+                          onClick={() =>
+                            navigate(
+                              `/donor-auth?mode=signup&redirect=/sponsor-a-child/${child.id}`,
+                            )
+                          }
                           className="w-full"
                         >
                           Sign Up or Log In to Sponsor
@@ -381,25 +238,6 @@ export default function ChildProfile() {
                       </div>
                     )}
 
-                    {sponsorWithCredit.isSuccess && (
-                      <div className="mt-3 rounded-lg bg-green-50 border border-green-200 p-3 flex items-start gap-2">
-                        <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
-                        <div className="font-body text-sm text-green-800">
-                          <p className="font-semibold">Sponsored!</p>
-                          <p>
-                            {child.first_name} is now sponsored by you. View the
-                            details in{" "}
-                            <Link
-                              to="/account"
-                              className="font-medium text-vibrant-blue hover:underline"
-                            >
-                              your account
-                            </Link>
-                            .
-                          </p>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
@@ -435,8 +273,8 @@ export default function ChildProfile() {
 
               {!child.bio && !child.needs && (
                 <p className="font-body text-body-lg text-on-surface-variant/60 italic">
-                  This child&rsquo;s story is being prepared. Check back soon
-                  to learn more about {child.first_name}.
+                  This child&rsquo;s story is being prepared. Check back soon to
+                  learn more about {child.first_name}.
                 </p>
               )}
 
@@ -446,11 +284,9 @@ export default function ChildProfile() {
                 </h3>
                 <ul className="space-y-3">
                   {[
-                    "Quality education and school supplies",
-                    "Nutritious meals and clean water",
-                    "Healthcare and medical checkups",
-                    "Mentorship and emotional support",
-                    "A safe and nurturing environment",
+                    "Education",
+                    "School supplies (uniforms, books, supplies)",
+                    "Meals",
                   ].map((item, i) => (
                     <li
                       key={i}

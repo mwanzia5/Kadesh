@@ -237,7 +237,7 @@ function PartnershipCardsSection() {
           variants={staggerContainer}
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
+          viewport={{ once: true, margin: "-100px 0px" }}
           className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
         >
           {PARTNERSHIP_TYPES.map((partnership) => {
@@ -315,7 +315,7 @@ function SponsorSection() {
           variants={staggerContainer}
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
+          viewport={{ once: true, margin: "-100px 0px" }}
           className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
         >
           {SPONSORSHIP_OPPORTUNITIES.map((item) => {

@@ -11,7 +11,7 @@ import {
   Image as ImageIcon,
   Calendar,
   HardDrive,
-  Link2,
+  Layers3,
   Crop,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -32,7 +32,92 @@ import ImageCropper from "@/components/admin/ImageCropper";
 import ImageKitEditor from "@/components/admin/ImageKitEditor";
 import { isImageKitConfigured } from "@/lib/imagekit";
 
-const FILTERS = ["All", "Gallery", "Projects", "Partners"];
+const PROJECT_CATEGORIES = [
+  "Lumina Charis School of Africa",
+  "Ohana Care Clinic",
+  "Home Care",
+  "Borewell Project",
+  "Bethlehem Bread",
+];
+
+const PROJECT_STAGES = {
+  "Lumina Charis School of Africa": [
+    { key: "planning", label: "Land & Planning" },
+    { key: "construction", label: "Construction" },
+    { key: "opening", label: "School Opening" },
+    { key: "classroom", label: "Classroom Activities" },
+    { key: "events", label: "Events & Celebrations" },
+    { key: "current", label: "Current School" },
+  ],
+  "Ohana Care Clinic": [
+    { key: "assessment", label: "Identification & Assessment" },
+    { key: "visits", label: "Clinic Visits" },
+    { key: "support", label: "Treatment & Support" },
+    { key: "followup", label: "Follow-up & Impact" },
+  ],
+  "Home Care": [
+    { key: "assessment", label: "Needs Assessment" },
+    { key: "visits", label: "Home Visits" },
+    { key: "support", label: "Practical Support" },
+    { key: "followup", label: "Follow-up & Impact" },
+  ],
+  "Borewell Project": [
+    { key: "before", label: "Before the Project" },
+    { key: "construction", label: "Construction" },
+    { key: "opening", label: "Opening & Dedication" },
+    { key: "in-use", label: "In Use & Community Impact" },
+  ],
+  "Bethlehem Bread": [
+    { key: "preparation", label: "Preparation" },
+    { key: "distribution", label: "Distribution" },
+    { key: "visits", label: "Community Visits" },
+    { key: "impact", label: "Impact Stories" },
+  ],
+};
+
+const LEGACY_PROJECT_NAMES = {};
+
+const FILTERS = ["All", ...PROJECT_CATEGORIES, "Gallery"];
+
+function normalizeProjectCategory(project) {
+  return LEGACY_PROJECT_NAMES[project] || project;
+}
+
+function getStagesForProject(project) {
+  return PROJECT_STAGES[normalizeProjectCategory(project)] || [];
+}
+
+function parseGalleryMeta(description) {
+  if (!description) return { stageKey: "", date: "", caption: "" };
+
+  try {
+    const parsed = JSON.parse(description);
+    if (parsed && typeof parsed === "object" && (parsed.__khmGallery || parsed.stageKey || parsed.stage || parsed.date)) {
+      return {
+        stageKey: String(parsed.stageKey || parsed.stage || ""),
+        date: String(parsed.date || ""),
+        caption: String(parsed.caption || ""),
+      };
+    }
+  } catch {
+    // Legacy descriptions were plain text. Preserve them as captions.
+  }
+
+  return { stageKey: "", date: "", caption: String(description) };
+}
+
+function buildGalleryMeta({ stageKey = "", date = "", caption = "" }) {
+  return JSON.stringify({
+    __khmGallery: 1,
+    stageKey,
+    date,
+    caption,
+  });
+}
+
+function getStageLabel(project, stageKey) {
+  return getStagesForProject(project).find((stage) => stage.key === stageKey)?.label || "Unassigned stage";
+}
 
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -113,6 +198,9 @@ export default function MediaLibrary() {
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState("grid");
   const [uploading, setUploading] = useState(false);
+  const [uploadCategory, setUploadCategory] = useState("");
+  const [uploadStage, setUploadStage] = useState("");
+  const [uploadDate, setUploadDate] = useState("");
   const [bulkCount, setBulkCount] = useState({ current: 0, total: 0 });
   const [dragOver, setDragOver] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
@@ -128,16 +216,31 @@ export default function MediaLibrary() {
 
   const MAX_BULK = 20;
 
-  const images = galleryData?.data?.map(img => ({
-    ...img,
-    src: img.image_url,
-    name: img.title || "Untitled Image",
-    date: new Date(img.created_at).toISOString().split("T")[0],
-  })) || [];
+  const images = galleryData?.data?.map((img) => {
+    const meta = parseGalleryMeta(img.description);
+    const normalizedCategory = normalizeProjectCategory(img.category);
+    return {
+      ...img,
+      // Keep legacy database rows intact, but present Home Care as the same
+      // project as Ohana Care Clinic throughout the admin UI.
+      originalCategory: img.category,
+      category: normalizedCategory,
+      src: img.image_url,
+      name: "project-photo",
+      date: new Date(img.created_at).toISOString().split("T")[0],
+      stageKey: meta.stageKey,
+      stageLabel: getStageLabel(normalizedCategory, meta.stageKey),
+      journeyDate: meta.date,
+      caption: meta.caption,
+    };
+  }) || [];
 
   const filteredImages = images.filter((img) => {
     const matchesFilter = filter === "All" || img.category === filter;
-    const matchesSearch = img.name.toLowerCase().includes(search.toLowerCase());
+    const query = search.toLowerCase();
+    const matchesSearch = !query || [img.category, img.stageLabel, img.journeyDate, img.date].some((value) =>
+      String(value || "").toLowerCase().includes(query)
+    );
     return matchesFilter && matchesSearch;
   });
 
@@ -159,10 +262,11 @@ export default function MediaLibrary() {
       const publicUrl = getPublicUrl("images", path);
 
       await createGalleryImage.mutateAsync({
-        title: file.name.replace(/\.[^.]+$/, "") + (file.type === "image/webp" || path.endsWith(".webp") ? ".webp" : `.${ext}`),
+        title: `${uploadCategory} photo`,
         image_url: publicUrl,
-        category: "Gallery",
-        sort_order: 0
+        category: uploadCategory,
+        description: buildGalleryMeta({ stageKey: uploadStage, date: uploadDate }),
+        sort_order: 0,
       });
 
       if (onProgress) onProgress();
@@ -197,6 +301,12 @@ export default function MediaLibrary() {
   };
 
   const handleFileSelect = (e) => {
+    if (!uploadCategory || !uploadStage) {
+      alert("Choose both a project and a journey stage before uploading photos.");
+      e.target.value = "";
+      return;
+    }
+
     const files = Array.from(e.target.files || []).filter((f) =>
       f.type.startsWith("image/")
     );
@@ -218,6 +328,12 @@ export default function MediaLibrary() {
   const handleDrop = (e) => {
     e.preventDefault();
     setDragOver(false);
+
+    if (!uploadCategory || !uploadStage) {
+      alert("Choose both a project and a journey stage before uploading photos.");
+      return;
+    }
+
     const files = Array.from(e.dataTransfer.files || []).filter((f) =>
       f.type.startsWith("image/")
     );
@@ -418,6 +534,108 @@ export default function MediaLibrary() {
     setPendingFile(null);
   };
 
+  const handleCategoryUpdate = async (category) => {
+    if (!selectedImage || !category) return;
+
+    const currentMeta = parseGalleryMeta(selectedImage.description);
+    const validStages = getStagesForProject(category);
+    const nextStageKey = validStages.some((stage) => stage.key === currentMeta.stageKey)
+      ? currentMeta.stageKey
+      : "";
+    const nextDescription = buildGalleryMeta({
+      stageKey: nextStageKey,
+      date: currentMeta.date,
+      caption: currentMeta.caption,
+    });
+
+    try {
+      const { error, data: updated } = await updateGalleryImage.mutateAsync({
+        id: selectedImage.id,
+        updates: { category, description: nextDescription },
+      });
+      if (error) throw error;
+
+      setSelectedImage((prev) =>
+        prev && prev.id === selectedImage.id
+          ? {
+              ...prev,
+              category: updated?.category || category,
+              description: updated?.description || nextDescription,
+              stageKey: nextStageKey,
+              stageLabel: getStageLabel(category, nextStageKey),
+            }
+          : prev
+      );
+      queryClient.invalidateQueries({ queryKey: ["gallery"] });
+    } catch (err) {
+      console.error("Category update failed:", err);
+      alert("Could not update the project category: " + err.message);
+    }
+  };
+
+  const handleStageUpdate = async (stageKey) => {
+    if (!selectedImage) return;
+    const currentMeta = parseGalleryMeta(selectedImage.description);
+    const nextDescription = buildGalleryMeta({
+      stageKey,
+      date: currentMeta.date,
+      caption: currentMeta.caption,
+    });
+
+    try {
+      const { error, data: updated } = await updateGalleryImage.mutateAsync({
+        id: selectedImage.id,
+        updates: { description: nextDescription },
+      });
+      if (error) throw error;
+      setSelectedImage((prev) =>
+        prev && prev.id === selectedImage.id
+          ? {
+              ...prev,
+              description: updated?.description || nextDescription,
+              stageKey,
+              stageLabel: getStageLabel(prev.category, stageKey),
+            }
+          : prev
+      );
+      queryClient.invalidateQueries({ queryKey: ["gallery"] });
+    } catch (err) {
+      console.error("Stage update failed:", err);
+      alert("Could not update the journey stage: " + err.message);
+    }
+  };
+
+  const handleJourneyDateUpdate = async (date) => {
+    if (!selectedImage) return;
+    const currentMeta = parseGalleryMeta(selectedImage.description);
+    const nextDescription = buildGalleryMeta({
+      stageKey: currentMeta.stageKey,
+      date,
+      caption: currentMeta.caption,
+    });
+
+    try {
+      const { error, data: updated } = await updateGalleryImage.mutateAsync({
+        id: selectedImage.id,
+        updates: { description: nextDescription },
+      });
+      if (error) throw error;
+      setSelectedImage((prev) =>
+        prev && prev.id === selectedImage.id
+          ? {
+              ...prev,
+              description: updated?.description || nextDescription,
+              journeyDate: date,
+            }
+          : prev
+      );
+      queryClient.invalidateQueries({ queryKey: ["gallery"] });
+    } catch (err) {
+      console.error("Journey date update failed:", err);
+      alert("Could not update the journey date: " + err.message);
+    }
+  };
+
   const handleDelete = async (id) => {
     try {
       const image = images.find((img) => img.id === id);
@@ -437,18 +655,77 @@ export default function MediaLibrary() {
 
   return (
     <motion.div variants={itemVariants} initial="hidden" animate="visible">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <h2 className="font-display text-2xl font-semibold text-deep-navy">
-          Media Library
-        </h2>
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          disabled={uploading}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-vibrant-blue text-white rounded-lg font-body text-sm font-semibold hover:bg-vibrant-blue/90 transition-colors disabled:opacity-50"
-        >
-          <Upload className="h-4 w-4" />
-          Upload Image
-        </button>
+      <div className="mb-6 rounded-2xl border border-[#dbe5f4] bg-white p-4 shadow-sm sm:p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h2 className="font-display text-2xl font-semibold text-deep-navy">
+              Media Library
+            </h2>
+            <p className="mt-1 font-body text-xs text-on-surface-variant sm:text-sm">
+              Select the project first. Every photo you upload will automatically appear under that project in the public Gallery.
+            </p>
+          </div>
+
+          <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:w-auto lg:grid-cols-[250px_250px_170px_auto] lg:items-end">
+            <label className="block min-w-0">
+              <span className="mb-1.5 block font-body text-xs font-bold uppercase tracking-wider text-deep-navy">Project</span>
+              <select
+                value={uploadCategory}
+                onChange={(e) => {
+                  setUploadCategory(e.target.value);
+                  setUploadStage("");
+                }}
+                className="w-full rounded-lg border-2 border-vibrant-blue/30 bg-[#f8fbff] px-3 py-2.5 font-body text-sm font-semibold text-deep-navy outline-none transition focus:border-vibrant-blue focus:ring-2 focus:ring-vibrant-blue/15"
+              >
+                <option value="">Choose a project...</option>
+                {PROJECT_CATEGORIES.map((category) => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="block min-w-0">
+              <span className="mb-1.5 block font-body text-xs font-bold uppercase tracking-wider text-deep-navy">Journey stage</span>
+              <select
+                value={uploadStage}
+                onChange={(e) => setUploadStage(e.target.value)}
+                disabled={!uploadCategory}
+                className="w-full rounded-lg border-2 border-vibrant-blue/30 bg-[#f8fbff] px-3 py-2.5 font-body text-sm font-semibold text-deep-navy outline-none transition focus:border-vibrant-blue focus:ring-2 focus:ring-vibrant-blue/15 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="">Choose a stage...</option>
+                {getStagesForProject(uploadCategory).map((stage) => (
+                  <option key={stage.key} value={stage.key}>{stage.label}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="block min-w-0">
+              <span className="mb-1.5 block font-body text-xs font-bold uppercase tracking-wider text-deep-navy">Date / month <span className="normal-case font-medium text-on-surface-variant">optional</span></span>
+              <input
+                type="month"
+                value={uploadDate}
+                onChange={(e) => setUploadDate(e.target.value)}
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 font-body text-sm text-deep-navy outline-none focus:border-vibrant-blue focus:ring-2 focus:ring-vibrant-blue/15"
+              />
+            </label>
+
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading || !uploadCategory || !uploadStage}
+              className="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-lg bg-vibrant-blue px-5 py-2.5 font-body text-sm font-semibold text-white transition-colors hover:bg-vibrant-blue/90 disabled:cursor-not-allowed disabled:opacity-45"
+            >
+              <Upload className="h-4 w-4" />
+              Upload Image
+            </button>
+          </div>
+        </div>
+
+        {(!uploadCategory || !uploadStage) && (
+          <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 font-body text-xs font-medium text-amber-700">
+            Choose both a project and a journey stage before browsing, dragging, or uploading photos.
+          </p>
+        )}
+
         <input
           ref={fileInputRef}
           type="file"
@@ -478,14 +755,17 @@ export default function MediaLibrary() {
         <p className="font-body text-sm text-on-surface-variant">
           Drag and drop images here, or{" "}
           <button
-            onClick={() => fileInputRef.current?.click()}
-            className="text-vibrant-blue font-semibold hover:underline"
+            onClick={() => uploadCategory && uploadStage && fileInputRef.current?.click()}
+            disabled={!uploadCategory || !uploadStage}
+            className="text-vibrant-blue font-semibold hover:underline disabled:cursor-not-allowed disabled:text-gray-400 disabled:no-underline"
           >
             browse
           </button>
         </p>
         <p className="font-body text-xs text-on-surface-variant mt-1">
-          PNG, JPG, GIF, WebP &mdash; up to {MAX_BULK} images at once
+          {uploadCategory && uploadStage
+            ? `Uploading to: ${uploadCategory} → ${getStageLabel(uploadCategory, uploadStage)}${uploadDate ? ` · ${uploadDate}` : ""} · up to ${MAX_BULK} images at once`
+            : "Select a project and journey stage above before uploading"}
         </p>
         {uploading && bulkCount.total > 0 && (
           <div className="mt-4 max-w-xs mx-auto">
@@ -539,7 +819,7 @@ export default function MediaLibrary() {
         <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 overflow-x-auto">
           {FILTERS.map((f) => (
             <button
-              key={f}
+              key={f === "Gallery" ? "Unassigned" : f}
               onClick={() => setFilter(f)}
               className={cn(
                 "px-3 py-1.5 rounded-md font-body text-xs font-medium transition-colors",
@@ -548,7 +828,7 @@ export default function MediaLibrary() {
                   : "text-on-surface-variant hover:text-deep-navy"
               )}
             >
-              {f}
+              {f === "Gallery" ? "Unassigned" : f}
             </button>
           ))}
         </div>
@@ -598,14 +878,9 @@ export default function MediaLibrary() {
                 >
                   <img
                     src={img.src}
-                    alt={img.name}
+                    alt={img.category && img.category !== "Gallery" ? `${img.category} photo` : "Gallery photo"}
                     className="w-full h-full object-cover"
                   />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-end p-2">
-                    <span className="font-body text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity truncate">
-                      {img.name}
-                    </span>
-                  </div>
                 </button>
               ))}
             </div>
@@ -622,15 +897,15 @@ export default function MediaLibrary() {
                 >
                   <img
                     src={img.src}
-                    alt={img.name}
+                    alt={img.category && img.category !== "Gallery" ? `${img.category} photo` : "Gallery photo"}
                     className="w-12 h-12 rounded-lg object-cover shrink-0"
                   />
                   <div className="min-w-0 flex-1">
                     <p className="font-body text-sm font-medium text-deep-navy truncate">
-                      {img.name}
+                      {img.category && img.category !== "Gallery" ? img.category : "Unassigned photo"}
                     </p>
                     <p className="font-body text-xs text-on-surface-variant">
-                      {img.size} &middot; {img.category}
+                      {img.stageLabel}{img.journeyDate ? ` · ${img.journeyDate}` : ""}
                     </p>
                   </div>
                 </button>
@@ -664,7 +939,7 @@ export default function MediaLibrary() {
               <div className="rounded-lg overflow-hidden mb-4">
                 <img
                   src={selectedImage.src}
-                  alt={selectedImage.name}
+                  alt={selectedImage.category && selectedImage.category !== "Gallery" ? `${selectedImage.category} photo` : "Gallery photo"}
                   className="w-full aspect-video object-cover"
                 />
               </div>
@@ -672,11 +947,63 @@ export default function MediaLibrary() {
               <div className="space-y-3">
                 <div className="flex items-start gap-2">
                   <ImageIcon className="h-4 w-4 text-on-surface-variant mt-0.5 shrink-0" />
-                  <div>
-                    <p className="font-body text-xs text-on-surface-variant">Name</p>
-                    <p className="font-body text-sm text-deep-navy">{selectedImage.name}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-body text-xs text-on-surface-variant">Project</p>
+                    <select
+                      value={selectedImage.category || ""}
+                      onChange={(e) => handleCategoryUpdate(e.target.value)}
+                      className="mt-1 w-full rounded-md border border-gray-200 bg-white px-2 py-1.5 font-body text-xs text-deep-navy outline-none focus:border-vibrant-blue"
+                    >
+                      {selectedImage.category &&
+                        selectedImage.category !== "Gallery" &&
+                        !PROJECT_CATEGORIES.includes(selectedImage.category) && (
+                          <option value={selectedImage.category}>{selectedImage.category}</option>
+                        )}
+                      <option value="Gallery">Unassigned / Legacy Gallery</option>
+                      {PROJECT_CATEGORIES.map((category) => (
+                        <option key={category} value={category}>
+                          {category}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
+
+                <div className="flex items-start gap-2">
+                  <Layers3 className="h-4 w-4 text-on-surface-variant mt-0.5 shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-body text-xs text-on-surface-variant">Journey stage</p>
+                    <select
+                      value={selectedImage.stageKey || ""}
+                      onChange={(e) => handleStageUpdate(e.target.value)}
+                      disabled={!PROJECT_CATEGORIES.includes(selectedImage.category)}
+                      className="mt-1 w-full rounded-md border border-gray-200 bg-white px-2 py-1.5 font-body text-xs text-deep-navy outline-none focus:border-vibrant-blue disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <option value="">Unassigned stage</option>
+                      {getStagesForProject(selectedImage.category).map((stage) => (
+                        <option key={stage.key} value={stage.key}>{stage.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <Calendar className="h-4 w-4 text-on-surface-variant mt-0.5 shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-body text-xs text-on-surface-variant">Journey date / month</p>
+                    <input
+                      type="month"
+                      value={selectedImage.journeyDate || ""}
+                      onChange={(e) => {
+                        const date = e.target.value;
+                        setSelectedImage((prev) => prev ? { ...prev, journeyDate: date } : prev);
+                      }}
+                      onBlur={(e) => handleJourneyDateUpdate(e.target.value)}
+                      className="mt-1 w-full rounded-md border border-gray-200 bg-white px-2 py-1.5 font-body text-xs text-deep-navy outline-none focus:border-vibrant-blue"
+                    />
+                  </div>
+                </div>
+
                 <div className="flex items-start gap-2">
                   <HardDrive className="h-4 w-4 text-on-surface-variant mt-0.5 shrink-0" />
                   <div>
@@ -700,13 +1027,6 @@ export default function MediaLibrary() {
                   <div>
                     <p className="font-body text-xs text-on-surface-variant">Uploaded</p>
                     <p className="font-body text-sm text-deep-navy">{selectedImage.date}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2">
-                  <Link2 className="h-4 w-4 text-on-surface-variant mt-0.5 shrink-0" />
-                  <div>
-                    <p className="font-body text-xs text-on-surface-variant">URL</p>
-                    <p className="font-body text-xs text-vibrant-blue break-all">{selectedImage.src}</p>
                   </div>
                 </div>
               </div>
@@ -763,7 +1083,7 @@ export default function MediaLibrary() {
       {showEditor && editorSourceUrl && (
         <ImageKitEditor
           sourceUrl={editorSourceUrl}
-          fileName={pendingFile?.name || editTarget?.name || "image"}
+          fileName="project-photo"
           onComplete={handleEditorSave}
           onCancel={handleEditorCancel}
         />

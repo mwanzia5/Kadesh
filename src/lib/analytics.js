@@ -1,4 +1,9 @@
 import posthog from "posthog-js";
+import {
+  hasAuthUrlParameters,
+  sanitizeAuthTelemetry,
+  sanitizeAuthUrl,
+} from "@/lib/authTelemetry";
 
 const POSTHOG_KEY = import.meta.env.VITE_POSTHOG_KEY;
 const POSTHOG_HOST = import.meta.env.VITE_POSTHOG_HOST;
@@ -12,6 +17,10 @@ export function initAnalytics() {
     capture_pageview: false,
     autocapture: true,
     persistence: "localStorage",
+    get_current_url: sanitizeAuthUrl,
+    before_send: sanitizeAuthTelemetry,
+    // Replay's raw initial-page metadata bypasses event URL scrubbing.
+    disable_session_recording: hasAuthUrlParameters(window.location.href),
   });
 }
 

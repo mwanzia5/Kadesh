@@ -1,8 +1,26 @@
 Add these URLs to Supabase Dashboard → Authentication → URL Configuration → Redirect URLs:
 
+Password recovery:
 http://localhost:5173/donor-auth?mode=recovery
 http://localhost:5173/admin/login?mode=recovery
 https://kadeshhopemission.org/donor-auth?mode=recovery
 https://kadeshhopemission.org/admin/login?mode=recovery
 
+Donor sign-in / sign-up return URLs (used by email-code and Google sign-in):
+http://localhost:5173/donor-auth?mode=login&redirect=%2Faccount
+http://localhost:5173/donor-auth?mode=login&redirect=%2Fdonate
+http://localhost:5173/donor-auth?mode=login&redirect=%2Fsponsor-a-child
+https://kadeshhopemission.org/donor-auth?mode=login&redirect=%2Faccount
+https://kadeshhopemission.org/donor-auth?mode=login&redirect=%2Fdonate
+https://kadeshhopemission.org/donor-auth?mode=login&redirect=%2Fsponsor-a-child
+
 Also set Site URL to: https://kadeshhopemission.org
+
+IMPORTANT - email codes (OTP):
+The login/signup page asks for a code, so the Supabase email templates must show
+{{ .Token }}, not {{ .ConfirmationURL }}. In Authentication → Emails → Templates,
+replace the body of BOTH templates with the files in supabase/templates/:
+  Magic Link      ← supabase/templates/magic-link.html
+  Confirm signup  ← supabase/templates/confirm-signup.html
+On new Free projects, custom SMTP (e.g. Resend) must be set up first before
+templates can be edited. See supabase/passwordless-auth-setup.md.

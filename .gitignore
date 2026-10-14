@@ -16,6 +16,8 @@ dist-ssr
 .env
 .env.local
 .env.production
+.env.scripts
+Kadesh(env.local)
 
 # Supabase CLI local cache
 supabase/.temp
