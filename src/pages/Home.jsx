@@ -97,28 +97,22 @@ function HeroSection() {
     <section className="relative z-0 flex min-h-[94vh] items-center justify-center overflow-hidden bg-deep-navy">
       <style>{`
         @keyframes kadeshHeroWordReveal {
-          0%, 8% {
+          from {
             opacity: 0;
             transform: translateY(24px);
             filter: blur(6px);
           }
-          18%, 72% {
+          to {
             opacity: 1;
             transform: translateY(0);
             filter: blur(0);
           }
-          88%, 100% {
-            opacity: 0;
-            transform: translateY(-12px);
-            filter: blur(3px);
-          }
         }
 
+        /* Plays once on load, then the title stays visible. */
         .kadesh-hero-word {
           display: inline-block;
-          opacity: 0;
-          animation: kadeshHeroWordReveal 5.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
-          will-change: transform, opacity, filter;
+          animation: kadeshHeroWordReveal 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
         .kadesh-hero-story,
