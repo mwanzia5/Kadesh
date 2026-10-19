@@ -10,6 +10,7 @@ import {
   Loader2,
   ArrowRight,
   ArrowLeft,
+  Repeat,
   LockKeyhole,
   Users,
   BookOpen,
@@ -642,6 +643,26 @@ export default function GivingCheckout({ mode = "donation" }) {
       {label}
     </button>
   );
+  const continueButton = ({ onClick, disabled = false, label, detail }) => (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled || processing}
+      className="group mt-8 flex w-full items-center justify-between gap-4 rounded-full bg-[#0b2d47] py-2.5 pl-7 pr-2.5 text-left text-white shadow-[0_16px_34px_-14px_rgba(11,45,71,.65)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#103652] hover:shadow-[0_20px_40px_-14px_rgba(11,45,71,.7)] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#f0cd72]/50 disabled:cursor-not-allowed disabled:translate-y-0 disabled:bg-slate-300 disabled:shadow-none"
+    >
+      <span className="min-w-0">
+        <span className="block font-body text-base font-bold sm:text-lg">
+          {label}
+        </span>
+        <span className="block truncate font-body text-xs font-medium text-white/65 group-disabled:text-white/90">
+          {detail}
+        </span>
+      </span>
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#f0cd72] text-[#0b2d47] transition-transform duration-300 group-hover:translate-x-0.5 group-disabled:bg-white/60 group-disabled:text-slate-500 sm:h-14 sm:w-14">
+        <ArrowRight className="h-5 w-5 sm:h-6 sm:w-6" />
+      </span>
+    </button>
+  );
   const customNumber = Number(customAmount);
   const customTooLow = isOther && customAmount !== "" && !isValidAmount;
   const amountParts = (value) => {
@@ -913,52 +934,67 @@ export default function GivingCheckout({ mode = "donation" }) {
                         <label className="mb-2 block font-body text-sm font-semibold text-deep-navy">
                           Frequency
                         </label>
-                        <div className="grid grid-cols-2 gap-3">
-                          <button
-                            type="button"
-                            onClick={() => setFrequency("monthly")}
-                            disabled={processing}
-                            aria-pressed={frequency === "monthly"}
-                            className={`rounded-xl border px-4 py-3.5 text-left transition ${
-                              frequency === "monthly"
-                                ? "border-[#1e5bab] bg-[#1e5bab] text-white shadow-[0_10px_24px_-12px_rgba(30,91,171,.6)]"
-                                : "border-slate-200 bg-white text-deep-navy hover:border-[#1e5bab]/50"
-                            }`}
-                          >
-                            <span className="block font-body text-sm font-bold">
-                              Monthly
-                            </span>
-                            <span
-                              className={`mt-1 block font-body text-xs ${frequency === "monthly" ? "text-white/65" : "text-slate-500"}`}
-                            >
-                              {isSponsorship
-                                ? "$25 or $50 per child / month"
-                                : `From $${minDonation}, paid each month`}
-                            </span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => setFrequency("one-time")}
-                            disabled={processing}
-                            aria-pressed={frequency === "one-time"}
-                            className={`rounded-xl border px-4 py-3.5 text-left transition ${
-                              frequency === "one-time"
-                                ? "border-[#1e5bab] bg-[#1e5bab] text-white shadow-[0_10px_24px_-12px_rgba(30,91,171,.6)]"
-                                : "border-slate-200 bg-white text-deep-navy hover:border-[#1e5bab]/50"
-                            }`}
-                          >
-                            <span className="block font-body text-sm font-bold">
-                              One-time
-                            </span>
-                            <span
-                              className={`mt-1 block font-body text-xs ${frequency === "one-time" ? "text-white/65" : "text-slate-500"}`}
-                            >
-                              {isSponsorship
+                        <div
+                          role="radiogroup"
+                          aria-label="Giving frequency"
+                          className="grid grid-cols-2 gap-1.5 rounded-2xl border border-slate-200 bg-[#eef2f7] p-1.5"
+                        >
+                          {[
+                            {
+                              value: "one-time",
+                              label: "One-time",
+                              icon: Heart,
+                              note: isSponsorship
                                 ? "$100 per need or $300 full year"
-                                : `Single gift, from $${minDonation}`}
-                            </span>
-                          </button>
+                                : `Single gift, from $${minDonation}`,
+                            },
+                            {
+                              value: "monthly",
+                              label: "Monthly",
+                              icon: Repeat,
+                              note: isSponsorship
+                                ? "$25 or $50 per child / month"
+                                : `From $${minDonation}, each month`,
+                            },
+                          ].map(({ value, label, icon: Icon, note }) => {
+                            const active = frequency === value;
+                            return (
+                              <button
+                                key={value}
+                                type="button"
+                                role="radio"
+                                aria-checked={active}
+                                onClick={() => setFrequency(value)}
+                                disabled={processing}
+                                className={`relative flex items-center gap-3 rounded-xl px-3 py-3 text-left transition-all duration-200 sm:px-4 sm:py-3.5 ${
+                                  active
+                                    ? "bg-white text-deep-navy shadow-[0_8px_22px_-10px_rgba(11,45,71,.45)] ring-1 ring-[#0b2d47]/10"
+                                    : "text-slate-500 hover:bg-white/60 hover:text-deep-navy"
+                                }`}
+                              >
+                                <span
+                                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors sm:h-10 sm:w-10 ${
+                                    active
+                                      ? "bg-[#f0cd72] text-[#0b2d47]"
+                                      : "bg-white text-slate-400"
+                                  }`}
+                                >
+                                  <Icon className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
+                                </span>
+                                <span className="min-w-0">
+                                  <span className="block font-body text-sm font-bold sm:text-base">
+                                    {label}
+                                  </span>
+                                  <span className="mt-0.5 block font-body text-[11px] leading-4 text-slate-500 sm:text-xs">
+                                    {note}
+                                  </span>
+                                </span>
+                                {active && (
+                                  <CheckCircle2 className="absolute right-2.5 top-2.5 hidden h-4 w-4 text-[#1e5bab] sm:block" />
+                                )}
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
 
@@ -1354,30 +1390,24 @@ export default function GivingCheckout({ mode = "donation" }) {
                       {frequencySection}
                       <div className="my-8 h-px bg-slate-100" />
                       {donationAmountPicker}
-                      <Button
-                        className="mt-8 w-full justify-center rounded-xl bg-[#1e5bab] py-4 text-base font-bold text-white hover:bg-[#174a8d] sm:text-lg"
-                        onClick={goToDetails}
-                        disabled={!isValidAmount}
-                      >
-                        <span className="inline-flex items-center gap-2">
-                          Continue with {formatUSD(baseAmount)}
-                          <ArrowRight className="h-5 w-5" />
-                        </span>
-                      </Button>
+                      {continueButton({
+                        onClick: goToDetails,
+                        disabled: !isValidAmount,
+                        label: "Continue",
+                        detail: isValidAmount
+                          ? `${formatUSD(baseAmount)}${frequency === "monthly" ? " / month" : " one-time gift"}`
+                          : `Minimum $${minDonation}`,
+                      })}
                     </>
                   ) : donationStep === 2 ? (
                     <>
                       {stepBackLink(1, "Change amount")}
                       {detailsSection}
-                      <Button
-                        className="mt-8 w-full justify-center rounded-xl bg-[#1e5bab] py-4 text-base font-bold text-white hover:bg-[#174a8d] sm:text-lg"
-                        onClick={goToPayment}
-                      >
-                        <span className="inline-flex items-center gap-2">
-                          Continue to payment
-                          <ArrowRight className="h-5 w-5" />
-                        </span>
-                      </Button>
+                      {continueButton({
+                        onClick: goToPayment,
+                        label: "Continue to payment",
+                        detail: `${formatUSD(baseAmount)}${frequency === "monthly" ? " / month" : " one-time gift"}`,
+                      })}
                       {attemptedDetails && hasFieldErrors && (
                         <p className="mt-3 text-center font-body text-sm text-red-600">
                           Please fill in all required fields above to continue.
