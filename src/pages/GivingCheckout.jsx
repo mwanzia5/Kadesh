@@ -9,6 +9,7 @@ import {
   UserPlus,
   Loader2,
   ArrowRight,
+  ArrowLeft,
   LockKeyhole,
   Users,
   BookOpen,
@@ -95,7 +96,7 @@ export default function GivingCheckout({ mode = "donation" }) {
   // Minimum for the "Enter a different amount" box.
   const minDonation = MIN_CUSTOM_DONATION;
   // Switching between monthly and one-time keeps a suggested amount that is
-  // valid for the new frequency (both start at $100).
+  // valid for the new frequency (both start at $25).
   const setFrequency = (next) => {
     if (isSponsorship) {
       setCartFrequency(next);
@@ -116,6 +117,9 @@ export default function GivingCheckout({ mode = "donation" }) {
   // whether Paystack's popup closed.
   const [result, setResult] = useState(null); // { type: "success" | "error", message }
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+  // General donations run as three steps: 1 amount, 2 donor details, 3 payment.
+  const [donationStep, setDonationStep] = useState(1);
+  const [attemptedDetails, setAttemptedDetails] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -289,7 +293,7 @@ export default function GivingCheckout({ mode = "donation" }) {
         message:
           sponsorshipError ||
           (!isValidAmount
-            ? `Custom amounts start at $${minDonation}. Enter $${minDonation} or more, or select one of the suggested amounts.`
+            ? `The minimum gift is $${minDonation}. Enter $${minDonation} or more, or select one of the suggested amounts.`
             : "Please fill in all required fields correctly before continuing."),
       });
       return;
@@ -598,147 +602,175 @@ export default function GivingCheckout({ mode = "donation" }) {
     );
   }
 
-  return (
-    <PageTransition>
-      <SEO title="Donate" description="Make a secure donation to Kadesh Hope Mission and support education, healthcare, and food security across Africa." />
-      <main className="overflow-hidden bg-[#f5f7fb]">
-        {/* Hero */}
-        <section className="relative isolate overflow-hidden bg-gradient-to-br from-[#0b2342] via-[#12366d] to-[#1e5bab] pb-24 pt-14 sm:pt-16">
-          <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full border border-white/[0.08]" />
-          <div className="pointer-events-none absolute -left-16 bottom-0 h-56 w-56 rounded-full bg-white/[0.04] blur-2xl" />
-          <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <p className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 font-body text-xs font-semibold uppercase tracking-[0.16em] text-white/85">
-              <LockKeyhole className="h-3.5 w-3.5" />
-              {isSponsorship ? "Secure sponsorship checkout" : "Secure donation"}
-            </p>
-            <h1 className="mt-4 max-w-3xl font-display text-3xl font-bold leading-tight text-white sm:text-4xl lg:text-5xl">
-              {isSponsorship
-                ? "Complete your sponsorship"
-                : "Make a donation"}
-            </h1>
-            <p className="mt-3 max-w-2xl font-body text-base leading-7 text-white/75">
-              {isSponsorship
-                ? "Help provide education fees, school supplies and meals for the children you've chosen."
-                : "Support education, health, food security and long-term development in the communities we serve."}
-            </p>
-            <ol className="mt-6 flex flex-wrap gap-2 font-body text-xs font-semibold text-white/80">
-              {["Your details", isSponsorship ? "Support options" : "Amount", "Secure payment"].map(
-                (step, index) => (
-                  <li
-                    key={step}
-                    className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-3 py-1.5"
-                  >
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-[11px] font-bold text-[#12366d]">
-                      {index + 1}
-                    </span>
-                    {step}
-                  </li>
-                ),
-              )}
-            </ol>
-          </div>
-        </section>
+  const scrollToCheckout = () => {
+    try {
+      document
+        .getElementById("giving-checkout-card")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch {
+      // Scrolling is a nicety only.
+    }
+  };
+  const goToStep = (step) => {
+    setDonationStep(step);
+    setResult(null);
+    scrollToCheckout();
+  };
+  const goToDetails = () => {
+    if (!isValidAmount) {
+      setResult({
+        type: "error",
+        message: `The minimum gift is $${minDonation}. Choose an amount or enter $${minDonation} or more.`,
+      });
+      return;
+    }
+    goToStep(2);
+  };
+  const goToPayment = () => {
+    setAttemptedDetails(true);
+    if (hasFieldErrors) return;
+    goToStep(3);
+  };
+  const stepBackLink = (step, label) => (
+    <button
+      type="button"
+      onClick={() => goToStep(step)}
+      disabled={processing}
+      className="mb-6 inline-flex items-center gap-1.5 font-body text-sm font-semibold text-[#1e5bab] hover:text-[#174a8d] disabled:opacity-50"
+    >
+      <ArrowLeft className="h-4 w-4" />
+      {label}
+    </button>
+  );
+  const customNumber = Number(customAmount);
+  const customTooLow = isOther && customAmount !== "" && !isValidAmount;
+  const amountParts = (value) => {
+    const [whole, cents = "00"] = Number(value || 0)
+      .toFixed(2)
+      .split(".");
+    return { whole: Number(whole).toLocaleString("en-US"), cents };
+  };
+  const displayAmount = isOther
+    ? customAmount === "" || !Number.isFinite(customNumber)
+      ? "0.00"
+      : customNumber.toLocaleString("en-US", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })
+    : Number(selectedUSD).toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+  const donationAmountPicker = (
+    <div>
+      <label
+        htmlFor="customAmount"
+        className="mb-3 block font-body text-sm font-semibold text-deep-navy"
+      >
+        Donation amount (USD)
+      </label>
+      <div
+        className={`flex items-center gap-3 rounded-2xl border-2 bg-white px-5 py-4 transition sm:px-7 sm:py-6 ${
+          customTooLow
+            ? "border-red-400"
+            : "border-deep-navy/80 focus-within:border-[#1e5bab] focus-within:ring-4 focus-within:ring-[#1e5bab]/10"
+        }`}
+        onClick={() => {
+          if (!isOther) {
+            setIsOther(true);
+            setCustomAmount(String(selectedUSD));
+          }
+        }}
+      >
+        <span className="font-body text-2xl text-slate-500 sm:text-3xl">$</span>
+        {isOther ? (
+          <input
+            id="customAmount"
+            autoFocus
+            disabled={processing}
+            type="number"
+            inputMode="decimal"
+            min={minDonation}
+            step="0.01"
+            placeholder={minDonation.toFixed(2)}
+            aria-describedby="custom-amount-help"
+            aria-invalid={customTooLow}
+            value={customAmount}
+            onChange={(e) => {
+              setCustomAmount(e.target.value);
+              setResult(null);
+            }}
+            className="w-full min-w-0 bg-transparent text-right font-display text-5xl font-bold text-deep-navy outline-none placeholder:text-slate-300 sm:text-6xl [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+          />
+        ) : (
+          <span
+            id="customAmount"
+            className="w-full min-w-0 truncate text-right font-display text-5xl font-bold text-deep-navy sm:text-6xl"
+          >
+            {displayAmount}
+          </span>
+        )}
+      </div>
+      <p
+        id="custom-amount-help"
+        className={`mt-2 font-body text-xs ${customTooLow ? "text-red-600" : "text-slate-500"}`}
+      >
+        {customTooLow
+          ? `The minimum gift is $${minDonation}. Please enter $${minDonation} or more.`
+          : `Minimum gift $${minDonation}. Tap an amount below or choose Custom Amount.`}
+      </p>
 
-        <section className="relative -mt-14 pb-16 sm:pb-20">
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
+        {donationPresets.map((value) => {
+          const active = selectedUSD === value && !isOther;
+          const { whole, cents } = amountParts(value);
+          return (
+            <button
+              type="button"
+              key={value}
+              onClick={() => handleAmountClick(value)}
+              disabled={processing}
+              aria-pressed={active}
+              className={`flex h-24 items-center justify-center rounded-2xl border-2 font-display font-bold transition sm:h-28 ${
+                active
+                  ? "border-[#1e5bab] bg-white text-[#1e5bab] shadow-[0_0_0_4px_rgba(30,91,171,.12)]"
+                  : "border-transparent bg-[#0b2d47] text-white hover:-translate-y-0.5 hover:bg-[#12366d] hover:shadow-[0_14px_30px_-14px_rgba(11,45,71,.6)]"
+              }`}
+            >
+              <span className="self-start pt-6 text-sm sm:pt-8 sm:text-base">$</span>
+              <span className="text-4xl leading-none sm:text-5xl">{whole}</span>
+              <span className="self-start pt-6 text-sm sm:pt-8 sm:text-base">{cents}</span>
+            </button>
+          );
+        })}
+        <button
+          type="button"
+          onClick={() => {
+            setIsOther(true);
+            setCustomAmount("");
+            setResult(null);
+          }}
+          disabled={processing}
+          aria-pressed={isOther}
+          className={`flex h-24 items-center justify-center rounded-2xl border-2 px-3 font-body text-lg font-semibold leading-tight transition sm:h-28 sm:text-xl ${
+            isOther
+              ? "border-[#1e5bab] bg-white text-[#1e5bab] shadow-[0_0_0_4px_rgba(30,91,171,.12)]"
+              : "border-transparent bg-[#0b2d47] text-white hover:-translate-y-0.5 hover:bg-[#12366d] hover:shadow-[0_14px_30px_-14px_rgba(11,45,71,.6)]"
+          }`}
+        >
+          Custom
+          <br />
+          Amount
+        </button>
+      </div>
+    </div>
+  );
 
-          <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            {result && (
-              <div
-                className={`mx-auto mb-8 flex max-w-4xl items-start gap-3 rounded-[1.35rem] border p-4 ${
-                  result.type === "success"
-                    ? "border-green-200 bg-green-50"
-                    : result.type === "info"
-                      ? "border-[#d6e3e9] bg-[#f3f8fa]"
-                      : "border-red-200 bg-red-50"
-                }`}
-              >
-                {result.type === "success" ? (
-                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-green-600" />
-                ) : result.type === "info" ? (
-                  <Shield className="mt-0.5 h-5 w-5 shrink-0 text-[#0e5874]" />
-                ) : (
-                  <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" />
-                )}
-                <div className="min-w-0">
-                  <p
-                    className={`font-body text-sm leading-6 ${
-                      result.type === "success"
-                        ? "text-green-800"
-                        : result.type === "info"
-                          ? "text-deep-navy"
-                          : "text-red-800"
-                    }`}
-                  >
-                    {result.message}
-                  </p>
-                  {result.type === "success" && result.guestEmail && (
-                    <div className="mt-3 rounded-xl border border-green-200 bg-white p-4">
-                      <p className="font-body text-sm font-semibold text-deep-navy">
-                        Create a free account to keep track of your giving
-                      </p>
-                      <p className="mt-1 font-body text-xs leading-5 text-slate-600">
-                        Sign up with {result.guestEmail} and this donation will
-                        appear in your account automatically, along with
-                        reminders for monthly gifts.
-                      </p>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <Link
-                          to={`/signup?redirect=${encodeURIComponent("/account")}&email=${encodeURIComponent(result.guestEmail)}`}
-                          className="inline-flex items-center gap-2 rounded-full bg-[#0b2d47] px-4 py-2 font-body text-sm font-semibold text-white hover:bg-[#103652]"
-                        >
-                          <UserPlus className="h-4 w-4" />
-                          Create my account
-                        </Link>
-                        <Link
-                          to={`/login?redirect=${encodeURIComponent("/account")}&email=${encodeURIComponent(result.guestEmail)}`}
-                          className="inline-flex items-center rounded-full border border-slate-200 px-4 py-2 font-body text-sm font-semibold text-deep-navy hover:border-[#1e5bab]/50"
-                        >
-                          I already have an account
-                        </Link>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            <div className="grid items-start gap-8 lg:grid-cols-[1fr_360px] xl:gap-10">
-              {/* Main donation card */}
-              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_24px_60px_-30px_rgba(15,38,82,0.35)]">
-                <div className="border-b border-slate-100 px-6 py-6 sm:px-8 lg:px-10">
-                  <p className="font-body text-xs font-bold uppercase tracking-[0.18em] text-[#1e5bab]">
-                    {isSponsorship ? "Sponsorship details" : "Your gift"}
-                  </p>
-                  <h2 className="mt-2 font-display text-2xl font-bold text-deep-navy sm:text-3xl">
-                    {isSponsorship
-                      ? "Complete your support"
-                      : "Choose how you would like to give"}
-                  </h2>
-                  <p className="mt-3 max-w-2xl font-body text-sm leading-7 text-slate-600 sm:text-base">
-                    Enter your details, choose the frequency and amount, then
-                    continue to secure payment.
-                  </p>
-                  {isGuest && (
-                    <p className="mt-4 max-w-2xl rounded-xl border border-blue-100 bg-blue-50/60 px-4 py-3 font-body text-sm leading-6 text-slate-700">
-                      You're giving as a guest. You can create a free account
-                      after your gift, or{" "}
-                      <Link
-                        to={`/login?redirect=${redirectTarget}`}
-                        className="font-semibold text-[#0b2d47] underline underline-offset-2"
-                      >
-                        sign in now
-                      </Link>{" "}
-                      to fill in your details.
-                    </p>
-                  )}
-                </div>
-
-                <div className="p-6 sm:p-8 lg:p-10">
-                  {/* Donor Information */}
+  const detailsSection = (
                   <div>
                     <div className="mb-5 flex items-center gap-3">
                       <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0b2d47] font-display text-sm font-bold text-white">
-                        1
+                        {isSponsorship ? 1 : 2}
                       </span>
                       <div>
                         <h3 className="font-display text-xl font-bold text-deep-navy">
@@ -856,23 +888,22 @@ export default function GivingCheckout({ mode = "donation" }) {
                       </div>
                     </div>
                   </div>
+  );
 
-                  <div className="my-9 h-px bg-slate-100" />
-
-                  {/* Giving preferences */}
+  const frequencySection = (
                   <div>
                     <div className="mb-5 flex items-center gap-3">
                       <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0b2d47] font-display text-sm font-bold text-white">
-                        2
+                        {isSponsorship ? 2 : 1}
                       </span>
                       <div>
                         <h3 className="font-display text-xl font-bold text-deep-navy">
-                          Giving preference
+                          {isSponsorship ? "Giving preference" : "Choose your gift"}
                         </h3>
                         <p className="font-body text-xs text-slate-500">
                           {isSponsorship
                             ? "Choose how often you would like to give."
-                            : "Suggested gifts from $100 monthly or one-time; custom amounts from $500."}
+                            : `Gifts start at $${minDonation}, monthly or one-time.`}
                         </p>
                       </div>
                     </div>
@@ -902,7 +933,7 @@ export default function GivingCheckout({ mode = "donation" }) {
                             >
                               {isSponsorship
                                 ? "$25 or $50 per child / month"
-                                : "From $100, paid each month"}
+                                : `From $${minDonation}, paid each month`}
                             </span>
                           </button>
 
@@ -925,7 +956,7 @@ export default function GivingCheckout({ mode = "donation" }) {
                             >
                               {isSponsorship
                                 ? "$100 per need or $300 full year"
-                                : "Single gift, from $100"}
+                                : `Single gift, from $${minDonation}`}
                             </span>
                           </button>
                         </div>
@@ -941,10 +972,9 @@ export default function GivingCheckout({ mode = "donation" }) {
                       </p>
                     )}
                   </div>
+  );
 
-                  <div className="my-9 h-px bg-slate-100" />
-
-                  {/* Amount */}
+  const sponsorshipAmountSection = (
                   <div>
                     <div className="mb-5 flex items-center gap-3">
                       <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0b2d47] font-display text-sm font-bold text-white">
@@ -1064,7 +1094,10 @@ export default function GivingCheckout({ mode = "donation" }) {
                       </>
                     )}
                   </div>
+  );
 
+  const paymentSection = (
+                  <>
                   {isSponsorship && <AnnualFundingNotice />}
                   {/* Payment */}
                   <div className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-deep-navy sm:p-6">
@@ -1150,6 +1183,237 @@ export default function GivingCheckout({ mode = "donation" }) {
                     <p className="mt-3 text-center font-body text-sm text-red-600">
                       Please fill in all required fields above before donating.
                     </p>
+                  )}
+                  </>
+  );
+
+  return (
+    <PageTransition>
+      <SEO title="Donate" description="Make a secure donation to Kadesh Hope Mission and support education, healthcare, and food security across Africa." />
+      <main className="overflow-hidden bg-[#f5f7fb]">
+        {/* Hero */}
+        <section className="relative isolate overflow-hidden bg-gradient-to-br from-[#0b2342] via-[#12366d] to-[#1e5bab] pb-24 pt-14 sm:pt-16">
+          <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full border border-white/[0.08]" />
+          <div className="pointer-events-none absolute -left-16 bottom-0 h-56 w-56 rounded-full bg-white/[0.04] blur-2xl" />
+          <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <p className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 font-body text-xs font-semibold uppercase tracking-[0.16em] text-white/85">
+              <LockKeyhole className="h-3.5 w-3.5" />
+              {isSponsorship ? "Secure sponsorship checkout" : "Secure donation"}
+            </p>
+            <h1 className="mt-4 max-w-3xl font-display text-3xl font-bold leading-tight text-white sm:text-4xl lg:text-5xl">
+              {isSponsorship
+                ? "Complete your sponsorship"
+                : "Make a donation"}
+            </h1>
+            <p className="mt-3 max-w-2xl font-body text-base leading-7 text-white/75">
+              {isSponsorship
+                ? "Help provide education fees, school supplies and meals for the children you've chosen."
+                : "Support education, health, food security and long-term development in the communities we serve."}
+            </p>
+            <ol className="mt-6 flex flex-wrap gap-2 font-body text-xs font-semibold text-white/80">
+              {(isSponsorship
+                ? ["Your details", "Support options", "Secure payment"]
+                : ["Amount", "Your details", "Secure payment"]
+              ).map(
+                (step, index) => (
+                  <li
+                    key={step}
+                    className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 ${
+                      !isSponsorship && donationStep === index + 1
+                        ? "border-white bg-white/20 text-white"
+                        : "border-white/15 bg-white/[0.06]"
+                    }`}
+                  >
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-[11px] font-bold text-[#12366d]">
+                      {index + 1}
+                    </span>
+                    {step}
+                  </li>
+                ),
+              )}
+            </ol>
+          </div>
+        </section>
+
+        <section className="relative -mt-14 pb-16 sm:pb-20">
+
+          <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            {result && (
+              <div
+                className={`mx-auto mb-8 flex max-w-4xl items-start gap-3 rounded-[1.35rem] border p-4 ${
+                  result.type === "success"
+                    ? "border-green-200 bg-green-50"
+                    : result.type === "info"
+                      ? "border-[#d6e3e9] bg-[#f3f8fa]"
+                      : "border-red-200 bg-red-50"
+                }`}
+              >
+                {result.type === "success" ? (
+                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-green-600" />
+                ) : result.type === "info" ? (
+                  <Shield className="mt-0.5 h-5 w-5 shrink-0 text-[#0e5874]" />
+                ) : (
+                  <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" />
+                )}
+                <div className="min-w-0">
+                  <p
+                    className={`font-body text-sm leading-6 ${
+                      result.type === "success"
+                        ? "text-green-800"
+                        : result.type === "info"
+                          ? "text-deep-navy"
+                          : "text-red-800"
+                    }`}
+                  >
+                    {result.message}
+                  </p>
+                  {result.type === "success" && result.guestEmail && (
+                    <div className="mt-3 rounded-xl border border-green-200 bg-white p-4">
+                      <p className="font-body text-sm font-semibold text-deep-navy">
+                        Create a free account to keep track of your giving
+                      </p>
+                      <p className="mt-1 font-body text-xs leading-5 text-slate-600">
+                        Sign up with {result.guestEmail} and this donation will
+                        appear in your account automatically, along with
+                        reminders for monthly gifts.
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <Link
+                          to={`/signup?redirect=${encodeURIComponent("/account")}&email=${encodeURIComponent(result.guestEmail)}`}
+                          className="inline-flex items-center gap-2 rounded-full bg-[#0b2d47] px-4 py-2 font-body text-sm font-semibold text-white hover:bg-[#103652]"
+                        >
+                          <UserPlus className="h-4 w-4" />
+                          Create my account
+                        </Link>
+                        <Link
+                          to={`/login?redirect=${encodeURIComponent("/account")}&email=${encodeURIComponent(result.guestEmail)}`}
+                          className="inline-flex items-center rounded-full border border-slate-200 px-4 py-2 font-body text-sm font-semibold text-deep-navy hover:border-[#1e5bab]/50"
+                        >
+                          I already have an account
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="grid items-start gap-8 lg:grid-cols-[1fr_360px] xl:gap-10">
+              {/* Main donation card */}
+              <div
+                id="giving-checkout-card"
+                className="scroll-mt-28 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_24px_60px_-30px_rgba(15,38,82,0.35)]"
+              >
+                <div className="border-b border-slate-100 px-6 py-6 sm:px-8 lg:px-10">
+                  <p className="font-body text-xs font-bold uppercase tracking-[0.18em] text-[#1e5bab]">
+                    {isSponsorship
+                      ? "Sponsorship details"
+                      : `Step ${donationStep} of 3`}
+                  </p>
+                  <h2 className="mt-2 font-display text-2xl font-bold text-deep-navy sm:text-3xl">
+                    {isSponsorship
+                      ? "Complete your support"
+                      : donationStep === 1
+                        ? "Choose your donation amount"
+                        : donationStep === 2
+                          ? "Tell us about yourself"
+                          : "Review and pay securely"}
+                  </h2>
+                  <p className="mt-3 max-w-2xl font-body text-sm leading-7 text-slate-600 sm:text-base">
+                    {isSponsorship
+                      ? "Enter your details, choose the frequency and amount, then continue to secure payment."
+                      : "Choose your amount first, then add your details and continue to secure payment."}
+                  </p>
+                  {isGuest && (
+                    <p className="mt-4 max-w-2xl rounded-xl border border-blue-100 bg-blue-50/60 px-4 py-3 font-body text-sm leading-6 text-slate-700">
+                      You're giving as a guest. You can create a free account
+                      after your gift, or{" "}
+                      <Link
+                        to={`/login?redirect=${redirectTarget}`}
+                        className="font-semibold text-[#0b2d47] underline underline-offset-2"
+                      >
+                        sign in now
+                      </Link>{" "}
+                      to fill in your details.
+                    </p>
+                  )}
+                </div>
+
+                <div className="p-6 sm:p-8 lg:p-10">
+                  {isSponsorship ? (
+                    <>
+                      {detailsSection}
+                      <div className="my-9 h-px bg-slate-100" />
+                      {frequencySection}
+                      <div className="my-9 h-px bg-slate-100" />
+                      {sponsorshipAmountSection}
+                      {paymentSection}
+                    </>
+                  ) : donationStep === 1 ? (
+                    <>
+                      {frequencySection}
+                      <div className="my-8 h-px bg-slate-100" />
+                      {donationAmountPicker}
+                      <Button
+                        className="mt-8 w-full justify-center rounded-xl bg-[#1e5bab] py-4 text-base font-bold text-white hover:bg-[#174a8d] sm:text-lg"
+                        onClick={goToDetails}
+                        disabled={!isValidAmount}
+                      >
+                        <span className="inline-flex items-center gap-2">
+                          Continue with {formatUSD(baseAmount)}
+                          <ArrowRight className="h-5 w-5" />
+                        </span>
+                      </Button>
+                    </>
+                  ) : donationStep === 2 ? (
+                    <>
+                      {stepBackLink(1, "Change amount")}
+                      {detailsSection}
+                      <Button
+                        className="mt-8 w-full justify-center rounded-xl bg-[#1e5bab] py-4 text-base font-bold text-white hover:bg-[#174a8d] sm:text-lg"
+                        onClick={goToPayment}
+                      >
+                        <span className="inline-flex items-center gap-2">
+                          Continue to payment
+                          <ArrowRight className="h-5 w-5" />
+                        </span>
+                      </Button>
+                      {attemptedDetails && hasFieldErrors && (
+                        <p className="mt-3 text-center font-body text-sm text-red-600">
+                          Please fill in all required fields above to continue.
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {stepBackLink(2, "Edit your details")}
+                      <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+                        <p className="font-body text-xs font-bold uppercase tracking-[0.18em] text-[#1e5bab]">
+                          Review your gift
+                        </p>
+                        <dl className="mt-4 grid gap-3 font-body text-sm sm:grid-cols-2">
+                          <div>
+                            <dt className="text-slate-500">Amount</dt>
+                            <dd className="font-display text-2xl font-bold text-deep-navy">
+                              {formatUSD(baseAmount)}
+                              <span className="ml-1 font-body text-sm font-semibold text-slate-500">
+                                {frequency === "monthly" ? "/ month" : "one-time"}
+                              </span>
+                            </dd>
+                          </div>
+                          <div>
+                            <dt className="text-slate-500">Donor</dt>
+                            <dd className="font-semibold text-deep-navy">
+                              {donorName}
+                              <span className="block font-normal text-slate-600">
+                                {donorEmail}
+                              </span>
+                            </dd>
+                          </div>
+                        </dl>
+                      </div>
+                      {paymentSection}
+                    </>
                   )}
                 </div>
               </div>

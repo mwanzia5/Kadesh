@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Heart,
   Loader2,
+  Lock,
   MapPin,
   Search,
   ShieldCheck,
@@ -26,6 +27,7 @@ import OptimizedImage from "@/components/ui/OptimizedImage";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import { useSponsorshipCart } from "@/context/SponsorshipCartContext";
 import { useChildren } from "@/hooks/useChildren";
+import { useDonorAuth } from "@/context/DonorAuthContext";
 import { getCMSContent, useCMSReady } from "@/hooks/useCMS";
 import { cn } from "@/lib/utils";
 import { AnnualFundingNotice } from "@/components/cart/SponsorshipSelection";
@@ -194,6 +196,45 @@ class ChildCardBoundary extends Component {
 
     return this.props.children;
   }
+}
+
+// Signed-out visitors only see a child's photo. Every other detail (name, age,
+// location, school, story) is shown only to signed-in donors.
+function LockedChildCard({ child }) {
+  const signInTo = `/login?redirect=${encodeURIComponent(`/sponsor-a-child/${child.id}`)}`;
+  return (
+    <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#eadfc8] bg-white shadow-[0_12px_32px_rgba(55,43,20,0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_44px_rgba(55,43,20,0.13)]">
+      <Link
+        to={signInTo}
+        aria-label="Sign in to view this child's profile"
+        className="relative block aspect-[4/5] overflow-hidden bg-[#f4ead7]"
+      >
+        {child.photo_url ? (
+          <OptimizedImage
+            src={child.photo_url}
+            alt="Child waiting for a sponsor"
+            className="absolute inset-0 h-full w-full bg-[#f4ead7] object-contain object-center"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#f7e7bd] to-[#efe1c5]">
+            <Users className="h-12 w-12 text-[#b2872f]/45" />
+          </div>
+        )}
+        <div className="absolute right-2.5 top-2.5 sm:right-3 sm:top-3">
+          <StatusBadge status={child.sponsorship_status} />
+        </div>
+      </Link>
+      <div className="mt-auto p-3.5 sm:p-4">
+        <Link
+          to={signInTo}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#1e5bab] px-3 py-2.5 font-body text-xs font-bold text-white shadow-sm transition-all hover:bg-[#174a8d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1e5bab]/40"
+        >
+          <Lock className="h-3.5 w-3.5" aria-hidden="true" />
+          Sign in to view profile
+        </Link>
+      </div>
+    </article>
+  );
 }
 
 function ChildCard({ child, locationLabel, onSponsored, funding }) {
@@ -389,7 +430,13 @@ export default function SponsorAChild() {
   const [currentPage, setCurrentPage] = useState(1);
   const [cartAlert, setCartAlert] = useState(null);
 
-  const { data: childrenData, isLoading } = useChildren();
+  const { user, loading: authLoading } = useDonorAuth();
+  const locked = !user;
+  const { data: childrenData, isLoading: childrenLoading } = useChildren({
+    publicOnly: locked,
+    enabled: !authLoading,
+  });
+  const isLoading = authLoading || childrenLoading;
   const funding = useAnnualFunding();
   const { cartCount, subtotal, frequency } = useSponsorshipCart();
   const children = useMemo(
@@ -833,8 +880,9 @@ export default function SponsorAChild() {
                   Find a child to sponsor
                 </h2>
                 <p className="mt-2 max-w-2xl font-body text-sm leading-6 text-[#6c6458] sm:text-base">
-                  Browse child profiles. Search by name or
-                  location, then narrow the list with the filters below.
+                  {locked
+                    ? "Every photo is a child waiting for someone to stand with them. Sign in to read their stories and sponsor."
+                    : "Browse child profiles. Search by name or location, then narrow the list with the filters below."}
                 </p>
               </div>
               {!isLoading && (
@@ -845,6 +893,41 @@ export default function SponsorAChild() {
               )}
             </div>
 
+            {locked ? (
+              <div className="flex flex-col gap-4 rounded-[1.5rem] border border-[#eadfc8] bg-white p-5 shadow-[0_12px_36px_rgba(55,43,20,0.07)] sm:flex-row sm:items-center sm:justify-between sm:p-6">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#0b2d47] text-[#f0cd72]">
+                    <Lock className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <p className="font-display text-xl font-bold text-deep-navy">
+                      Child profiles are private
+                    </p>
+                    <p className="mt-1 max-w-xl font-body text-sm leading-6 text-[#6c6458]">
+                      To protect the children in our care, names, ages,
+                      locations and stories are only visible to signed-in
+                      donors. Sign in or create a free account to view full
+                      profiles and sponsor a child.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex shrink-0 flex-wrap gap-2">
+                  <Link
+                    to={`/login?redirect=${encodeURIComponent("/sponsor-a-child")}`}
+                    className="inline-flex items-center gap-2 rounded-full bg-[#1e5bab] px-5 py-2.5 font-body text-sm font-bold text-white transition hover:bg-[#174a8d]"
+                  >
+                    Sign in
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                  <Link
+                    to={`/signup?redirect=${encodeURIComponent("/sponsor-a-child")}`}
+                    className="inline-flex items-center rounded-full border border-[#dfd3bc] bg-[#fffdf8] px-5 py-2.5 font-body text-sm font-bold text-deep-navy transition hover:border-[#1e5bab] hover:text-[#1e5bab]"
+                  >
+                    Create account
+                  </Link>
+                </div>
+              </div>
+            ) : (
             <div className="rounded-[1.5rem] border border-[#eadfc8] bg-white p-4 shadow-[0_12px_36px_rgba(55,43,20,0.07)] sm:p-5">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7">
                 <label className="relative block min-w-0 sm:col-span-2 lg:col-span-3 xl:col-span-2">
@@ -960,6 +1043,7 @@ export default function SponsorAChild() {
                 )}
               </div>
             </div>
+            )}
 
             {!isLoading && availableCount > 0 && (
               <div className="mt-5 flex flex-col gap-4 overflow-hidden rounded-[1.35rem] border border-[#efdca7] bg-[linear-gradient(90deg,#fff6dc,#fffaf0)] p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
@@ -1048,10 +1132,13 @@ export default function SponsorAChild() {
               >
                 {paginatedChildren.map((child) => (
                   <motion.div
-                    key={child.id ?? `${child.first_name}-${child.age}`}
+                    key={child.id}
                     variants={slideUp}
                   >
                     <ChildCardBoundary child={child}>
+                      {locked ? (
+                        <LockedChildCard child={child} />
+                      ) : (
                       <ChildCard
                         funding={funding.data?.[child.id]}
                         child={child}
@@ -1062,6 +1149,7 @@ export default function SponsorAChild() {
                         }
                         onSponsored={setCartAlert}
                       />
+                      )}
                     </ChildCardBoundary>
                   </motion.div>
                 ))}

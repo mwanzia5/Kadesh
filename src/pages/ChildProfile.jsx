@@ -11,6 +11,7 @@ import {
   ArrowLeft,
   Loader2,
   LogIn,
+  Lock,
 } from "lucide-react";
 
 import PageTransition from "@/animations/PageTransition";
@@ -52,10 +53,17 @@ function StatusBadge({ status }) {
 export default function ChildProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useDonorAuth();
+  const { user, loading: authLoading } = useDonorAuth();
   const { addToCart, openCart } = useSponsorshipCart();
   const funding = useAnnualFunding();
-  const { data, isLoading, error } = useChild(id);
+  // Signed-out visitors only get the photo; full details need a sign-in.
+  const locked = !user;
+  const {
+    data,
+    isLoading: childLoading,
+    error,
+  } = useChild(id, { publicOnly: locked, enabled: !authLoading });
+  const isLoading = authLoading || childLoading;
 
   const child = data?.data
     ? {
@@ -91,6 +99,67 @@ export default function ChildProfile() {
             Back to Sponsor a Child
           </Button>
         </div>
+      </PageTransition>
+    );
+  }
+
+  if (locked) {
+    const redirect = encodeURIComponent(`/sponsor-a-child/${id}`);
+    return (
+      <PageTransition>
+        <SEO title="Sponsor a Child" />
+        <Section background="white" className="relative z-10 pt-5 pb-16 sm:pt-6 lg:pt-8">
+          <Container>
+            <Link
+              to="/sponsor-a-child"
+              className="mb-4 inline-flex items-center gap-2 font-body text-sm font-semibold text-deep-navy transition-colors hover:text-[#1e5bab] sm:mb-6"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Sponsor a Child
+            </Link>
+            <div className="mx-auto grid max-w-4xl grid-cols-1 items-center gap-8 md:grid-cols-2">
+              <div className="overflow-hidden rounded-2xl border border-soft-accent/50 bg-white shadow-card">
+                {child.photo_url ? (
+                  <OptimizedImage
+                    src={child.photo_url}
+                    alt="Child waiting for a sponsor"
+                    className="h-auto w-full"
+                  />
+                ) : (
+                  <div className="flex aspect-[4/5] w-full items-center justify-center bg-gradient-to-br from-vibrant-blue/20 to-hope-orange/20">
+                    <Heart className="h-16 w-16 text-vibrant-blue/30" />
+                  </div>
+                )}
+              </div>
+              <div>
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#0b2d47] text-[#f0cd72]">
+                  <Lock className="h-5 w-5" />
+                </span>
+                <h1 className="mt-5 font-display text-3xl font-bold text-deep-navy sm:text-4xl">
+                  Sign in to view this child&apos;s profile
+                </h1>
+                <p className="mt-4 font-body text-base leading-7 text-on-surface-variant">
+                  To protect the children in our care, their names, ages,
+                  locations and stories are only visible to signed-in donors.
+                  Sign in or create a free account to read this child&apos;s
+                  story and become their sponsor.
+                </p>
+                <div className="mt-7 flex flex-wrap gap-3">
+                  <Button variant="primary" as={Link} to={`/login?redirect=${redirect}`}>
+                    <LogIn className="mr-2 h-5 w-5" />
+                    Sign in
+                  </Button>
+                  <Link
+                    to={`/signup?redirect=${redirect}`}
+                    className="inline-flex items-center rounded-full border border-slate-300 px-6 py-3 font-body text-sm font-bold text-deep-navy transition hover:border-[#1e5bab] hover:text-[#1e5bab]"
+                  >
+                    Create a free account
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </Container>
+        </Section>
       </PageTransition>
     );
   }

@@ -8,19 +8,21 @@ import {
   deleteChild,
 } from "@/services/children";
 
-export function useChildren() {
+// publicOnly: fetch only the photo-level columns signed-out visitors may see.
+export function useChildren({ publicOnly = false, enabled = true } = {}) {
   return useQuery({
-    queryKey: ["children"],
-    queryFn: getChildren,
+    queryKey: ["children", publicOnly ? "public" : "full"],
+    queryFn: () => getChildren({ publicOnly }),
+    enabled,
     staleTime: 5 * 60 * 1000,
   });
 }
 
-export function useChild(id) {
+export function useChild(id, { publicOnly = false, enabled = true } = {}) {
   return useQuery({
-    queryKey: ["children", id],
-    queryFn: () => getChild(id),
-    enabled: !!id,
+    queryKey: ["children", id, publicOnly ? "public" : "full"],
+    queryFn: () => getChild(id, { publicOnly }),
+    enabled: !!id && enabled,
     staleTime: 5 * 60 * 1000,
   });
 }

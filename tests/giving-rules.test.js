@@ -28,37 +28,28 @@ const funding = (amount, other = {}) => ({
   ...other,
 });
 
-test("one-time donation presets start at $100", () => {
-  assert.deepEqual(DONATION_AMOUNTS, [100, 150, 300, 500]);
-  assert.deepEqual(donationAmountsFor("one-time"), [100, 150, 300, 500]);
-  for (const amount of donationAmountsFor("one-time"))
-    assert.ok(isValidDonationAmount(amount));
-  for (const amount of [0, 10, 25, 50, 250, 499, 600])
-    assert.equal(isValidDonationAmount(amount), false);
-});
-test("monthly donation presets start at $100", () => {
-  assert.deepEqual(donationAmountsFor("monthly"), [100, 150, 200, 300]);
-  for (const amount of [100, 150, 200, 300])
-    assert.ok(isValidDonationAmount(amount, false, "monthly"));
-  for (const amount of [25, 50])
-    assert.equal(isValidDonationAmount(amount, false, "monthly"), false);
-  assert.equal(isValidDonationAmount(500, false, "monthly"), false);
-});
-test("custom (enter a different amount) donations start at $500", () => {
-  assert.equal(MIN_CUSTOM_DONATION, 500);
+test("donation presets are $25, $50, $100, $300 and $500", () => {
   for (const frequency of ["one-time", "monthly"]) {
-    for (const amount of ["", -500, 0, 25, 50, 75, 499.99, NaN, "invalid", 500.001])
+    assert.deepEqual(donationAmountsFor(frequency), [25, 50, 100, 300, 500]);
+    for (const amount of donationAmountsFor(frequency))
+      assert.ok(isValidDonationAmount(amount, false, frequency));
+    for (const amount of [0, 10, 24, 75, 150, 600])
+      assert.equal(isValidDonationAmount(amount, false, frequency), false);
+  }
+  assert.deepEqual(DONATION_AMOUNTS, [25, 50, 100, 300, 500]);
+});
+test("custom amounts must be at least $25", () => {
+  assert.equal(MIN_CUSTOM_DONATION, 25);
+  for (const frequency of ["one-time", "monthly"]) {
+    for (const amount of ["", -25, 0, 10, 24.99, NaN, "invalid", 25.001])
       assert.equal(
         isValidDonationAmount(amount, true, frequency),
         false,
         `${frequency} ${amount}`,
       );
-    for (const amount of [500, "500", 500.01, 850.25])
+    for (const amount of [25, "25", 25.01, 40, 850.25])
       assert.ok(isValidDonationAmount(amount, true, frequency), `${frequency} ${amount}`);
   }
-  // Suggested amounts below $500 are still accepted.
-  assert.ok(isValidDonationAmount(150, false, "one-time"));
-  assert.ok(isValidDonationAmount(200, false, "monthly"));
 });
 test("verified payments are recordable from $25 so no real gift is lost", () => {
   assert.ok(isRecordableDonationAmount(25));

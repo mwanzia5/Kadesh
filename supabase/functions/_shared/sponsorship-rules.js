@@ -1,12 +1,12 @@
-// General donations. One-time gifts start at $100; monthly gifts start at $100.
+// General donations. Every gift (one-time or monthly) starts at $25.
 // Monthly gifts are paid manually each month (no automatic card charge).
-export const ONE_TIME_DONATION_AMOUNTS = Object.freeze([100, 150, 300, 500]);
-export const MONTHLY_DONATION_AMOUNTS = Object.freeze([100, 150, 200, 300]);
+export const ONE_TIME_DONATION_AMOUNTS = Object.freeze([25, 50, 100, 300, 500]);
+export const MONTHLY_DONATION_AMOUNTS = ONE_TIME_DONATION_AMOUNTS;
 export const DONATION_AMOUNTS = ONE_TIME_DONATION_AMOUNTS;
-export const MIN_ONE_TIME_DONATION = 100;
-export const MIN_MONTHLY_DONATION = 100;
-// "Enter a different amount" (custom) gifts start at $500, monthly or one-time.
-export const MIN_CUSTOM_DONATION = 500;
+export const MIN_ONE_TIME_DONATION = 25;
+export const MIN_MONTHLY_DONATION = 25;
+// "Custom Amount" gifts must also be at least $25, monthly or one-time.
+export const MIN_CUSTOM_DONATION = 25;
 // Lowest gift the payment recorder accepts for any donation type. Kept at $25
 // (the smallest monthly child sponsorship) so no verified payment is lost.
 export const MIN_RECORDABLE_DONATION = 25;

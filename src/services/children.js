@@ -1,10 +1,18 @@
 import supabase from "@/supabase/client";
 
-export async function getChildren() {
+// Signed-out visitors may only see a child's photo (plus the id and
+// availability needed to show the card). Every other column — name, age,
+// location, school, family and story — is for signed-in donors only. The
+// database enforces the same split (supabase/child-privacy.sql), so these are
+// the only columns an anonymous request is allowed to read.
+export const PUBLIC_CHILD_COLUMNS =
+  "id, photo_url, sponsorship_status, created_at";
+
+export async function getChildren({ publicOnly = false } = {}) {
   try {
     const { data, error } = await supabase
       .from("children")
-      .select("*")
+      .select(publicOnly ? PUBLIC_CHILD_COLUMNS : "*")
       .order("created_at", { ascending: false });
 
     return { data, error };
@@ -13,11 +21,11 @@ export async function getChildren() {
   }
 }
 
-export async function getChild(id) {
+export async function getChild(id, { publicOnly = false } = {}) {
   try {
     const { data, error } = await supabase
       .from("children")
-      .select("*")
+      .select(publicOnly ? PUBLIC_CHILD_COLUMNS : "*")
       .eq("id", id)
       .single();
 
