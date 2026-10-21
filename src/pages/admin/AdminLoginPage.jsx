@@ -4,7 +4,17 @@ import { motion } from "framer-motion";
 import { Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle, ArrowLeft, Loader2 } from "lucide-react";
 import { supabase } from "@/supabase/client";
 import Button from "@/components/ui/Button";
+import TurnstileWidget, { CAPTCHA_ENABLED } from "@/components/ui/TurnstileWidget";
 import { isAdminEmail } from "@/constants";
+
+const CAPTCHA_MISSING = "Please complete the security check, then try again.";
+
+function friendlyAuthError(err, fallback) {
+  const message = String(err?.message || "");
+  if (err?.code === "captcha_failed" || /captcha/i.test(message))
+    return "The security check didn’t pass. Please complete it again and retry.";
+  return message || fallback;
+}
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState("");
@@ -17,6 +27,8 @@ export default function AdminLoginPage() {
   const [forgotEmail, setForgotEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [captchaToken, setCaptchaToken] = useState(null);
+  const [captchaReset, setCaptchaReset] = useState(0);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -42,16 +54,25 @@ export default function AdminLoginPage() {
       return;
     }
 
+    if (CAPTCHA_ENABLED && !captchaToken) {
+      setError(CAPTCHA_MISSING);
+      setLoading(false);
+      return;
+    }
+
     const {
       data,
       error: authError,
     } = await supabase.auth.signInWithPassword({
       email,
       password,
+      options: captchaToken ? { captchaToken } : undefined,
     });
+    // Turnstile tokens are single-use.
+    setCaptchaReset((value) => value + 1);
 
     if (authError) {
-      setError(authError.message);
+      setError(friendlyAuthError(authError, "Sign-in failed."));
       setLoading(false);
       return;
     }
@@ -75,18 +96,26 @@ export default function AdminLoginPage() {
     if (!forgotEmail) return;
     setError("");
     setSuccess("");
+    if (CAPTCHA_ENABLED && !captchaToken) {
+      setError(CAPTCHA_MISSING);
+      return;
+    }
     setLoading(true);
     try {
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         forgotEmail,
-        { redirectTo: `${window.location.origin}/admin/login?mode=recovery` }
+        {
+          redirectTo: `${window.location.origin}/admin/login?mode=recovery`,
+          ...(captchaToken ? { captchaToken } : {}),
+        }
       );
       if (resetError) throw resetError;
       setMode("check-email");
     } catch (err) {
-      setError(err.message || "Failed to send reset email.");
+      setError(friendlyAuthError(err, "Failed to send reset email."));
     } finally {
       setLoading(false);
+      setCaptchaReset((value) => value + 1);
     }
   };
 
@@ -287,6 +316,11 @@ export default function AdminLoginPage() {
                     />
                   </div>
                 </div>
+                <TurnstileWidget
+                  action="admin-reset-password"
+                  onToken={setCaptchaToken}
+                  resetKey={captchaReset}
+                />
                 <Button
                   type="submit"
                   disabled={loading}
@@ -355,6 +389,12 @@ export default function AdminLoginPage() {
                 </button>
               </div>
             </div>
+
+            <TurnstileWidget
+              action="admin-login"
+              onToken={setCaptchaToken}
+              resetKey={captchaReset}
+            />
 
             <Button
               type="submit"

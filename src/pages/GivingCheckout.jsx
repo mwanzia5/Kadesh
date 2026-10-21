@@ -118,7 +118,8 @@ export default function GivingCheckout({ mode = "donation" }) {
   // whether Paystack's popup closed.
   const [result, setResult] = useState(null); // { type: "success" | "error", message }
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
-  // General donations run as three steps: 1 amount, 2 donor details, 3 payment.
+  // Both checkouts run as three steps: 1 support options (frequency + amount),
+  // 2 donor details, 3 review and payment.
   const [donationStep, setDonationStep] = useState(1);
   const [attemptedDetails, setAttemptedDetails] = useState(false);
 
@@ -212,6 +213,7 @@ export default function GivingCheckout({ mode = "donation" }) {
     donorPhone: donorPhone.trim() ? null : "Phone number is required",
   };
   const hasFieldErrors = Object.values(fieldErrors).some(Boolean);
+  const showFieldErrors = attemptedSubmit || attemptedDetails;
   const formIsValid = !hasFieldErrors && isValidAmount;
 
   const handleAmountClick = (amount) => {
@@ -621,7 +623,9 @@ export default function GivingCheckout({ mode = "donation" }) {
     if (!isValidAmount) {
       setResult({
         type: "error",
-        message: `The minimum gift is $${minDonation}. Choose an amount or enter $${minDonation} or more.`,
+        message:
+          sponsorshipError ||
+          `The minimum gift is $${minDonation}. Choose an amount or enter $${minDonation} or more.`,
       });
       return;
     }
@@ -630,6 +634,21 @@ export default function GivingCheckout({ mode = "donation" }) {
   const goToPayment = () => {
     setAttemptedDetails(true);
     if (hasFieldErrors) return;
+    goToStep(3);
+  };
+  // Progress pills: earlier steps open directly; later steps only open once
+  // everything before them is valid, otherwise the donor lands on what's missing.
+  const paymentDone = result?.type === "success";
+  const goToStepFromNav = (step) => {
+    if (processing || paymentDone || step === donationStep) return;
+    if (step < donationStep) return goToStep(step);
+    if (step === 2) return goToDetails();
+    if (!isValidAmount) return goToDetails();
+    setAttemptedDetails(true);
+    if (hasFieldErrors) {
+      if (donationStep !== 2) goToStep(2);
+      return;
+    }
     goToStep(3);
   };
   const stepBackLink = (step, label) => (
@@ -663,6 +682,11 @@ export default function GivingCheckout({ mode = "donation" }) {
       </span>
     </button>
   );
+  const giftSummary = `${
+    isSponsorship
+      ? `${cartCount} ${cartCount === 1 ? "child" : "children"} · `
+      : ""
+  }${formatUSD(baseAmount)}${frequency === "monthly" ? " / month" : " one-time"}`;
   const customNumber = Number(customAmount);
   const customTooLow = isOther && customAmount !== "" && !isValidAmount;
   const amountParts = (value) => {
@@ -790,15 +814,16 @@ export default function GivingCheckout({ mode = "donation" }) {
   const detailsSection = (
                   <div>
                     <div className="mb-5 flex items-center gap-3">
-                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0b2d47] font-display text-sm font-bold text-white">
-                        {isSponsorship ? 1 : 2}
+                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0b2d47] text-white">
+                        <UserPlus className="h-4 w-4" />
                       </span>
                       <div>
                         <h3 className="font-display text-xl font-bold text-deep-navy">
                           Your details
                         </h3>
                         <p className="font-body text-xs text-slate-500">
-                          Used for your receipt and donation record.
+                          We use these only to send your receipt and keep a
+                          record of your {isSponsorship ? "sponsorship" : "gift"}.
                         </p>
                       </div>
                     </div>
@@ -818,12 +843,12 @@ export default function GivingCheckout({ mode = "donation" }) {
                           value={donorName}
                           onChange={(e) => setDonorName(e.target.value)}
                           className={`w-full rounded-xl border bg-white px-4 py-3.5 font-body text-[15px] text-deep-navy outline-none transition placeholder:text-slate-400 focus:bg-white focus:ring-4 ${
-                            attemptedSubmit && fieldErrors.donorName
+                            showFieldErrors && fieldErrors.donorName
                               ? "border-red-400 focus:border-red-500 focus:ring-red-100"
                               : "border-slate-200 focus:border-[#1e5bab] focus:ring-[#1e5bab]/10"
                           }`}
                         />
-                        {attemptedSubmit && fieldErrors.donorName && (
+                        {showFieldErrors && fieldErrors.donorName && (
                           <p className="mt-1.5 font-body text-xs text-red-600">
                             {fieldErrors.donorName}
                           </p>
@@ -844,12 +869,12 @@ export default function GivingCheckout({ mode = "donation" }) {
                           value={donorEmail}
                           onChange={(e) => setDonorEmail(e.target.value)}
                           className={`w-full rounded-xl border bg-white px-4 py-3.5 font-body text-[15px] text-deep-navy outline-none transition placeholder:text-slate-400 focus:bg-white focus:ring-4 ${
-                            attemptedSubmit && fieldErrors.donorEmail
+                            showFieldErrors && fieldErrors.donorEmail
                               ? "border-red-400 focus:border-red-500 focus:ring-red-100"
                               : "border-slate-200 focus:border-[#1e5bab] focus:ring-[#1e5bab]/10"
                           }`}
                         />
-                        {attemptedSubmit && fieldErrors.donorEmail && (
+                        {showFieldErrors && fieldErrors.donorEmail && (
                           <p className="mt-1.5 font-body text-xs text-red-600">
                             {fieldErrors.donorEmail}
                           </p>
@@ -870,12 +895,12 @@ export default function GivingCheckout({ mode = "donation" }) {
                           value={donorLocation}
                           onChange={(e) => setDonorLocation(e.target.value)}
                           className={`w-full rounded-xl border bg-white px-4 py-3.5 font-body text-[15px] text-deep-navy outline-none transition placeholder:text-slate-400 focus:bg-white focus:ring-4 ${
-                            attemptedSubmit && fieldErrors.donorLocation
+                            showFieldErrors && fieldErrors.donorLocation
                               ? "border-red-400 focus:border-red-500 focus:ring-red-100"
                               : "border-slate-200 focus:border-[#1e5bab] focus:ring-[#1e5bab]/10"
                           }`}
                         />
-                        {attemptedSubmit && fieldErrors.donorLocation && (
+                        {showFieldErrors && fieldErrors.donorLocation && (
                           <p className="mt-1.5 font-body text-xs text-red-600">
                             {fieldErrors.donorLocation}
                           </p>
@@ -896,12 +921,12 @@ export default function GivingCheckout({ mode = "donation" }) {
                           value={donorPhone}
                           onChange={(e) => setDonorPhone(e.target.value)}
                           className={`w-full rounded-xl border bg-white px-4 py-3.5 font-body text-[15px] text-deep-navy outline-none transition placeholder:text-slate-400 focus:bg-white focus:ring-4 ${
-                            attemptedSubmit && fieldErrors.donorPhone
+                            showFieldErrors && fieldErrors.donorPhone
                               ? "border-red-400 focus:border-red-500 focus:ring-red-100"
                               : "border-slate-200 focus:border-[#1e5bab] focus:ring-[#1e5bab]/10"
                           }`}
                         />
-                        {attemptedSubmit && fieldErrors.donorPhone && (
+                        {showFieldErrors && fieldErrors.donorPhone && (
                           <p className="mt-1.5 font-body text-xs text-red-600">
                             {fieldErrors.donorPhone}
                           </p>
@@ -914,16 +939,18 @@ export default function GivingCheckout({ mode = "donation" }) {
   const frequencySection = (
                   <div>
                     <div className="mb-5 flex items-center gap-3">
-                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0b2d47] font-display text-sm font-bold text-white">
-                        {isSponsorship ? 2 : 1}
+                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0b2d47] text-white">
+                        <Repeat className="h-4 w-4" />
                       </span>
                       <div>
                         <h3 className="font-display text-xl font-bold text-deep-navy">
-                          {isSponsorship ? "Giving preference" : "Choose your gift"}
+                          {isSponsorship
+                            ? "How often would you like to give?"
+                            : "Choose your gift"}
                         </h3>
                         <p className="font-body text-xs text-slate-500">
                           {isSponsorship
-                            ? "Choose how often you would like to give."
+                            ? "Pick one-time or monthly. You can change this before you pay."
                             : `Gifts start at $${minDonation}, monthly or one-time.`}
                         </p>
                       </div>
@@ -1013,18 +1040,18 @@ export default function GivingCheckout({ mode = "donation" }) {
   const sponsorshipAmountSection = (
                   <div>
                     <div className="mb-5 flex items-center gap-3">
-                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0b2d47] font-display text-sm font-bold text-white">
-                        3
+                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0b2d47] text-white">
+                        <Heart className="h-4 w-4" />
                       </span>
                       <div>
                         <h3 className="font-display text-xl font-bold text-deep-navy">
                           {isCartCheckout
-                            ? "Sponsorship amount"
+                            ? "What would you like to cover?"
                             : "Choose an amount"}
                         </h3>
                         <p className="font-body text-xs text-slate-500">
                           {isCartCheckout
-                            ? "Choose a support option for each child, then review your total."
+                            ? "Choose a support option for each child. Your total updates on the right."
                             : "Select a suggested gift or enter your own amount."}
                         </p>
                       </div>
@@ -1143,11 +1170,13 @@ export default function GivingCheckout({ mode = "donation" }) {
                       </span>
                       <div>
                         <p className="font-body text-sm font-bold">
-                          Secure payment
+                          How payment works
                         </p>
                         <p className="mt-1 font-body text-xs leading-5 text-slate-600">
-                          Payments are securely processed via Paystack in
-                          Kenyan shillings (KSh) at $1 = KSh {KES_PER_USD}.
+                          When you press the button below, a secure Paystack
+                          window opens where you choose card, M-Pesa, Airtel
+                          Money or bank. Payments are in Kenyan shillings (KSh)
+                          at $1 = KSh {KES_PER_USD}.
                           {isValidAmount && baseAmount > 0 && (
                             <>
                               {" "}
@@ -1248,25 +1277,42 @@ export default function GivingCheckout({ mode = "donation" }) {
             </p>
             <ol className="mt-6 flex flex-wrap gap-2 font-body text-xs font-semibold text-white/80">
               {(isSponsorship
-                ? ["Your details", "Support options", "Secure payment"]
-                : ["Amount", "Your details", "Secure payment"]
-              ).map(
-                (step, index) => (
-                  <li
-                    key={step}
-                    className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 ${
-                      !isSponsorship && donationStep === index + 1
-                        ? "border-white bg-white/20 text-white"
-                        : "border-white/15 bg-white/[0.06]"
+                ? ["Support options", "Your details", "Review & pay"]
+                : ["Amount", "Your details", "Review & pay"]
+              ).map((step, index) => {
+                const number = index + 1;
+                const current = donationStep === number;
+                const done = donationStep > number;
+                return (
+                  <li key={step}>
+                  <button
+                    type="button"
+                    onClick={() => goToStepFromNav(number)}
+                    disabled={processing || paymentDone}
+                    aria-current={current ? "step" : undefined}
+                    aria-label={`Step ${number}: ${step}${done ? " (done)" : ""}`}
+                    className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f0cd72] disabled:cursor-not-allowed ${
+                      current
+                        ? "cursor-default border-white bg-white/20 text-white"
+                        : done
+                          ? "border-white/25 bg-white/10 text-white/90 hover:border-white/60 hover:bg-white/20"
+                          : "border-white/15 bg-white/[0.06] text-white/60 hover:border-white/40 hover:text-white"
                     }`}
                   >
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-[11px] font-bold text-[#12366d]">
-                      {index + 1}
+                    <span
+                      className={`flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold ${
+                        done
+                          ? "bg-[#f0cd72] text-[#0b2d47]"
+                          : "bg-white text-[#12366d]"
+                      }`}
+                    >
+                      {done ? <CheckCircle2 className="h-3.5 w-3.5" /> : number}
                     </span>
                     {step}
+                  </button>
                   </li>
-                ),
-              )}
+                );
+              })}
             </ol>
           </div>
         </section>
@@ -1342,23 +1388,25 @@ export default function GivingCheckout({ mode = "donation" }) {
               >
                 <div className="border-b border-slate-100 px-6 py-6 sm:px-8 lg:px-10">
                   <p className="font-body text-xs font-bold uppercase tracking-[0.18em] text-[#1e5bab]">
-                    {isSponsorship
-                      ? "Sponsorship details"
-                      : `Step ${donationStep} of 3`}
+                    {`Step ${donationStep} of 3`}
                   </p>
                   <h2 className="mt-2 font-display text-2xl font-bold text-deep-navy sm:text-3xl">
-                    {isSponsorship
-                      ? "Complete your support"
-                      : donationStep === 1
-                        ? "Choose your donation amount"
-                        : donationStep === 2
-                          ? "Tell us about yourself"
-                          : "Review and pay securely"}
+                    {donationStep === 1
+                      ? isSponsorship
+                        ? "Choose how you'd like to help"
+                        : "Choose your donation amount"
+                      : donationStep === 2
+                        ? "Tell us about yourself"
+                        : "Review and pay securely"}
                   </h2>
                   <p className="mt-3 max-w-2xl font-body text-sm leading-7 text-slate-600 sm:text-base">
-                    {isSponsorship
-                      ? "Enter your details, choose the frequency and amount, then continue to secure payment."
-                      : "Choose your amount first, then add your details and continue to secure payment."}
+                    {donationStep === 1
+                      ? isSponsorship
+                        ? "Pick how often to give and what to cover for each child. Next, you'll add your details."
+                        : "Pick one-time or monthly and an amount. Next, you'll add your details."
+                      : donationStep === 2
+                        ? "So we can send your receipt. Then you'll review everything before paying."
+                        : "Check your gift below, then pay with card, M-Pesa, Airtel Money or bank."}
                   </p>
                   {isGuest && (
                     <p className="mt-4 max-w-2xl rounded-xl border border-blue-100 bg-blue-50/60 px-4 py-3 font-body text-sm leading-6 text-slate-700">
@@ -1376,37 +1424,35 @@ export default function GivingCheckout({ mode = "donation" }) {
                 </div>
 
                 <div className="p-6 sm:p-8 lg:p-10">
-                  {isSponsorship ? (
-                    <>
-                      {detailsSection}
-                      <div className="my-9 h-px bg-slate-100" />
-                      {frequencySection}
-                      <div className="my-9 h-px bg-slate-100" />
-                      {sponsorshipAmountSection}
-                      {paymentSection}
-                    </>
-                  ) : donationStep === 1 ? (
+                  {donationStep === 1 ? (
                     <>
                       {frequencySection}
                       <div className="my-8 h-px bg-slate-100" />
-                      {donationAmountPicker}
+                      {isSponsorship
+                        ? sponsorshipAmountSection
+                        : donationAmountPicker}
                       {continueButton({
                         onClick: goToDetails,
                         disabled: !isValidAmount,
-                        label: "Continue",
+                        label: "Continue to your details",
                         detail: isValidAmount
-                          ? `${formatUSD(baseAmount)}${frequency === "monthly" ? " / month" : " one-time gift"}`
-                          : `Minimum $${minDonation}`,
+                          ? giftSummary
+                          : isSponsorship
+                            ? sponsorshipError || "Choose a support option"
+                            : `Minimum $${minDonation}`,
                       })}
                     </>
                   ) : donationStep === 2 ? (
                     <>
-                      {stepBackLink(1, "Change amount")}
+                      {stepBackLink(
+                        1,
+                        isSponsorship ? "Change support options" : "Change amount",
+                      )}
                       {detailsSection}
                       {continueButton({
                         onClick: goToPayment,
-                        label: "Continue to payment",
-                        detail: `${formatUSD(baseAmount)}${frequency === "monthly" ? " / month" : " one-time gift"}`,
+                        label: "Continue to review & pay",
+                        detail: giftSummary,
                       })}
                       {attemptedDetails && hasFieldErrors && (
                         <p className="mt-3 text-center font-body text-sm text-red-600">
@@ -1419,9 +1465,28 @@ export default function GivingCheckout({ mode = "donation" }) {
                       {stepBackLink(2, "Edit your details")}
                       <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
                         <p className="font-body text-xs font-bold uppercase tracking-[0.18em] text-[#1e5bab]">
-                          Review your gift
+                          {isSponsorship
+                            ? "Review your sponsorship"
+                            : "Review your gift"}
                         </p>
                         <dl className="mt-4 grid gap-3 font-body text-sm sm:grid-cols-2">
+                          {isSponsorship && (
+                            <div>
+                              <dt className="text-slate-500">Sponsoring</dt>
+                              <dd className="font-semibold text-deep-navy">
+                                {cartCount}{" "}
+                                {cartCount === 1 ? "child" : "children"}
+                                <button
+                                  type="button"
+                                  onClick={() => goToStep(1)}
+                                  disabled={processing}
+                                  className="ml-2 font-body text-xs font-semibold text-[#1e5bab] hover:underline disabled:opacity-50"
+                                >
+                                  Change
+                                </button>
+                              </dd>
+                            </div>
+                          )}
                           <div>
                             <dt className="text-slate-500">Amount</dt>
                             <dd className="font-display text-2xl font-bold text-deep-navy">

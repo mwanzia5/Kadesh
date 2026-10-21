@@ -76,6 +76,8 @@ export function getAuthErrorMessage(error, action = "send") {
   ) {
     return "Email requests are temporarily limited. Please wait before trying again. If this continues, contact our team.";
   }
+  if (code === "captcha_failed" || /captcha/.test(message))
+    return "The security check didn’t pass. Please complete it again and retry.";
   if (["invalid_email", "email_address_invalid"].includes(code))
     return "Enter a valid email address.";
   if (code === "invalid_otp_format")
@@ -130,6 +132,7 @@ export function createDonorAuthActions(client) {
       lastName = "",
       redirectTo,
       origin,
+      captchaToken,
     }) {
       if (!["login", "signup"].includes(mode))
         throw authError("invalid_mode", "Choose sign in or create an account.");
@@ -137,6 +140,8 @@ export function createDonorAuthActions(client) {
         shouldCreateUser: mode === "signup",
         emailRedirectTo: authCallbackUrl(redirectTo, origin),
       };
+      // Required by Supabase once CAPTCHA protection is enabled.
+      if (captchaToken) options.captchaToken = captchaToken;
       if (mode === "signup")
         options.data = {
           first_name: String(firstName).trim().slice(0, 100),

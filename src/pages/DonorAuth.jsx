@@ -14,6 +14,7 @@ import {
 import PageTransition from "@/animations/PageTransition";
 import SEO from "@/components/ui/SEO";
 import Container from "@/components/ui/Container";
+import TurnstileWidget, { CAPTCHA_ENABLED } from "@/components/ui/TurnstileWidget";
 import { useDonorAuth } from "@/context/DonorAuthContext";
 import {
   getAuthErrorMessage,
@@ -93,6 +94,8 @@ function AuthForm({ mode, redirectTo, initialEmail = "" }) {
   const [busy, setBusy] = useState("");
   const [retryAt, setRetryAt] = useState(readCooldown);
   const [now, setNow] = useState(Date.now);
+  const [captchaToken, setCaptchaToken] = useState(null);
+  const [captchaReset, setCaptchaReset] = useState(0);
   const busyRef = useRef(false);
   const mounted = useRef(true);
   const codeInput = useRef(null);
@@ -136,6 +139,10 @@ function AuthForm({ mode, redirectTo, initialEmail = "" }) {
       setError("Please enter your name.");
       return;
     }
+    if (CAPTCHA_ENABLED && !captchaToken) {
+      setError("Please complete the security check below, then try again.");
+      return;
+    }
     busyRef.current = true;
     setBusy("send");
     setError("");
@@ -150,6 +157,7 @@ function AuthForm({ mode, redirectTo, initialEmail = "" }) {
         lastName: rest.join(" "),
         redirectTo,
         origin: window.location.origin,
+        captchaToken,
       });
       if (!mounted.current) return;
       setEmail(normalizedEmail);
@@ -169,7 +177,11 @@ function AuthForm({ mode, redirectTo, initialEmail = "" }) {
         startCooldown();
     } finally {
       busyRef.current = false;
-      if (mounted.current) setBusy("");
+      if (mounted.current) {
+        setBusy("");
+        // Turnstile tokens are single-use; get a fresh one for the next send.
+        setCaptchaReset((value) => value + 1);
+      }
     }
   }
 
@@ -399,6 +411,11 @@ function AuthForm({ mode, redirectTo, initialEmail = "" }) {
                 Get secure access by email. No password needed.
               </p>
             </div>
+            <TurnstileWidget
+              action="donor-send-code"
+              onToken={setCaptchaToken}
+              resetKey={captchaReset}
+            />
             <button
               type="submit"
               disabled={Boolean(busy) || remaining > 0}
@@ -504,6 +521,13 @@ function AuthForm({ mode, redirectTo, initialEmail = "" }) {
             <p className="leading-relaxed text-slate-500">
               Can’t find the email? Check your spam folder.
             </p>
+            {remaining === 0 && (
+              <TurnstileWidget
+                action="donor-resend-code"
+                onToken={setCaptchaToken}
+                resetKey={captchaReset}
+              />
+            )}
             <button
               type="button"
               onClick={requestCode}

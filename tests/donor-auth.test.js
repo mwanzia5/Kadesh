@@ -150,6 +150,27 @@ test("login sends an email code without creating users or overwriting metadata",
   );
 });
 
+test("a CAPTCHA token is forwarded to Supabase only when present", async () => {
+  const withToken = authClient();
+  await withToken.actions.sendEmailCode({
+    email: donor.email,
+    origin,
+    captchaToken: "turnstile-token",
+  });
+  assert.equal(withToken.calls[0].args.options.captchaToken, "turnstile-token");
+
+  const withoutToken = authClient();
+  await withoutToken.actions.sendEmailCode({ email: donor.email, origin });
+  assert.equal("captchaToken" in withoutToken.calls[0].args.options, false);
+});
+
+test("CAPTCHA failures get a clear message", () => {
+  assert.match(
+    getAuthErrorMessage({ code: "captcha_failed", message: "captcha protection: request disallowed" }),
+    /security check/,
+  );
+});
+
 test("signup sends trimmed profile names and explicitly permits account creation", async () => {
   const { actions, calls } = authClient();
   await actions.sendEmailCode({
