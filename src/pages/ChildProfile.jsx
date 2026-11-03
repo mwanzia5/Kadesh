@@ -1,3 +1,4 @@
+import FundingProgress, { fundingLabel } from "@/components/cart/FundingProgress";
 import { useState } from "react";
 import {
   useParams,
@@ -32,7 +33,7 @@ import {
   SponsorshipPlanSelect,
 } from "@/components/cart/SponsorshipSelection";
 
-function StatusBadge({ status }) {
+function StatusBadge({ status, funding }) {
   const styles = {
     available: "bg-green-100 text-green-700",
     sponsored: "bg-vibrant-blue/10 text-vibrant-blue",
@@ -45,7 +46,7 @@ function StatusBadge({ status }) {
         styles[status] || "bg-gray-100 text-gray-600",
       )}
     >
-      {status}
+      {fundingLabel(funding) || status}
     </span>
   );
 }
@@ -202,7 +203,8 @@ export default function ChildProfile() {
                       <h1 className="font-display text-headline-lg text-deep-navy">
                         {child.first_name}
                       </h1>
-                      <StatusBadge status={child.sponsorship_status} />
+                      <StatusBadge status={child.sponsorship_status} funding={funding.data?.[id]} />
+                      <FundingProgress funding={funding.data?.[id]} />
                     </div>
                     <div className="flex flex-wrap items-center gap-4 mb-6">
                       <span className="inline-flex items-center gap-1.5 font-body text-body-md text-on-surface-variant">
