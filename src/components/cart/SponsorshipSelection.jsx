@@ -34,13 +34,13 @@ export function AnnualSponsorshipSummary({ sponsorship }) {
         <>
           <p className="mt-1">
             {progress.funding_available === false ? "Last known: " : ""}
-            ${Number(progress.funded_amount).toLocaleString()} of $300 received
+            ${Number(progress.funded_amount).toLocaleString()} of $300 raised toward annual support
             from all sponsors
           </p>
           <progress
             max="300"
             value={Math.min(300, Number(progress.funded_amount))}
-            aria-label="Annual support received"
+            aria-label="Annual support funding progress"
             className="mt-2 h-2 w-full accent-blue-700"
           />
         </>

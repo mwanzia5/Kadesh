@@ -1,3 +1,4 @@
+import FundingProgress, { fundingLabel } from "@/components/cart/FundingProgress";
 import { Component, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -34,7 +35,6 @@ import { AnnualFundingNotice } from "@/components/cart/SponsorshipSelection";
 import { useAnnualFunding } from "@/hooks/useAnnualFunding";
 import {
   annualChildStatus,
-  hasAnnualFundingAmount,
   SPONSORSHIP_CHECKOUT,
 } from "@/lib/sponsorship";
 
@@ -141,7 +141,7 @@ function statusLabel(status) {
   return status || "Unknown";
 }
 
-function StatusBadge({ status }) {
+function StatusBadge({ status, funding }) {
   const value = normalizeStatus(status);
   const styles = {
     available: "border-rose-200 bg-rose-50 text-rose-700",
@@ -156,7 +156,7 @@ function StatusBadge({ status }) {
         styles[value] || "border-gray-200 bg-gray-50 text-gray-600",
       )}
     >
-      {statusLabel(status)}
+      {fundingLabel(funding) || statusLabel(status)}
     </span>
   );
 }
@@ -276,7 +276,7 @@ function ChildCard({ child, locationLabel, onSponsored, funding }) {
           </div>
         )}
         <div className="absolute right-2.5 top-2.5 sm:right-3 sm:top-3">
-          <StatusBadge status={child.sponsorship_status} />
+          <StatusBadge status={child.sponsorship_status} funding={funding} />
         </div>
       </Link>
 
@@ -317,12 +317,7 @@ function ChildCard({ child, locationLabel, onSponsored, funding }) {
           </div>
         )}
 
-        {hasAnnualFundingAmount(funding) && !funding.legacy_reserved && (
-          <p className="mb-3 text-xs text-slate-600">
-            ${Number(funding.funded_amount).toLocaleString()} of $300 annual
-            support received
-          </p>
-        )}
+        <FundingProgress funding={funding} />
         <div className="mt-auto pt-1">
           {isAvailable ? (
             <button
@@ -343,17 +338,17 @@ function ChildCard({ child, locationLabel, onSponsored, funding }) {
                 </>
               ) : (
                 <>
-                  Add {child.first_name || "child"} to cart
+                  {Number(funding?.funded_amount) > 0 ? "Help fund remaining support" : "Sponsor this child"}
                   <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                 </>
               )}
             </button>
           ) : (
             <Link
-              to={`/sponsor-a-child/${child.id}`}
+              to={fundingLabel(funding)?.startsWith("Fully funded") ? "/sponsor-a-child" : `/sponsor-a-child/${child.id}`}
               className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#dfd3bc] bg-[#fffdf8] px-3 py-2.5 font-body text-xs font-bold text-deep-navy transition-all hover:border-[#1e5bab] hover:text-[#1e5bab]"
             >
-              View Profile
+              {fundingLabel(funding)?.startsWith("Fully funded") ? "Support another child" : "View Profile"}
               <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           )}
@@ -563,6 +558,11 @@ export default function SponsorAChild() {
     });
 
     return [...result].sort((a, b) => {
+      // Keep fully sponsored children last across every sort and before pagination.
+      const aSponsored = normalizeStatus(a.sponsorship_status) === "sponsored";
+      const bSponsored = normalizeStatus(b.sponsorship_status) === "sponsored";
+      if (aSponsored !== bSponsored) return Number(aSponsored) - Number(bSponsored);
+
       if (prioritizeAvailable) {
         const aAvailable =
           normalizeStatus(a.sponsorship_status) === "available" ? 0 : 1;
