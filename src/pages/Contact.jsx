@@ -27,6 +27,20 @@ import Container from "@/components/ui/Container";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 
 const offices = {
+  kenya: {
+    label: "Kenya",
+    flag: "KE",
+    name: "Branch Office — Kenya",
+    address: [
+      "Kadesh Hope Mission of Africa",
+      "Syokimau, Quarry Road, 350 Mtr off",
+      "Syokimau Katani Rd, Nairobi, Kenya.",
+    ],
+    phone: "+254 706 959 383",
+    phoneHref: "tel:+254706959383",
+    email: "info@kadeshhopemission.org",
+    mapQuery: "Syokimau+Quarry+Road+Syokimau+Katani+Road+Nairobi+Kenya",
+  },
   uganda: {
     label: "Uganda",
     flag: "🇺🇬",
@@ -63,7 +77,6 @@ const socialLinks = [
 
 export default function Contact() {
   const [status, setStatus] = useState("idle");
-  const [activeOffice] = useState("uganda");
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -77,8 +90,8 @@ export default function Contact() {
     email: "",
   });
 
+  const office = offices.uganda;
   const sendMessageMutation = useSendMessage();
-  const office = offices[activeOffice];
 
   const validateField = (name, rawValue) => {
     const value = rawValue.trim();
@@ -571,15 +584,16 @@ export default function Contact() {
                   Where to find us
                 </p>
                 <h2 className="mt-3 font-display text-4xl font-bold text-deep-navy sm:text-5xl">
-                  Our Head Office
+                  Our Offices
                 </h2>
                 <p className="mx-auto mt-4 max-w-2xl font-body text-base leading-7 text-[#625a4d] sm:text-lg">
-                  Visit or contact our team at our Uganda head office.
+                  Visit or contact our team at our Uganda head office or Kenya branch office.
                 </p>
               </div>
             </ScrollReveal>
 
-            <div className="mt-12 overflow-hidden rounded-[2rem] border border-[#eadfc8] bg-white shadow-[0_18px_48px_rgba(55,43,20,.08)]">
+            {Object.entries(offices).reverse().map(([key, office]) => (
+            <div key={key} className="mt-12 overflow-hidden rounded-[2rem] border border-[#eadfc8] bg-white shadow-[0_18px_48px_rgba(55,43,20,.08)]">
               <div className="grid lg:grid-cols-[0.72fr_1.28fr]">
                 <ScrollReveal direction="left" className="h-full">
                   <div className="flex h-full flex-col justify-center p-7 sm:p-9 lg:p-10">
@@ -637,6 +651,7 @@ export default function Contact() {
                 </div>
               </div>
             </div>
+            ))}
           </Container>
         </section>
       </main>
